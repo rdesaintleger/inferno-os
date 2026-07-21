@@ -82,18 +82,19 @@ user inferno
 run --mount=type=tmpfs,target=/tmp \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/cache/apt,target=/var/cache/apt \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/lib/apt,target=/var/lib/apt \
-    cd /home/project && \
-    git clone https://github.com/rdesaintleger/inferno-os.git && \
+    --mount=target=/tmp/export,type=bind \
+    cd /tmp && tar -cpf - export | tar -C /home/project -xpf - && \
+    mv /home/project/export /home/project/inferno-os && \
+    mkdir -p /home/project/inferno-os/tmp && \
     cd /home/project/inferno-os && \
     git submodule update --init --recursive && \
-    echo > mkconfig ROOT=/home/project/inferno-os && \
-    echo >>mkconfig TKSTYLE=std && \
-    echo >>mkconfig SYSHOST=Linux && \
-    echo >>mkconfig SYSTARG=Linux && \
-    echo >>mkconfig OBJTYPE=386 && \
-    echo >>mkconfig 'OBJDIR=$SYSTARG/$OBJTYPE' && \
-    echo >>mkconfig '<$ROOT/mkfiles/mkhost-$SYSHOST' && \
-    echo >>mkconfig '<$ROOT/mkfiles/mkfile-$SYSTARG-$OBJTYPE' && \
+    sed -i \
+      -e 's|^ROOT=.*|ROOT=/home/project/inferno-os|' \
+      -e 's|^TKSTYLE=.*|TKSTYLE=std|' \
+      -e 's|^SYSHOST=.*|SYSHOST=Linux|' \
+      -e 's|^SYSTARG=.*|SYSTARG=Linux|' \
+      -e 's|^OBJTYPE=.*|OBJTYPE=386|' \
+    mkconfig && \
     /home/project/inferno-os/makemk.sh && \
     mk nuke && \
     mk install
@@ -122,10 +123,9 @@ run --mount=type=tmpfs,target=/tmp \
         mkdir -p /home/inferno/.local/share/icons/dist && \
         mkdir -p /home/inferno/.local/share/applications"
 
-env PATH="/home/project/inferno-os/Linux/386/bin:${PATH}"
 
 copy --from=build_theia_stage --chown=theia:theia /home/theia /home/theia
-copy --from=build_inferno_stage /home/project/inferno-os /home/project/inferno-os
+copy --from=build_inferno_stage --chown=inferno:inferno /home/project/inferno-os /home/project/inferno-os
 
 # expose theia port and noVNC port
 expose 3000
@@ -134,6 +134,7 @@ expose 6080
 # Specify default shell for Theia and the Built-In plugins directory
 env SHELL=/bin/bash
 env THEIA_DEFAULT_PLUGINS=local-dir:/home/theia/plugins
+env PATH="/home/project/inferno-os/Linux/386/bin:${PATH}"
 
 # Use installed git instead of dugite
 env USE_LOCAL_GIT=true
