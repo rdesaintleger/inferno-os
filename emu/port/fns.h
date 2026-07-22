@@ -78,7 +78,6 @@ int		findmount(Chan**, Mhead**, int, int, Qid);
 void		freeb(Block*);
 void		freeblist(Block*);
 void		freeskey(Signerkey*);
-ulong	getcallerpc(void*);
 ulong	getFPcontrol(void);
 ulong	getFPstatus(void);
 void		gkbdputc(Queue*, int);

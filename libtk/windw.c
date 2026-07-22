@@ -199,7 +199,6 @@ tkmoveresize(Tk *tk, int x, int y, int w, int h)
 		w = 0;
 	if(h < 0)
 		h = 0;
-//print("moveresize %s %d %d +[%d %d], callerpc %lux\n", tk->name->name, x, y, w, h, getcallerpc(&tk));
 	tk->req.width = w;
 	tk->req.height = h;
 	tk->act = tk->req;

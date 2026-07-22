@@ -45,7 +45,7 @@ struct Btail
 #define B2D(bp)		((void*)bp->u.data)
 #define D2B(b, dp)	b = ((Bhdr*)(((uchar*)dp)-(((Bhdr*)0)->u.data))); \
 			if(b->magic != MAGIC_A && b->magic != MAGIC_I)\
-				poolfault(dp, "alloc:D2B", getcallerpc(&dp));
+				poolfault(dp, "alloc:D2B");
 #define B2NB(b)		((Bhdr*)((uchar*)b + b->size))
 #define B2PT(b)		((Btail*)((uchar*)b - sizeof(Btail)))
 #define B2T(b)		((Btail*)(((uchar*)b)+b->size-sizeof(Btail)))
@@ -54,7 +54,7 @@ struct Btail
 
 #define BHDRSIZE	((int)(((Bhdr*)0)->u.data)+sizeof(Btail))
 
-extern	void	(*poolfault)(void *, char *, ulong);
+extern	void	(*poolfault)(void *, char *);
 extern	void	poolinit(void);
 extern	void*	poolalloc(Pool*, ulong);
 extern	void	poolfree(Pool*, void*);

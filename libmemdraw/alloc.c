@@ -87,7 +87,6 @@ allocmemimage(Rectangle r, ulong chan)
 	}
 
 	md->base[0] = (ulong)md;
-	/* md->base[1] = getcallerpc(&r); */
 
 	/* if this changes, memimagemove must change too */
 	md->bdata = (uchar*)&md->base[2];

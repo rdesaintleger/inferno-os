@@ -113,7 +113,6 @@ randomread(void *xp, ulong n)
 
 	p = xp;
 
-if(0)print("A%ld.%d.%lux|", n, rb.target, getcallerpc(&xp));
 	if(waserror()){
 		qunlock(&rb.l);
 		nexterror();

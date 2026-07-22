@@ -547,13 +547,13 @@ logfsrealloc(void *p, ulong size)
 void *
 logfsrealloc(void *p, ulong size)
 {
-	return _realloc(p, size, getcallerpc(&p));
+	return _realloc(p, size);
 }
 
 void *
 nandfsrealloc(void *p, ulong size)
 {
-	return _realloc(p, size, getcallerpc(&p));
+	return _realloc(p, size);
 }
 #else
 void *
@@ -567,7 +567,7 @@ void
 logfsfreemem(void *p)
 {
 #ifdef LEAKHUNT
-	leakfree(p, getcallerpc(&p));
+	leakfree(p);
 #endif
 	free(p);
 }
@@ -576,7 +576,7 @@ void
 nandfsfreemem(void *p)
 {
 #ifdef LEAKHUNT
-	leakfree(p, getcallerpc(&p));
+	leakfree(p);
 #endif
 	free(p);
 }
