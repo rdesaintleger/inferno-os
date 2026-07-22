@@ -4,7 +4,6 @@ LIB=libinterp.a
 
 OFILES=\
 	alt.$O\
-	comp-$OBJTYPE.$O\
 	conv.$O\
 	crypt.$O\
 	dec.$O\
@@ -20,7 +19,6 @@ OFILES=\
 	load.$O\
 	loader.$O\
 	math.$O\
-#	prefab.$O\
 	raise.$O\
 	readmod.$O\
 	runt.$O\
@@ -29,7 +27,6 @@ OFILES=\
 	tk.$O\
 	validstk.$O\
 	xec.$O\
-	das-$OBJTYPE.$O\
 	keyring.$O\
 	string.$O\
 
@@ -115,9 +112,6 @@ ipint.$O:	ipint.h ipintsmod.h
 loader.$O:	loadermod.h
 freetype.$O:	freetypemod.h $ROOT/include/freetype.h
 math.$O:	$ROOT/include/mathi.h
-
-das-spim.c:N:	das-mips.c
-comp-spim.c:N:	comp-mips.c
 
 # optab.h:	$ROOT/include/isa.h mkoptab
 #	$SHELLNAME mkoptab > $target

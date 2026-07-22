@@ -1685,9 +1685,7 @@ xec(Prog *p)
 
 // print("%lux %lux %lux %lux %lux\n", (ulong)&R, R.xpc, R.FP, R.MP, R.PC);
 
-	if(R.M->compiled)
-		comvec();
-	else do {
+	do {
 		dec[R.PC->add]();
 		op = R.PC->op;
 		R.PC++;

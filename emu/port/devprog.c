@@ -1405,13 +1405,6 @@ dbgxec(Prog *p)
 
 	buf[0] = '\0';
 
-	if(R.IC != 0 && R.M->compiled) {
-		comvec();
-		if(p != currun())
-			dbgblock(p);
-		goto save;
-	}
-
 	while(R.IC != 0) {
 		if(0)
 			print("step: %lux: %s %4ld %D\n",

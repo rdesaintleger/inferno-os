@@ -492,18 +492,6 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 		m->entryt = m->type[entryt];
 	}
 
-	if(cflag) {
-		if((m->rt&DONTCOMPILE) == 0 && !dontcompile)
-			compile(m, isize, nil);
-	}
-	else
-	if(m->rt & MUSTCOMPILE && !dontcompile) {
-		if(compile(m, isize, nil) == 0) {
-			kwerrstr("compiler required");
-			goto bad;
-		}
-	}
-
 	m->path = strdup(path);
 	if(m->path == nil) {
 		kwerrstr(exNomem);

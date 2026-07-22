@@ -435,10 +435,6 @@ Loader_compile(void *a)
 	*f->ret = 0;
 	m->origmp = f->mp->MP;
 	if(cflag || f->flag)
-	if(compile(m, m->nprog, f->mp)) {
-		f->mp->prog = m->prog;
-		f->mp->compiled = 1;
-	} else
 		*f->ret = -1;
 	m->origmp = H;
 }

@@ -624,32 +624,28 @@ cpxec(Prog *p)
 		error(m);
 	}
 
-	if(R.M->compiled)
-		comvec();
-	else{
-		m = R.M->m;
-		r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
-		do{
-			dec[R.PC->add]();
-			op = R.PC->op;
-			if(r != nil){
-				i = R.PC-r->base;
-				if(i >= 0 && i < r->size)
-					r->bucket[i]++;
-			}
-			R.PC++;
-			optab[op]();
-			if(op == ISPAWN || op == IMSPAWN){
-				n = delruntail(Pdebug);	/* any state will do */
-				n->xec = cpxec;
-				addrun(n);
-			}
-			if(m != R.M->m){
-				m = R.M->m;
-				r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
-			}
-		}while(--R.IC != 0);
-	}
+	m = R.M->m;
+	r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
+	do{
+		dec[R.PC->add]();
+		op = R.PC->op;
+		if(r != nil){
+			i = R.PC-r->base;
+			if(i >= 0 && i < r->size)
+				r->bucket[i]++;
+		}
+		R.PC++;
+		optab[op]();
+		if(op == ISPAWN || op == IMSPAWN){
+			n = delruntail(Pdebug);	/* any state will do */
+			n->xec = cpxec;
+			addrun(n);
+		}
+		if(m != R.M->m){
+			m = R.M->m;
+			r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
+		}
+	}while(--R.IC != 0);
 
 	p->R = R;
 }
