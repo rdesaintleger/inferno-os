@@ -11,9 +11,6 @@ COMMONFILES=\
 	convM2S.$O\
 	convS2M.$O\
 	fcallfmt.$O\
-	runestrchr.$O\
-	runestrlen.$O\
-	runetype.$O\
 	strtoll.$O\
 	strtoull.$O\
 	rune.$O\
@@ -24,14 +21,10 @@ COMMONFILES=\
 IMPORTFILES=\
 	argv0.$O\
 	charstod.$O\
-	cistrcmp.$O\
-	cistrncmp.$O\
-	cistrstr.$O\
 	cleanname.$O\
 	create.$O\
 	dirwstat.$O\
 	dofmt.$O\
-	dorfmt.$O\
 	errfmt.$O\
 	exits.$O\
 	fmt.$O\
@@ -39,21 +32,15 @@ IMPORTFILES=\
 	fmtlock.$O\
 	fmtprint.$O\
 	fmtquote.$O\
-	fmtrune.$O\
 	fmtstr.$O\
 	fmtvprint.$O\
 	fprint.$O\
 	getfields.$O\
 	nulldir.$O\
-	pow10.$O\
 	print.$O\
 	qsort.$O\
 	readn.$O\
 	rerrstr.$O\
-	runeseprint.$O\
-	runesmprint.$O\
-	runesnprint.$O\
-	runevseprint.$O\
 	seek.$O\
 	seprint.$O\
 	smprint.$O\

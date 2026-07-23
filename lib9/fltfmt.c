@@ -109,16 +109,16 @@ xdtoa(Fmt *fmt, char *s2, double f)
 			h = f;
 		} else {
 			d = e/2;
-			h = f * pow10(-d);
+			h = f * ipow10(-d);
 		}
-		g = h * pow10(d-e);
+		g = h * ipow10(d-e);
 		while(g < 1) {
 			e--;
-			g = h * pow10(d-e);
+			g = h * ipow10(d-e);
 		}
 		while(g >= 10) {
 			e++;
-			g = h * pow10(d-e);
+			g = h * ipow10(d-e);
 		}
 	}
 

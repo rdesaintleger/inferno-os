@@ -42,7 +42,4 @@ sbrk(int size)
     
     return brk;
 }
-#else
-/* dummy function for everyone else, in case its ar complains about empty files */
-void	__fakesbrk(void){}
 #endif

@@ -2191,12 +2191,6 @@ refreshslave(Display *d)
 	}
 }
 
-void
-startrefresh(Display *disp)
-{
-	USED(disp);
-}
-
 static
 int
 doflush(Display *d)
@@ -2253,67 +2247,6 @@ flushimage(Display *d, int visible)
 	return ret;
 }
 
-/*
- * Turn off refresh for this window and remove any pending refresh events for it.
- */
-void
-delrefresh(Image *i)
-{
-	Refreshq *r, *prev, *next;
-	int locked;
-	Display *d;
-	void *refptr;
-
-	d = i->display;
-	/*
-	 * Any refresh function will do, because the data pointer is nil.
-	 * Can't use nil, though, because that turns backing store back on.
-	 */
-	if(d->local)
-		drawlsetrefresh(d->dataqid, i->id, memlnorefresh, nil);
-	refptr = i->refptr;
-	i->refptr = nil;
-	if(d->refhead==nil || refptr==nil)
-		return;
-	locked = lockdisplay(d);
-	prev = nil;
-	for(r=d->refhead; r; r=next){
-		next = r->next;
-		if(r->refptr == refptr){
-			if(prev)
-				prev->next = next;
-			else
-				d->refhead = next;
-			if(d->reftail == r)
-				d->reftail = prev;
-			free(r);
-		}else
-			prev = r;
-	}
-	if(locked)
-		unlockdisplay(d);
-}
-
-void
-queuerefresh(Image *i, Rectangle r, Reffn reffn, void *refptr)
-{
-	Display *d;
-	Refreshq *rq;
-
-	d = i->display;
-	rq = malloc(sizeof(Refreshq));
-	if(rq == nil)
-		return;
-	if(d->reftail)
-		d->reftail->next = rq;
-	else
-		d->refhead = rq;
-	d->reftail = rq;
-	rq->reffn = reffn;
-	rq->refptr = refptr;
-	rq->r = r;
-}
-
 uchar*
 bufimage(Display *d, int n)
 {
@@ -2335,11 +2268,4 @@ bufimage(Display *d, int n)
 	d->bufp += n;
 	/* return with buffer locked */
 	return p;
-}
-
-void
-drawerror(Display *d, char *s)
-{
-	USED(d);
-	fprint(2, "draw: %s: %r\n", s);
 }

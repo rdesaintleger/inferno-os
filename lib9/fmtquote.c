@@ -235,25 +235,3 @@ quotefmtinstall(void)
 	fmtinstall('q', quotestrfmt);
 	fmtinstall('Q', quoterunestrfmt);
 }
-
-int
-_needsquotes(char *s, int *quotelenp)
-{
-	Quoteinfo q;
-
-	_quotesetup(s, nil, -1, 0x7FFFFFFF, &q, 0, 0);
-	*quotelenp = q.nbytesout;
-
-	return q.quoted;
-}
-
-int
-_runeneedsquotes(Rune *r, int *quotelenp)
-{
-	Quoteinfo q;
-
-	_quotesetup(nil, r, -1, 0x7FFFFFFF, &q, 0, 0);
-	*quotelenp = q.nrunesout;
-
-	return q.quoted;
-}

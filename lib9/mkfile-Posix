@@ -2,7 +2,6 @@ TARGFILES=\
 	$IMPORTFILES\
 	dirstat-posix.$O\
 	errstr-posix.$O\
-	getuser-posix.$O\
 	setfcr-$SYSTARG-$OBJTYPE.$O\
 	getwd-posix.$O\
 	sbrk-posix.$O\

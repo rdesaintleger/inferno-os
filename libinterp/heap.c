@@ -191,12 +191,6 @@ freemodlink(Heap *h, int swept)
 	unload(ml->m);
 }
 
-int
-heapref(void *v)
-{
-	return D2H(v)->ref;
-}
-
 void
 freeheap(Heap *h, int swept)
 {
@@ -301,29 +295,6 @@ incmem(void *vw, Type *t)
 					h->ref++;
 					Setmark(h);
 				}
-				q++;
-			}
-		}
-		w += 8;
-	}
-}
-
-void
-scanptrs(void *vw, Type *t, void (*f)(void*))
-{
-	uchar *p;
-	int i, c, m;
-	WORD **w, **q, *wp;
-
-	w = (WORD**)vw;
-	p = t->map;
-	for(i = 0; i < t->np; i++) {
-		c = *p++;
-		if(c != 0) {
-			q = w;
-			for(m = 0x80; m != 0; m >>= 1) {
-				if((c & m) && (wp = *q) != H)
-					f(D2H(wp));
 				q++;
 			}
 		}

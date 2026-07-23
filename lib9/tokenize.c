@@ -72,23 +72,6 @@ etoken(char *t, char *sep)
 }
 
 int
-gettokens(char *s, char **args, int maxargs, char *sep)
-{
-	int nargs;
-
-	for(nargs=0; nargs<maxargs; nargs++){
-		while(*s!='\0' && utfrune(sep, *s)!=nil)
-			*s++ = '\0';
-		if(*s == '\0')
-			break;
-		args[nargs] = s;
-		s = etoken(s, sep);
-	}
-
-	return nargs;
-}
-
-int
 tokenize(char *s, char **args, int maxargs)
 {
 	int nargs;

@@ -176,15 +176,6 @@ qidtype(char *s, uchar t)
 	return s;
 }
 
-int
-dirfmt(Fmt *fmt)
-{
-	char buf[160];
-
-	fdirconv(buf, buf+sizeof buf, va_arg(fmt->args, Dir*));
-	return fmtstrcpy(fmt, buf);
-}
-
 static void
 fdirconv(char *buf, char *e, Dir *d)
 {

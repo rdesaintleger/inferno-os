@@ -61,8 +61,8 @@ $RANLIB $PLAT/lib/libbio.a || error libbio ranlib failed
 
 # lib9
 cd $ROOT/lib9 || error cannot find lib9 directory
-CFILES="dirstat-$SYSTYPE.c rerrstr.c errstr-$SYSTYPE.c getuser-$SYSTYPE.c"	# system specific
-CFILES="$CFILES charstod.c cleanname.c create.c dirwstat.c *print*.c *fmt*.c exits.c getfields.c  pow10.c print.c qsort.c rune.c runestrlen.c seek.c strdup.c strtoll.c utflen.c utfrrune.c utfrune.c utf*.c *str*cpy*.c"
+CFILES="dirstat-$SYSTYPE.c rerrstr.c errstr-$SYSTYPE.c"	# system specific
+CFILES="$CFILES charstod.c cleanname.c create.c dirwstat.c *print*.c *fmt*.c exits.c getfields.c  print.c qsort.c rune.c seek.c strdup.c strtoll.c utflen.c utfrrune.c utfrune.c utf*.c *str*cpy*.c"
 $CC $CFILES || error lib9 compilation failed
 $AR $PLAT/lib/lib9.a `ofiles $CFILES` || error lib9 ar failed
 $RANLIB $PLAT/lib/lib9.a || error lib9 ranlib failed
