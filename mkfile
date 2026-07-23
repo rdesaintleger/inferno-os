@@ -17,7 +17,6 @@ EMUDIRS=\
 	libinterp\
 	libkeyring\
 	libdraw\
-	libprefab\
 	libtk\
 	libfreetype\
 	libmemdraw\
