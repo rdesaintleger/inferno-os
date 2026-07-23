@@ -20,7 +20,6 @@ COMMONFILES=\
 #
 IMPORTFILES=\
 	argv0.$O\
-	charstod.$O\
 	cleanname.$O\
 	create.$O\
 	dirwstat.$O\

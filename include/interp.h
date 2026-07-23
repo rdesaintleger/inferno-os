@@ -437,7 +437,6 @@ extern	int		handler(char*);
 extern	Heap*	heap(Type*);
 extern	Heap*	heaparray(Type*, int);
 extern	void		(*heapmonitor)(int, void*, ulong);
-extern	int		heapref(void*);
 extern	Heap*		heapz(Type*);
 extern	int		hmsize(void*);
 extern	void		incmem(void*, Type*);

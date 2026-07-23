@@ -308,8 +308,6 @@ struct EGsig
 };
 
 EGpriv*		eggen(int nlen, int rounds);
-mpint*		egencrypt(EGpub *k, mpint *in, mpint *out);	/* deprecated */
-mpint*		egdecrypt(EGpriv *k, mpint *in, mpint *out);
 EGsig*		egsign(EGpriv *k, mpint *m);
 int		egverify(EGpub *k, EGsig *sig, mpint *m);
 EGpub*		egpuballoc(void);

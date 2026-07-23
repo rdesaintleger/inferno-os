@@ -42,11 +42,9 @@ struct	Biobuf
 #define	BLINELEN(bp)	Blinelen(bp)
 #define	BFILDES(bp)	Bfildes(bp)
 
-int	Bbuffered(Biobuf*);
 int	Bfildes(Biobuf*);
 int	Bflush(Biobuf*);
 int	Bgetc(Biobuf*);
-int	Bgetd(Biobuf*, double*);
 long	Bgetrune(Biobuf*);
 int	Binit(Biobuf*, int, int);
 int	Binits(Biobuf*, int, int, uchar*, int);
