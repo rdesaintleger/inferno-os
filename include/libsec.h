@@ -82,10 +82,6 @@ struct DESstate
 void	setupDESstate(DESstate *s, uchar key[8], uchar *ivec);
 void	des_key_setup(uchar[8], ulong[32]);
 void	block_cipher(ulong*, uchar*, int);
-void	desCBCencrypt(uchar*, int, DESstate*);
-void	desCBCdecrypt(uchar*, int, DESstate*);
-void	desECBencrypt(uchar*, int, DESstate*);
-void	desECBdecrypt(uchar*, int, DESstate*);
 
 /* for backward compatibility with 7 byte DES key format */
 void	des56to64(uchar *k56, uchar *k64);
