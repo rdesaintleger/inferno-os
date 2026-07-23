@@ -502,39 +502,3 @@ tkcvsevent(Tk *tk, int event, void *data)
 		tksubdeliver(tk, tk->binds, event, data, 0);
 	return dest;
 }
-
-/*
- * debugging
- */
-void
-tkcvsdump(Tk *tk)
-{
-	TkCanvas *c;
-	TkCitem *it;
-	TkCwind *w;
-	char v1[Tkminitem], v2[Tkminitem];
-	int i;
-
-	if(tk == nil)
-		return;
-	c = TKobj(TkCanvas, tk);
-	tkfprint(v1, c->width);
-	tkfprint(v2, c->height);
-	print("%q configure -width %s -height %s", tkname(tk), v1, v2);
-	print(" # focus %#p mouse %#p grab %#p\n", c->focus, c->mouse, c->grab);
-	for(it = c->head; it != nil; it = it->next){
-		print("%q create %q", tkname(tk), tkcimethod[it->type].name);
-		for(i = 0; i < it->p.npoint; i++){
-			tkfprint(v1, it->p.parampt[i].x);
-			tkfprint(v2, it->p.parampt[i].y);
-			print(" %s %s", v1, v2);
-		}
-		if(it->type == TkCVwindow){
-			w = TKobj(TkCwind, it);
-			if(w->sub != nil)
-				print(" -window %q", tkname(w->sub));
-			print(" # item %#p id %d sub %#p focus [%#p %q]\n", it, it->id, w->sub, w->focus, tkname(w->focus));
-		}else
-			print("# item %#p id %d\n", it, it->id);
-	}
-}

@@ -348,7 +348,6 @@ extern int	geninitdraw(char*, void(*)(Display*, char*), char*, char*, char*, int
 extern int	initdraw(void(*)(Display*, char*), char*, char*);
 extern Display*	initdisplay(char*, char*, void(*)(Display*, char*));
 extern int	loadimage(Image*, Rectangle, uchar*, int);
-extern int	cloadimage(Image*, Rectangle, uchar*, int);
 extern int	getwindow(Display*, int);
 extern int	gengetwindow(Display*, char*, Image**, Screen**, int);
 extern Image* readimage(Display*, int, int);
@@ -364,7 +363,6 @@ extern Image* allocimagemix(Display*, ulong, ulong);
  * Colors
  */
 extern	void	readcolmap(Display*, RGB*);
-extern	void	writecolmap(Display*, RGB*);
 extern	ulong	setalpha(ulong, uchar);
 
 /*
@@ -442,12 +440,10 @@ extern Point	runestringnbg(Image*, Point, Image*, Point, Font*, Rune*, int, Imag
 extern Point	runestringnbgop(Image*, Point, Image*, Point, Font*, Rune*, int, Image*, Point, Drawop);
 extern Point	_string(Image*, Point, Image*, Point, Font*, char*, Rune*, int, Rectangle, Image*, Point, Drawop);
 extern Point	stringsubfont(Image*, Point, Image*, Subfont*, char*);
-extern int		bezier(Image*, Point, Point, Point, Point, int, int, int, Image*, Point);
 extern int		bezierop(Image*, Point, Point, Point, Point, int, int, int, Image*, Point, Drawop);
 extern int		bezspline(Image*, Point*, int, int, int, int, Image*, Point);
 extern int		bezsplineop(Image*, Point*, int, int, int, int, Image*, Point, Drawop);
 extern int		getbezsplinepts(Point*, int, Point**);
-extern int		fillbezier(Image*, Point, Point, Point, Point, int, Image*, Point);
 extern int		fillbezierop(Image*, Point, Point, Point, Point, int, Image*, Point, Drawop);
 extern int		fillbezspline(Image*, Point*, int, int, Image*, Point);
 extern int		fillbezsplineop(Image*, Point*, int, int, Image*, Point, Drawop);
@@ -459,7 +455,6 @@ extern void	arc(Image*, Point, int, int, int, Image*, Point, int, int);
 extern void	arcop(Image*, Point, int, int, int, Image*, Point, int, int, Drawop);
 extern void	fillarc(Image*, Point, int, int, Image*, Point, int, int);
 extern void	fillarcop(Image*, Point, int, int, Image*, Point, int, int, Drawop);
-extern void	border(Image*, Rectangle, int, Image*, Point);
 extern void	borderop(Image*, Rectangle, int, Image*, Point, Drawop);
 
 /*

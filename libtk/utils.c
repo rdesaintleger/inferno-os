@@ -187,26 +187,6 @@ tkfreecolcache(TkCtxt *c)
 }
 
 Image*
-tkcolormix(TkCtxt *c, ulong one, ulong three)
-{
-	Image *i;
-	Display *d;
-
-	i = tkfindcol(c, one, three);
-	if(i != nil)
-		return i;
-	d = c->display;
-	i = allocimagemix(d, one, three);
-	if(i == nil)
-		return d->black;
-	if(!tkcachecol(c, i, one, three)){
-		freeimage(i);
-		return d->black;
-	}
-	return i;
-}
-
-Image*
 tkcolor(TkCtxt *c, ulong pix)
 {
 	Image *i;
@@ -234,63 +214,6 @@ tkcolor(TkCtxt *c, ulong pix)
 		freeimage(i);
 		return d->black;
 	}
-	return i;
-}
-
-Image*
-tkgradient(TkCtxt *c, Rectangle r, int dir, ulong pix0, ulong pix1)
-{
-	Display *d;
-	Image *i;
-	uchar *b, *p, *e;
-	int c0[3], c1[3], delta[3], a, j, x, y, n, locked;
-	Rectangle s;
-
-	d = c->display;
-	y = Dy(r);
-	x = Dx(r);
-	if(x <= 0 || y <= 0) {
-		r = Rect(0, 0, 1, 1);
-		x = y = 1;
-	}
-	/* TO DO: diagonal */
-	s = r;
-	if(dir == Tkhorizontal){
-		n = x;
-		r.max.y = r.min.y+1;
-	}else{
-		n = y;
-		r.max.x = r.min.x+1;
-	}
-	b = mallocz(3*n, 0);
-	if(b == nil)
-		return nil;
-	locked = lockdisplay(d);
-	i = allocimage(d, r, RGB24, 1, DNofill);
-	if(i == nil)
-		goto Ret;
-	tkrgbavals(pix0, &c0[2], &c0[1], &c0[0], &a);
-	tkrgbavals(pix1, &c1[2], &c1[1], &c1[0], &a);
-	for(j = 0; j < 3; j++){
-		c0[j] <<= 12;
-		c1[j] <<= 12;
-		delta[j] = ((c1[j]-c0[j])+(1<<11))/n;
-	}
-	e = b+3*n;
-	for(p = b; p < e; p += 3) {
-		p[0] = c0[0]>>12;
-		p[1] = c0[1]>>12;
-		p[2] = c0[2]>>12;
-		c0[0] += delta[0];
-		c0[1] += delta[1];
-		c0[2] += delta[2];
-	}
-	loadimage(i, r, b, 3*n);
-	replclipr(i, 1, s);
-Ret:
-	if(locked)
-		unlockdisplay(d);
-	free(b);
 	return i;
 }
 
@@ -1324,27 +1247,6 @@ tkvisiblerect(Tk *tk, Rectangle *rr)
 	*rr = rectsubpt(r, Pt(tk->borderwidth, tk->borderwidth));
 	return 1;
 }
-
-Point
-tkanchorpoint(Rectangle r, Point size, int anchor)
-{
-	int dx, dy;
-	Point p;
-
-	p = r.min;
-	dx = Dx(r) - size.x;
-	dy = Dy(r) - size.y;
-	if((anchor & (Tknorth|Tksouth)) == 0)
-		p.y += dy/2;
-	else if(anchor & Tksouth)
-		p.y += dy;
-
-	if((anchor & (Tkeast|Tkwest)) == 0)
-		p.x += dx/2;
-	else if(anchor & Tkeast)
-		p.x += dx;
-	return p;
-}
 	
 static char*
 tkunits(char c, int *d, TkEnv *e)
@@ -2069,56 +1971,4 @@ tkblink(Tk *tk, void (*callback)(Tk*, int))
 		blinkrpt = rptproc("blinker", TkBlinkinterval, nil, blinkactive, ckblink, doblink);
 	else
 		rptwakeup(nil, blinkrpt);
-}
-
-/*
- * debugging
- */
-void
-tkdump(Tk *tk)
-{
-	Tk *sl;
-
-	if(tk == nil)
-		return;
-	if((uint)tk->type < TKwidgets)
-		print("%s", tkmethod[tk->type]->name);
-	else
-		print("TYPE#%#ux", tk->type);
-	if(tk->name == nil || (ulong)tk->name < 512)
-		print(" NAME %p", tk->name);
-	else
-		print(" %s", tkname(tk));
-	print(" # tk %#p flag %#ux grid %#p", tk, tk->flag, tk->grid);
-	if(tk->parent != nil)
-		print(" parent [%#p %q]", tk->parent, tkname(tk->parent));
-	if(tk->master != nil)
-		print(" master [%#p %q]", tk->master, tkname(tk->master));
-	if(tk->slave != nil){
-		print(" slaves");
-		for(sl = tk->slave; sl != nil; sl = sl->next)
-			print(" [%#p %q]", sl, tkname(sl));
-	}
-	print("\n");
-	if(tk->type != TKcanvas)
-		return;
-	tkcvsdump(tk);
-}
-
-void
-tktopdump(Tk *tk)
-{
-	TkTop *top;
-	Tk *sub;
-
-	if(tk == nil || tk->env == nil){
-		print("# %#p no top\n", tk);
-		return;
-	}
-	top = tk->env->top;
-	print("# env %#p top %#p\n", tk->env, top);
-	if(top != nil){
-		for(sub = top->root; sub != nil; sub = sub->siblings)
-			tkdump(sub);
-	}
 }

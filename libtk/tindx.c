@@ -11,7 +11,6 @@
 /* debugging */
 extern int tktdbg;
 extern void tktprinttext(TkText*);
-extern void tktprintindex(TkTindex*);
 extern void tktprintitem(TkTitem*);
 extern void tktprintline(TkTline*);
 

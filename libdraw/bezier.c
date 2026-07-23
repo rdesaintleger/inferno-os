@@ -155,12 +155,6 @@ getbezsplinepts(Point *pt, int npt, Point **pp)
 }
 
 int
-bezier(Image *dst, Point p0, Point p1, Point p2, Point p3, int end0, int end1, int radius, Image *src, Point sp)
-{
-	return bezierop(dst, p0, p1, p2, p3, end0, end1, radius, src, sp, SoverD);
-}
-
-int
 bezierop(Image *dst, Point p0, Point p1, Point p2, Point p3, int end0, int end1, int radius, Image *src, Point sp, Drawop op)
 {
 	Plist l;
@@ -196,12 +190,6 @@ bezsplineop(Image *dst, Point *pt, int npt, int end0, int end1, int radius, Imag
 		free(l.p);
 	}
 	return 1;
-}
-
-int
-fillbezier(Image *dst, Point p0, Point p1, Point p2, Point p3, int w, Image *src, Point sp)
-{
-	return fillbezierop(dst, p0, p1, p2, p3, w, src, sp, SoverD);
 }
 
 int

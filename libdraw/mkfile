@@ -10,7 +10,6 @@ OFILES=	alloc.$O\
 	buildfont.$O\
 	bytesperline.$O\
 	chan.$O\
-	cloadimage.$O\
 	computil.$O\
 	creadimage.$O\
 	defont.$O\
@@ -42,9 +41,7 @@ OFILES=	alloc.$O\
 	subfontname.$O\
 	unloadimage.$O\
 	window.$O\
-	writecolmap.$O\
 	writeimage.$O\
-	writesubfont.$O\
 
 HFILES=\
 	$ROOT/include/draw.h \

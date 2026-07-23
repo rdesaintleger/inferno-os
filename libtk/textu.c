@@ -11,7 +11,6 @@
 /* debugging */
 int tktdbg;
 extern void tktprinttext(TkText*);
-extern void tktprintindex(TkTindex*);
 extern void tktprintitem(TkTitem*);
 extern void tktprintline(TkTline*);
 extern void tktcheck(TkText*, char*);
@@ -855,12 +854,6 @@ tktprintline(TkTline *l)
 	for(i = l->items; i != nil; i = i->next)
 		tktprintitem(i);
 	print("\n");
-}
-
-void
-tktprintindex(TkTindex *ix)
-{
-	print("line=%p,item=%p,pos=%d\n", ix->line, ix->item, ix->pos);
 }
 
 void

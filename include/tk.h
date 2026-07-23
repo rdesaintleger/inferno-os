@@ -693,7 +693,6 @@ extern	void		tksetglobalfocus(TkTop*, int);
 extern	TkImg*		tkname2img(TkTop*, char*);
 extern	void		tkimgput(TkImg*);
 extern	void		tksizeimage(Tk*, TkImg*);
-extern	TkImg*		tkauximage(TkTop*, char*, TkMemimage*, int);
 
 /* choicebuttons - menus.c */
 extern	Tk*		tkfindchoicemenu(Tk*);
@@ -726,8 +725,6 @@ extern	char*		tkparsecolor(char*, ulong*);
 extern	Image*		tkgc(TkEnv*, int);
 extern	Image*		tkgshade(TkEnv*, int, int);
 extern	Image*		tkcolor(TkCtxt*, ulong);
-extern	Image*		tkcolormix(TkCtxt*, ulong, ulong);
-extern	Image*		tkgradient(TkCtxt*, Rectangle, int, ulong, ulong);
 extern	void			tkclear(Image*, Rectangle);
 extern	TkEnv*		tknewenv(TkTop*);
 extern	TkEnv*		tkdefaultenv(TkTop*);
@@ -755,7 +752,6 @@ extern	char*		tkitem(char*, char*);
 extern	Point		tkposn(Tk*);
 extern	Point		tkscrn2local(Tk*, Point);
 extern	int		tkvisiblerect(Tk *tk, Rectangle *rr);
-extern	Point		tkanchorpoint(Rectangle, Point, int);
 extern	char*		tkfrac(char**, int*, TkEnv*);
 extern	char*		tkfracword(TkTop*, char**, int*, TkEnv*);
 extern	char*		tkfprint(char*, int);
@@ -818,11 +814,6 @@ extern	void		tkextnfreeobj(Tk*);
 extern	int		tkextnnewctxt(TkCtxt*);
 extern	void		tkextnfreectxt(TkCtxt*);
 extern	char*	tkextnparseseq(char*, char*, int*);
-
-/* Debugging */
-extern	void		tkdump(Tk*);
-extern	void		tktopdump(Tk*);
-extern	void		tkcvsdump(Tk*);
 
 /* External to libtk */
 extern	void		tkenterleave(TkTop*);

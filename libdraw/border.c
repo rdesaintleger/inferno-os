@@ -18,9 +18,3 @@ borderop(Image *im, Rectangle r, int i, Image *color, Point sp, Drawop op)
 	drawop(im, Rect(r.max.x-i, r.min.y+i, r.max.x, r.max.y-i),
 		color, nil, Pt(sp.x+Dx(r)-i, sp.y+i), op);
 }
-
-void
-border(Image *im, Rectangle r, int i, Image *color, Point sp)
-{
-	borderop(im, r, i, color, sp, SoverD);
-}
