@@ -362,7 +362,6 @@ extern Image* allocimagemix(Display*, ulong, ulong);
 /*
  * Colors
  */
-extern	void	readcolmap(Display*, RGB*);
 extern	ulong	setalpha(ulong, uchar);
 
 /*
@@ -426,20 +425,11 @@ extern Point	string(Image*, Point, Image*, Point, Font*, char*);
 extern Point	stringop(Image*, Point, Image*, Point, Font*, char*, Drawop);
 extern Point	stringn(Image*, Point, Image*, Point, Font*, char*, int);
 extern Point	stringnop(Image*, Point, Image*, Point, Font*, char*, int, Drawop);
-extern Point	runestring(Image*, Point, Image*, Point, Font*, Rune*);
-extern Point	runestringop(Image*, Point, Image*, Point, Font*, Rune*, Drawop);
 extern Point	runestringn(Image*, Point, Image*, Point, Font*, Rune*, int);
 extern Point	runestringnop(Image*, Point, Image*, Point, Font*, Rune*, int, Drawop);
-extern Point	stringbg(Image*, Point, Image*, Point, Font*, char*, Image*, Point);
-extern Point	stringbgop(Image*, Point, Image*, Point, Font*, char*, Image*, Point, Drawop);
-extern Point	stringnbg(Image*, Point, Image*, Point, Font*, char*, int, Image*, Point);
 extern Point	stringnbgop(Image*, Point, Image*, Point, Font*, char*, int, Image*, Point, Drawop);
-extern Point	runestringbg(Image*, Point, Image*, Point, Font*, Rune*, Image*, Point);
-extern Point	runestringbgop(Image*, Point, Image*, Point, Font*, Rune*, Image*, Point, Drawop);
-extern Point	runestringnbg(Image*, Point, Image*, Point, Font*, Rune*, int, Image*, Point);
 extern Point	runestringnbgop(Image*, Point, Image*, Point, Font*, Rune*, int, Image*, Point, Drawop);
 extern Point	_string(Image*, Point, Image*, Point, Font*, char*, Rune*, int, Rectangle, Image*, Point, Drawop);
-extern Point	stringsubfont(Image*, Point, Image*, Subfont*, char*);
 extern int		bezierop(Image*, Point, Point, Point, Point, int, int, int, Image*, Point, Drawop);
 extern int		bezspline(Image*, Point*, int, int, int, int, Image*, Point);
 extern int		bezsplineop(Image*, Point*, int, int, int, int, Image*, Point, Drawop);
@@ -463,7 +453,6 @@ extern void	borderop(Image*, Rectangle, int, Image*, Point, Drawop);
 extern Font*	openfont(Display*, char*);
 extern Font*	buildfont(Display*, char*, char*);
 extern void	freefont(Font*);
-extern Font*	mkfont(Subfont*, Rune);
 extern int	cachechars(Font*, char**, Rune**, ushort*, int, int*, char**);
 extern void	agefont(Font*);
 extern Subfont*	allocsubfont(char*, int, int, int, Fontchar*, Image*);
@@ -478,10 +467,7 @@ extern void	_unpackinfo(Fontchar*, uchar*, int);
 extern Point	stringsize(Font*, char*);
 extern int	stringwidth(Font*, char*);
 extern int	stringnwidth(Font*, char*, int);
-extern Point	runestringsize(Font*, Rune*);
-extern int	runestringwidth(Font*, Rune*);
 extern int	runestringnwidth(Font*, Rune*, int);
-extern Point	strsubfontwidth(Subfont*, char*);
 extern int	loadchar(Font*, Rune, Cacheinfo*, int, int, char**);
 extern char*	subfontname(char*, char*, int);
 extern Subfont*	_getsubfont(Display*, char*);

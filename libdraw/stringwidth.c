@@ -82,15 +82,3 @@ runestringnwidth(Font *f, Rune *r, int len)
 {
 	return _stringnwidth(f, nil, r, len);
 }
-
-int
-runestringwidth(Font *f, Rune *r)
-{
-	return _stringnwidth(f, nil, r, 1<<24);
-}
-
-Point
-runestringsize(Font *f, Rune *r)
-{
-	return Pt(_stringnwidth(f, nil, r, 1<<24), f->height);
-}

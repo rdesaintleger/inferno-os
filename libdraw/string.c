@@ -13,12 +13,6 @@ string(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s)
 }
 
 Point
-stringop(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s, Drawop op)
-{
-	return _string(dst, pt, src, sp, f, s, nil, 1<<24, dst->clipr, nil, ZP, op);
-}
-
-Point
 stringn(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s, int len)
 {
 	return _string(dst, pt, src, sp, f, s, nil, len, dst->clipr, nil, ZP, SoverD);
@@ -28,18 +22,6 @@ Point
 stringnop(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s, int len, Drawop op)
 {
 	return _string(dst, pt, src, sp, f, s, nil, len, dst->clipr, nil, ZP, op);
-}
-
-Point
-runestring(Image *dst, Point pt, Image *src, Point sp, Font *f, Rune *r)
-{
-	return _string(dst, pt, src, sp, f, nil, r, 1<<24, dst->clipr, nil, ZP, SoverD);
-}
-
-Point
-runestringop(Image *dst, Point pt, Image *src, Point sp, Font *f, Rune *r, Drawop op)
-{
-	return _string(dst, pt, src, sp, f, nil, r, 1<<24, dst->clipr, nil, ZP, op);
 }
 
 Point

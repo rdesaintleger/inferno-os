@@ -22,11 +22,9 @@ OFILES=	alloc.$O\
 	getsubfont.$O\
 	init.$O\
 	line.$O\
-	mkfont.$O\
 	openfont.$O\
 	poly.$O\
 	loadimage.$O\
-	readcolmap.$O\
 	readimage.$O\
 	readsubfont.$O\
 	rectclip.$O\
@@ -34,7 +32,6 @@ OFILES=	alloc.$O\
 	rgb.$O\
 	string.$O\
 	stringbg.$O\
-	stringsubfont.$O\
 	stringwidth.$O\
 	subfont.$O\
 	subfontcache.$O\

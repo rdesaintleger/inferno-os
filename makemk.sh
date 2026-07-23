@@ -48,7 +48,7 @@ mkdir -p $PLAT/lib $PLAT/bin
 
 # libregexp
 cd $ROOT/utils/libregexp || error cannot find libregexp directory
-CFILES="regaux.c regcomp.c regerror.c regexec.c regsub.c rregexec.c rregsub.c"
+CFILES="regaux.c regcomp.c regerror.c regexec.c regsub.c"
 $CC $CFILES || error libregexp compilation failed
 $AR $PLAT/lib/libregexp.a `ofiles $CFILES` || error libregexp ar failed
 $RANLIB $PLAT/lib/libregexp.a || error libregexp ranlib failed
@@ -62,7 +62,7 @@ $RANLIB $PLAT/lib/libbio.a || error libbio ranlib failed
 # lib9
 cd $ROOT/lib9 || error cannot find lib9 directory
 CFILES="dirstat-$SYSTYPE.c rerrstr.c errstr-$SYSTYPE.c"	# system specific
-CFILES="$CFILES charstod.c cleanname.c create.c dirwstat.c *print*.c *fmt*.c exits.c getfields.c  print.c qsort.c rune.c seek.c strdup.c strtoll.c utflen.c utfrrune.c utfrune.c utf*.c *str*cpy*.c"
+CFILES="$CFILES cleanname.c create.c dirwstat.c *print*.c *fmt*.c exits.c getfields.c  print.c qsort.c rune.c seek.c strdup.c strtoll.c utflen.c utfrrune.c utfrune.c utf*.c *str*cpy*.c"
 $CC $CFILES || error lib9 compilation failed
 $AR $PLAT/lib/lib9.a `ofiles $CFILES` || error lib9 ar failed
 $RANLIB $PLAT/lib/lib9.a || error lib9 ranlib failed
