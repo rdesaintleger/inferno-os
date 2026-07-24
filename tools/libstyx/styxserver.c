@@ -414,12 +414,6 @@ flushtag(int oldtag)
 	USED(oldtag);
 }
 
-int
-eqqid(Qid a, Qid b)
-{
-	return a.path == b.path && a.vers == b.vers;
-}
-
 static Fid *
 fidclone(Fid *old, short fid)
 {
@@ -960,14 +954,6 @@ styxinit(Styxserver *server, Styxops *ops, char *port, int perm, int needfile)
 	return nil;
 }
 
-char*
-styxend(Styxserver *server)
-{
-	USED(server);
-	styxendsocket();
-	return nil;
-}
-
 char *
 styxwait(Styxserver *server)
 {
@@ -1036,38 +1022,4 @@ styxadddir(Styxserver *server, Path pqid, Path qid, char *name, int mode, char *
 		return nil;
 	f = newfile(server, parent, 1, qid, name, mode|DMDIR, owner);
 	return f;
-}
-
-long
-styxreadstr(ulong off, char *buf, ulong n, char *str)
-{
-	int size;
-
-	size = strlen(str);
-	if(off >= size)
-		return 0;
-	if(off+n > size)
-		n = size-off;
-	memmove(buf, str+off, n);
-	return n;
-}
-
-Qid
-styxqid(int path, int isdir)
-{
-	Qid q;
-
-	q.path = path;
-	q.vers = 0;
-	if(isdir)
-		q.type = QTDIR;
-	else
-		q.type = 0;
-	return q;
-}
-
-void
-styxsetowner(char *name)
-{
-	eve = name;
 }

@@ -252,7 +252,6 @@ extern	vlong	strtoll(const char*, char**, int);
 #define	qsort	infqsort
 extern	void	qsort(void*, long, long, int (*)(void*, void*));
 extern	uvlong	strtoull(const char*, char**, int);
-extern	void	sysfatal(char*, ...);
 extern	int	dec64(uchar*, int, char*, int);
 extern	int	enc64(char*, int, uchar*, int);
 extern	int	dec32(uchar*, int, char*, int);
