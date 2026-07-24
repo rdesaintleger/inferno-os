@@ -40,30 +40,31 @@ foo:QV:
 
 all:V:		all-$HOSTMODEL
 clean:V:	clean-$HOSTMODEL
-install:V:	install-$HOSTMODEL appl
+install:V:	install-$HOSTMODEL appl/install-$HOSTMODEL
 installall:V:	installall-$HOSTMODEL
 emu:V:	emu/all-$HOSTMODEL
 emuinstall:V:	emu/install-$HOSTMODEL
-emuclean:V:	emu/clean-$HOSTMODEL
-emunuke:V:	emu/nuke-$HOSTMODEL
+emuclean:V:	emu/clean-$HOSTMODEL appl/clean-$HOSTMODEL
+emunuke:V:	emu/nuke-$HOSTMODEL appl/nuke-$HOSTMODEL
 nuke:V:		nuke-$HOSTMODEL
-
-appl:V: emu
-	for j in $LIMBODIRS
-	do
-		echo "(cd $j; mk $MKFLAGS $stem)"
-		(cd $j; mk $MKFLAGS $stem install) || exit 1
-	done
 
 cleandist:V: clean
 	rm -f $ROOT/$OBJDIR/lib/lib*.a
 
 nukedist:V: nuke
-	rm -f $ROOT/$OBJDIR/bin/*.exe
+	rm -rf $ROOT/dis/*
+	rm -f $ROOT/$OBJDIR/bin/*
 	rm -f $ROOT/$OBJDIR/lib/lib*.a
 	
 &-Posix:QV:
 	for j in $DIRS utils tools
+	do
+		echo "(cd $j; mk $MKFLAGS $stem)"
+		(cd $j; mk $MKFLAGS $stem) || exit 1
+	done
+	
+appl/&-Posix:QV: emu
+	for j in $LIMBODIRS
 	do
 		echo "(cd $j; mk $MKFLAGS $stem)"
 		(cd $j; mk $MKFLAGS $stem) || exit 1
