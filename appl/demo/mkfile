@@ -7,7 +7,7 @@ DIRS=\
 	lego\
 	ns\
 	odbc\
-	spree\
+#	spree\
 	whiteboard\
 
 

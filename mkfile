@@ -25,6 +25,10 @@ EMUDIRS=\
 	utils/ndate\
 	emu\
 
+LIMBODIRS=\
+	appl\
+
+
 <mkconfig
 
 DIRS=\
@@ -36,13 +40,20 @@ foo:QV:
 
 all:V:		all-$HOSTMODEL
 clean:V:	clean-$HOSTMODEL
-install:V:	install-$HOSTMODEL
+install:V:	install-$HOSTMODEL appl
 installall:V:	installall-$HOSTMODEL
 emu:V:	emu/all-$HOSTMODEL
 emuinstall:V:	emu/install-$HOSTMODEL
 emuclean:V:	emu/clean-$HOSTMODEL
 emunuke:V:	emu/nuke-$HOSTMODEL
 nuke:V:		nuke-$HOSTMODEL
+
+appl:V: emu
+	for j in $LIMBODIRS
+	do
+		echo "(cd $j; mk $MKFLAGS $stem)"
+		(cd $j; mk $MKFLAGS $stem install) || exit 1
+	done
 
 cleandist:V: clean
 	rm -f $ROOT/$OBJDIR/lib/lib*.a

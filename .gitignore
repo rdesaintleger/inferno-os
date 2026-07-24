@@ -13,6 +13,7 @@ y.output
 y.tab.[ch]
 y.debug
 
+/dis/
 /contrib/
 /grid/
 /tmp/
@@ -48,18 +49,9 @@ y.debug
 /emu/*/srv.h
 /emu/*/srvm.h
 
-/emu/Nt/*.map
-/emu/Nt/*.exe
-
 # initial mk from makemk.sh
 /utils/mk/mk
 
-# no binaries are committed for any of the netbsd ports
-# can be deleted if wildcard from the comment below is enabled
-/NetBSD/*/bin/
+/Linux/*/bin/
+/Linux/*/lib/
 
-# preserve the patterns from .hgignore, though perhaps all binaries
-# should be deleted and ignored with:
-/[A-Z]*/*/bin/
-!/[A-Z]*/*/bin/mk
-!/[A-Z]*/*/bin/mkext

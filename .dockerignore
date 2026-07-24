@@ -32,3 +32,4 @@ keydb/countersigned
 keydb/signed
 keydb/signerkey
 tmp/*
+dis/*

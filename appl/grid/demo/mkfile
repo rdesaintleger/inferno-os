@@ -21,8 +21,10 @@ DISBIN=$ROOT/dis/grid/demo
 <$ROOT/mkfiles/mkdis
 
 $ROOT/dis/grid/demo/blur.dis:	blur.dis
+	mkdir -p `dirname $target`
 	rm -f $target && cp blur.dis $target
 $ROOT/dis/grid/demo/block.dis:	block.dis
+	mkdir -p `dirname $target`
 	rm -f $target && cp block.dis $target
 
 blur.dis:	blur.b $MODULE $SYS_MODULE
