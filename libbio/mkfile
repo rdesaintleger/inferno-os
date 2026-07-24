@@ -13,7 +13,6 @@ OFILES=\
 	bputc.$O\
 	brdline.$O\
 	bread.$O\
-	bseek.$O\
 	bvprint.$O\
 	bwrite.$O\
 

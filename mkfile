@@ -21,7 +21,6 @@ EMUDIRS=\
 	libfreetype\
 	libmemdraw\
 	libmemlayer\
-	libdynld\
 	utils/data2c\
 	utils/ndate\
 	emu\

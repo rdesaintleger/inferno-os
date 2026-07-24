@@ -58,7 +58,6 @@ int	Bputrune(Biobuf*, long);
 void*	Brdline(Biobuf*, int);
 char*	Brdstr(Biobuf*, int, int);
 long	Bread(Biobuf*, void*, long);
-vlong	Bseek(Biobuf*, vlong, int);
 int	Bterm(Biobuf*);
 int	Bungetc(Biobuf*);
 int	Bungetrune(Biobuf*);

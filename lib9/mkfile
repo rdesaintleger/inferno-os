@@ -12,7 +12,6 @@ COMMONFILES=\
 	convS2M.$O\
 	fcallfmt.$O\
 	strtoll.$O\
-	strtoull.$O\
 	rune.$O\
 #
 # files used by most models.  these are added to TARGFILES in some
@@ -38,7 +37,6 @@ IMPORTFILES=\
 	nulldir.$O\
 	print.$O\
 	qsort.$O\
-	readn.$O\
 	rerrstr.$O\
 	seek.$O\
 	seprint.$O\

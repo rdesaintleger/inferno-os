@@ -8,12 +8,9 @@
 ALWAYS=\
 	libregexp\
 	iyacc\
-	cc\
-	ftl\
 	data2c\
 	data2s\
 	idea\
-	c2l\
 
 #
 #	Utils we build on Posix and Nt, which already exist on Plan 9.
