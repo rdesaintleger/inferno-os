@@ -425,12 +425,6 @@ _memimageline(Memimage *dst, Point p0, Point p1, int end0, int end1, int radius,
 	return;
 }
 
-void
-memimageline(Memimage *dst, Point p0, Point p1, int end0, int end1, int radius, Memimage *src, Point sp, int op)
-{
-	_memimageline(dst, p0, p1, end0, end1, radius, src, sp, dst->clipr, op);
-}
-
 /*
  * Simple-minded conservative code to compute bounding box of line.
  * Result is probably a little larger than it needs to be.

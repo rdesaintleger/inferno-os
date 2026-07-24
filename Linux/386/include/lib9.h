@@ -73,9 +73,6 @@ typedef unsigned long uintptr;
 
 extern	char*	strecpy(char*, char*, char*);
 extern	char*	strdup(const char*);
-extern	int	cistrncmp(char*, char*, int);
-extern	int	cistrcmp(char*, char*);
-extern	char*	cistrstr(char*, char*);
 extern	int	tokenize(char*, char**, int);
 
 enum
@@ -112,18 +109,7 @@ extern	Rune*	runestrecpy(Rune*, Rune*, Rune*);
 extern	Rune*	runestrdup(Rune*);
 extern	Rune*	runestrncat(Rune*, Rune*, long);
 extern	int	runestrncmp(Rune*, Rune*, long);
-extern	Rune*	runestrrchr(Rune*, Rune);
-extern	long	runestrlen(Rune*);
 extern	Rune*	runestrstr(Rune*, Rune*);
-
-extern	Rune	tolowerrune(Rune);
-extern	Rune	totitlerune(Rune);
-extern	Rune	toupperrune(Rune);
-extern	int	isalpharune(Rune);
-extern	int	islowerrune(Rune);
-extern	int	isspacerune(Rune);
-extern	int	istitlerune(Rune);
-extern	int	isupperrune(Rune);
 
 /*
  * malloc
@@ -188,13 +174,6 @@ extern	int	sprint(char*, char*, ...);
 extern	int	fprint(int, char*, ...);
 extern	int	vfprint(int, char*, va_list);
 
-extern	int	runesprint(Rune*, char*, ...);
-extern	int	runesnprint(Rune*, int, char*, ...);
-extern	int	runevsnprint(Rune*, int, char*, va_list);
-extern	Rune*	runeseprint(Rune*, Rune*, char*, ...);
-extern	Rune*	runevseprint(Rune*, Rune*, char*, va_list);
-extern	Rune*	runesmprint(char*, ...);
-extern	Rune*	runevsmprint(char*, va_list);
 
 extern	int	fmtfdinit(Fmt*, int, char*, int);
 extern	int	fmtfdflush(Fmt*);
@@ -205,10 +184,8 @@ extern	Rune*	runefmtstrflush(Fmt*);
 
 extern	int	fmtinstall(int, int (*)(Fmt*));
 extern	int	dofmt(Fmt*, char*);
-extern	int	dorfmt(Fmt*, Rune*);
 extern	int	fmtprint(Fmt*, char*, ...);
 extern	int	fmtvprint(Fmt*, char*, va_list);
-extern	int	fmtrune(Fmt*, int);
 extern	int	fmtstrcpy(Fmt*, char*);
 extern	int	fmtrunestrcpy(Fmt*, Rune*);
 /*
@@ -267,14 +244,10 @@ extern	vlong	osnsec(void);
  * one-of-a-kind
  */
 extern	void	_assert(char*);
-extern	double	charstod(int(*)(void*), void*);
 extern	char*	cleanname(char*);
 extern	int	getfields(char*, char**, int, int, char*);
-extern	char*	getuser(void);
 extern	char*	getwd(char*, int);
 extern	double	ipow10(int);
-#define	pow10	infpow10
-extern	double	pow10(int);
 extern	vlong	strtoll(const char*, char**, int);
 #define	qsort	infqsort
 extern	void	qsort(void*, long, long, int (*)(void*, void*));
@@ -414,7 +387,6 @@ struct Dir {
 extern	Dir*	dirstat(char*);
 extern	Dir*	dirfstat(int);
 extern	int	dirwstat(char*, Dir*);
-extern	int	dirfwstat(int, Dir*);
 extern	long	dirread(int, Dir**);
 extern	void	nulldir(Dir*);
 extern	long	dirreadall(int, Dir**);
