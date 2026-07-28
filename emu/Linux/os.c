@@ -252,17 +252,19 @@ readkbd(void)
 long
 osmillisec(void)
 {
-	static long sec0 = 0, usec0;
-	struct timeval t;
+	static uint64_t t0, now;
+	struct timespec t;
 
-	if(gettimeofday(&t,(struct timezone*)0)<0)
+	if(clock_gettime(CLOCK_MONOTONIC, &t)<0)
 		return 0;
 
-	if(sec0 == 0) {
-		sec0 = t.tv_sec;
-		usec0 = t.tv_usec;
+	now = (uint64_t)t.tv_sec * 1000 + t.tv_nsec / 1000000;
+
+	if(t0 == 0) {
+		t0 = now;
 	}
-	return (t.tv_sec-sec0)*1000+(t.tv_usec-usec0+500)/1000;
+
+	return (long) (now - t0);
 }
 
 /*
@@ -272,30 +274,38 @@ osmillisec(void)
 vlong
 osnsec(void)
 {
-	struct timeval t;
+	struct timespec t;
 
-	gettimeofday(&t, nil);
-	return (vlong)t.tv_sec*1000000000L + t.tv_usec*1000;
+	clock_gettime(CLOCK_REALTIME, &t);
+	return (vlong)t.tv_sec * 1000000000LL + t.tv_nsec;
 }
 
 vlong
 osusectime(void)
 {
-	struct timeval t;
+	struct timespec t;
  
-	gettimeofday(&t, nil);
-	return (vlong)t.tv_sec * 1000000 + t.tv_usec;
+	clock_gettime(CLOCK_REALTIME, &t);
+	return (vlong)t.tv_sec * 1000000LL + t.tv_nsec / 1000;
 }
 
 int
 osmillisleep(ulong milsec)
 {
-	struct  timespec time;
+    struct timespec req, rem;
 
-	time.tv_sec = milsec/1000;
-	time.tv_nsec= (milsec%1000)*1000000;
-	nanosleep(&time, NULL);
-	return 0;
+    req.tv_sec  = milsec / 1000;
+    req.tv_nsec = (milsec % 1000) * 1000000;
+
+    while(nanosleep(&req, &rem) < 0){
+        if(errno != EINTR)
+            return -1;
+
+        req.tv_sec = rem.tv_sec;
+        req.tv_nsec = rem.tv_nsec;
+    }
+
+    return 0;
 }
 
 int
