@@ -25,7 +25,7 @@ readenv(void)
 			w = newword("");
 		if (symlook(*p, S_INTERNAL, 0))
 			continue;
-		s = strdup(*p);
+		s = HOSTED_API(strdup)(*p);
 		setvar(s, (void *)w);
 		symlook(s, S_EXPORTED, (void*)"")->value = (void*)"";
 	}
@@ -282,7 +282,7 @@ rcopy(char **to, Resub *match, int n)
 			p = match->e.ep;
 			c = *p;
 			*p = 0;
-			*to = strdup(match->s.sp);
+			*to = HOSTED_API(strdup)(match->s.sp);
 			*p = c;
 		}
 		else

@@ -19,7 +19,7 @@ utfnlen(char *s, long m)
 		}
 		if(!fullrune(s, es-s))
 			break;
-		s += chartorune(&rune, s);
+		s += HOSTED_API(chartorune)(&rune, s);
 	}
 	return n;
 }

@@ -32,7 +32,7 @@ shname(char *a)
 	int n;
 
 	while (*a) {
-		n = chartorune(&r, a);
+		n = HOSTED_API(chartorune)(&r, a);
 		if (!WORDCHR(r))
 			break;
 		a += n;

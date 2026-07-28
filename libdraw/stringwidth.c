@@ -34,7 +34,7 @@ _stringnwidth(Font *f, char *s, Rune *r, int len)
 				if(*r)
 					rune = *r;
 				else
-					chartorune(&rune, s);
+					HOSTED_API(chartorune)(&rune, s);
 				if(f->name != nil)
 					name = f->name;
 				else

@@ -12,7 +12,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 	int i;
 
 	if(strcmp(cfname, "*default*") == 0)
-		return strdup(cfname);
+		return HOSTED_API(strdup)(cfname);
 	t = cfname;
 	if(t[0] != '/'){
 		snprint(tmp2, sizeof tmp2, "%s", fname);
@@ -34,12 +34,12 @@ subfontname(char *cfname, char *fname, int maxdepth)
 		/* try i-bit grey */
 		snprint(tmp2, sizeof tmp2, "%s.%d", t, i);
 		if(access(tmp2, AREAD) == 0)
-			return strdup(tmp2);
+			return HOSTED_API(strdup)(tmp2);
 	}
 
 	/* try default */
 	if(access(t, AREAD) == 0)
-		return strdup(t);
+		return HOSTED_API(strdup)(t);
 
 	return nil;
 }

@@ -672,7 +672,7 @@ ptext(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	if(buf[0] == '\0')
 		*p = nil;
 	else {
-		*p = strdup(buf);
+		*p = HOSTED_API(strdup)(buf);
 		if(*p == nil)
 			return TkNomem;
 	}
@@ -1176,7 +1176,7 @@ plist(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 				goto Error;
 			v = nv;
 		}
-		v[n] = strdup(wbuf);
+		v[n] = HOSTED_API(strdup)(wbuf);
 		if (v[n] == nil)
 			goto Error;
 		n++;

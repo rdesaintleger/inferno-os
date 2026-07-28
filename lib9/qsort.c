@@ -110,7 +110,7 @@ qsorts(char *a, long n, Sort *p)
 }
 
 void
-qsort(void *va, long n, long es, int (*cmp)(void*, void*))
+HOSTED_API(qsort)(void *va, long n, long es, int (*cmp)(void*, void*))
 {
 	Sort s;
 

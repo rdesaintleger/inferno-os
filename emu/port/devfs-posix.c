@@ -16,7 +16,7 @@
 #include	<dirent.h>
 #include	<stdio.h>
 #define	__EXTENSIONS__
-#undef	getwd
+
 #include	<unistd.h>
 #include	<pwd.h>
 #include	<grp.h>
@@ -963,7 +963,7 @@ newuser(int id, int gid, char *name, int nmem)
 	u = malloc(sizeof(*u));
 	if(u == nil)
 		return nil;
-	u->name = strdup(name);
+	u->name = HOSTED_API(strdup)(name);
 	if(u->name == nil){
 		free(u);
 		return nil;

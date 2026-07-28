@@ -13,7 +13,7 @@ Bputrune(Biobuf *bp, long c)
 		Bputc(bp, rune);
 		return 1;
 	}
-	n = runetochar(str, &rune);
+	n = HOSTED_API(runetochar)(str, &rune);
 	if(n == 0)
 		return Bbad;
 	if(Bwrite(bp, str, n) != n)

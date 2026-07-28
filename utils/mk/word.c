@@ -8,7 +8,7 @@ newword(char *s)
 	Word *w;
 
 	w = (Word *)Malloc(sizeof(Word));
-	w->s = strdup(s);
+	w->s = HOSTED_API(strdup)(s);
 	w->next = 0;
 	return(w);
 }
@@ -50,7 +50,7 @@ wtos(Word *w, int sep)
 			insert(buf, sep);
 	}
 	insert(buf, 0);
-	cp = strdup(buf->start);
+	cp = HOSTED_API(strdup)(buf->start);
 	freebuf(buf);
 	return(cp);
 }
@@ -104,7 +104,7 @@ nextword(char **s)
 	while(*cp == ' ' || *cp == '\t')		/* leading white space */
 		cp++;
 	while(*cp){
-		cp += chartorune(&r, cp);
+		cp += HOSTED_API(chartorune)(&r, cp);
 		switch(r)
 		{
 		case ' ':
@@ -128,7 +128,7 @@ nextword(char **s)
 				bufcpy(b, w->s, strlen(w->s));
 				insert(b, 0);
 				free(w->s);
-				w->s = strdup(b->start);
+				w->s = HOSTED_API(strdup)(b->start);
 				b->current = b->start;
 			}
 			if(head){
@@ -136,7 +136,7 @@ nextword(char **s)
 				bufcpy(b, w->s, strlen(w->s));
 				insert(b, 0);
 				free(tail->s);
-				tail->s = strdup(b->start);
+				tail->s = HOSTED_API(strdup)(b->start);
 				tail->next = w->next;
 				free(w->s);
 				free(w);
@@ -160,7 +160,7 @@ out:
 			bufcpy(b, b->start, cp-b->start);
 			insert(b, 0);
 			free(tail->s);
-			tail->s = strdup(cp);
+			tail->s = HOSTED_API(strdup)(cp);
 		} else {
 			insert(b, 0);
 			head = newword(b->start);

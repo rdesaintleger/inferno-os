@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 char*
-strdup(const char *s) 
+HOSTED_API(strdup)(const char *s) 
 {  
 	char *os;
 

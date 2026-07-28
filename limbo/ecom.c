@@ -477,13 +477,13 @@ if(debug['U']) print("call %n\n", left);
 		if(newfnptr)
 			return n;
 		if(selfdecl == nil){
-			d = selfdecl = mkids(&n->src, enter(strdup(".self"), 5), tany, nil);
+			d = selfdecl = mkids(&n->src, enter(HOSTED_API(strdup)(".self"), 5), tany, nil);
 			installids(Dglobal, d);
 			d->refs++;
 		}
 		nn = mkn(Oload, nil, nil);
 		nn->src = n->src;
-		nn->left = mksconst(&n->src, enterstring(strdup("$self"), 5));
+		nn->left = mksconst(&n->src, enterstring(HOSTED_API(strdup)("$self"), 5));
 		nn->ty = impdecl->ty;
 		usetype(nn->ty);
 		usetype(nn->ty->tof);

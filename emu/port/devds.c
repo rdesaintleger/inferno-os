@@ -195,9 +195,9 @@ mconfig(char* a, long n)	// "name idev0 idev1"
 	cb->f++;	// skip command
 	cb->nf--;
 	if (ct->index == Fpart){
-		size = strtoll(cb->f[3], nil, 10);
+		size = HOSTED_API(strtoll)(cb->f[3], nil, 10);
 		cb->nf--;
-		start = strtoll(cb->f[2], nil, 10);
+		start = HOSTED_API(strtoll)(cb->f[2], nil, 10);
 		cb->nf--;
 	}
 	for (i = 0; i < nelem(fsdev); i++)

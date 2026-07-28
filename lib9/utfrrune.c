@@ -21,7 +21,7 @@ utfrrune(char *s, long c)
 			s++;
 			continue;
 		}
-		c1 = chartorune(&r, s);
+		c1 = HOSTED_API(chartorune)(&r, s);
 		if(r == c)
 			s1 = s;
 		s += c1;

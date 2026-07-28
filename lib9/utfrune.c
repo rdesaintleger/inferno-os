@@ -20,7 +20,7 @@ utfrune(char *s, long c)
 			s++;
 			continue;
 		}
-		n = chartorune(&r, s);
+		n = HOSTED_API(chartorune)(&r, s);
 		if(r == c)
 			return s;
 		s += n;

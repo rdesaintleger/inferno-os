@@ -93,7 +93,7 @@ void	_fmtunlock(void);
 		*t++ = r;\
 	else{\
 		_rune = r;\
-		t += runetochar(t, &_rune);\
+		t += HOSTED_API(runetochar)(t, &_rune);\
 	}\
 	}while(0)
 

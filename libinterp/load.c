@@ -379,7 +379,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 		kwerrstr("bad module name");
 		goto bad;
 	}
-	m->name = strdup((char*)mod);
+	m->name = HOSTED_API(strdup)((char*)mod);
 	if(m->name == nil) {
 		kwerrstr(exNomem);
 		goto bad;
@@ -429,7 +429,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			}
 			for(j = 0; j < n; j++, i1++){
 				i1->sig = disw(isp);
-				i1->name = strdup((char*)istream);
+				i1->name = HOSTED_API(strdup)((char*)istream);
 				if(i1->name == nil){
 					kwerrstr(exNomem);
 					goto bad;
@@ -470,7 +470,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			}
 			e = h->etab;
 			for(j = 0; j < n; j++, e++){
-				e->s = strdup((char*)istream);
+				e->s = HOSTED_API(strdup)((char*)istream);
 				if(e->s == nil){
 					kwerrstr(exNomem);
 					goto bad;
@@ -492,7 +492,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 		m->entryt = m->type[entryt];
 	}
 
-	m->path = strdup(path);
+	m->path = HOSTED_API(strdup)(path);
 	if(m->path == nil) {
 		kwerrstr(exNomem);
 		goto bad;
@@ -518,7 +518,7 @@ newmod(char *s)
 	m->ref = 1;
 	m->path = s;
 	m->origmp = H;
-	m->name = strdup(s);
+	m->name = HOSTED_API(strdup)(s);
 	if(m->name == nil) {
 		free(m);
 		error(exNomem);

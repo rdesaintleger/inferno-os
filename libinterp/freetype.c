@@ -125,7 +125,7 @@ Freetype_newface(void *fp)
 	face = H2D(Face*, h);
 	limboface = (Freetype_Face*)face;
 	*f->ret = limboface;
-	path = strdup(string2c(f->path));	/* string2c() can call error() */
+	path = HOSTED_API(strdup)(string2c(f->path));	/* string2c() can call error() */
 	release();
 	err = ftnewface(path, f->index, &face->ftface, &finfo);
 	acquire();

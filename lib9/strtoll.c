@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 vlong
-strtoll(const char *nptr, char **endptr, int base)
+HOSTED_API(strtoll)(const char *nptr, char **endptr, int base)
 {
 	const char *p;
 	vlong n;

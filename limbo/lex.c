@@ -204,7 +204,7 @@ lexstart(char *in)
 	bstack = 0;
 	nfiles = 0;
 	lastfile = 0;
-	addfile(mkfile(strdup(in), 1, 0, -1, nil, 0, -1));
+	addfile(mkfile(HOSTED_API(strdup)(in), 1, 0, -1, nil, 0, -1));
 	bin = bins[bstack];
 	lineno = 1;
 	linepos = Linestart;
@@ -330,7 +330,7 @@ includef(Sym *file)
 		yyerror("can't include %s: %r", file->name);
 		bstack--;
 	}else{
-		addfile(mkfile(strdup(buf), lineno+1, -lineno, lineno, nil, 0, -1));
+		addfile(mkfile(HOSTED_API(strdup)(buf), lineno+1, -lineno, lineno, nil, 0, -1));
 		lineno++;
 		linepos = Linestart;
 	}
@@ -441,7 +441,7 @@ lexcom(void)
 		actline += f->actoff;
 		act = f->act;
 	}
-	addfile(mkfile(strdup(s), lineno, n-lineno, f->in, act, actline - n, -1));
+	addfile(mkfile(HOSTED_API(strdup)(s), lineno, n-lineno, f->in, act, actline - n, -1));
 
 	return 1;
 }
@@ -524,7 +524,7 @@ lexid(int c)
 				*p++ = c;
 			else{
 				r = c;
-				p += runetochar(p, &r);
+				p += HOSTED_API(runetochar)(p, &r);
 			}
 			i++;
 		}
@@ -872,7 +872,7 @@ lexstring(int israw)
 			str = reallocmem(str, alloc * sizeof(str));
 		}
 		r = c;
-		len += runetochar(&str[len], &r);
+		len += HOSTED_API(runetochar)(&str[len], &r);
 		str[len] = '\0';
 	}
 }

@@ -290,7 +290,7 @@ so_gethostbyname(char *host, char**hostv, int n)
 	for(i = 0; hp->h_addr_list[i] && i < n; i++) {
 		p = (uchar*)hp->h_addr_list[i];
 		sprint(buf, "%ud.%ud.%ud.%ud", p[0], p[1], p[2], p[3]);
-		hostv[i] = strdup(buf);
+		hostv[i] = HOSTED_API(strdup)(buf);
 		if(hostv[i] == 0)
 			break;
 	}
@@ -312,11 +312,11 @@ so_gethostbyaddr(char *addr, char **hostv, int n)
 	if(hp == 0)
 		return 0;
 
-	hostv[0] = strdup(hp->h_name);
+	hostv[0] = HOSTED_API(strdup)(hp->h_name);
 	if(hostv[0] == 0)
 		return 0;
 	for(i = 1; hp->h_aliases[i-1] && i < n; i++) {
-		hostv[i] = strdup(hp->h_aliases[i-1]);
+		hostv[i] = HOSTED_API(strdup)(hp->h_aliases[i-1]);
 		if(hostv[i] == 0)
 			break;
 	}

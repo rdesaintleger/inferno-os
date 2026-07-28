@@ -23,7 +23,7 @@ enum
 };
 
 int
-chartorune(Rune *rune, char *str)
+HOSTED_API(chartorune)(Rune *rune, char *str)
 {
 	int c[UTFmax], i;
 	Rune l;
@@ -72,7 +72,7 @@ bad:
 }
 
 int
-runetochar(char *str, Rune *rune)
+HOSTED_API(runetochar)(char *str, Rune *rune)
 {
 	int i, j;
 	Rune c;
@@ -122,7 +122,7 @@ runelen(long c)
 	char str[10];
 
 	rune = c;
-	return runetochar(str, &rune);
+	return HOSTED_API(runetochar)(str, &rune);
 }
 
 int

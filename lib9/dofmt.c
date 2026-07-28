@@ -32,7 +32,7 @@ dofmt(Fmt *f, char *fmt)
 				if(r < Runeself)
 					fmt++;
 				else{
-					fmt += chartorune(&rune, fmt);
+					fmt += HOSTED_API(chartorune)(&rune, fmt);
 					r = rune;
 				}
 				FMTRCHAR(f, rt, rs, r);
@@ -51,7 +51,7 @@ dofmt(Fmt *f, char *fmt)
 					FMTCHAR(f, t, s, r);
 					fmt++;
 				}else{
-					n = chartorune(&rune, fmt);
+					n = HOSTED_API(chartorune)(&rune, fmt);
 					if(t + n > s){
 						t = _fmtflush(f, t, n);
 						if(t != nil)
@@ -150,7 +150,7 @@ _fmtcpy(Fmt *f, void *vm, int n, int sz)
 			if(r < Runeself)
 				m++;
 			else if((me - m) >= UTFmax || fullrune(m, me-m))
-				m += chartorune(&r, m);
+				m += HOSTED_API(chartorune)(&r, m);
 			else
 				break;
 			FMTRCHAR(f, rt, rs, r);
@@ -171,7 +171,7 @@ _fmtcpy(Fmt *f, void *vm, int n, int sz)
 			if(r < Runeself)
 				m++;
 			else if((me - m) >= UTFmax || fullrune(m, me-m))
-				m += chartorune(&r, m);
+				m += HOSTED_API(chartorune)(&r, m);
 			else
 				break;
 			FMTRUNE(f, t, s, r);

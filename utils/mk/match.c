@@ -7,7 +7,7 @@ match(char *name, char *template, char *stem)
 	int n;
 
 	while(*name && *template){
-		n = chartorune(&r, template);
+		n = HOSTED_API(chartorune)(&r, template);
 		if (PERCENT(r))
 			break;
 		while (n--)
@@ -36,7 +36,7 @@ subst(char *stem, char *template, char *dest)
 	int n;
 
 	while(*template){
-		n = chartorune(&r, template);
+		n = HOSTED_API(chartorune)(&r, template);
 		if (PERCENT(r)) {
 			template += n;
 			for (s = stem; *s; s++)

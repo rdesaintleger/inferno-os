@@ -113,8 +113,8 @@ newclient(Styxserver *server, int fd)
 	c->nc = 0;
 	c->state = 0;
 	c->fids = nil;
-	c->uname = strdup(eve);
-	c->aname = strdup("");
+	c->uname = HOSTED_API(strdup)(eve);
+	c->aname = HOSTED_API(strdup)("");
 	c->next = server->clients;
 	server->clients = c;
 	if(server->ops->newclient)
@@ -589,9 +589,9 @@ newfile(Styxserver *server, Styxfile *parent, int isdir, Path qid, char *name, i
 	d.atime = time(0);
 	d.mtime = boottime;
 	d.length = 0;
-	d.name = strdup(name);
-	d.uid = strdup(owner);
-	d.gid = strdup(eve);
+	d.name = HOSTED_API(strdup)(name);
+	d.uid = HOSTED_API(strdup)(owner);
+	d.gid = HOSTED_API(strdup)(eve);
 	d.muid = "";
 
 	if(isdir){
@@ -906,11 +906,11 @@ run(Client *c)
 
 			if(f.uname[0]){
 				free(c->uname);
-				c->uname = strdup(f.uname);
+				c->uname = HOSTED_API(strdup)(f.uname);
 			}
 			if(f.aname[0]){
 				free(c->aname);
-				c->aname = strdup(f.aname);
+				c->aname = HOSTED_API(strdup)(f.aname);
 			}
 			q.path = Qroot;
 			q.type = QTDIR;

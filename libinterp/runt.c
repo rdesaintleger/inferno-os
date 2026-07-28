@@ -105,7 +105,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 			case 'E':
 				f--;
 				r = 0x00c9;	/* L'É' */
-				f += runetochar(f, &r);	/* avoid clash with ether address */
+				f += HOSTED_API(runetochar)(f, &r);	/* avoid clash with ether address */
 				*f = '\0';
 				/* fall through */
 			case 'e':
@@ -343,7 +343,7 @@ Sys_byte2char(void *fp)
 	}
 	p = (char*)a->data+n;
 	if(n+UTFmax <= a->len || fullrune(p, a->len-n))
-		w = chartorune(&r, p);
+		w = HOSTED_API(chartorune)(&r, p);
 	else {
 		/* insufficient data */
 		f->ret->t0 = Runeerror;
@@ -385,7 +385,7 @@ Sys_char2byte(void *fp)
 	}
 	r = c;
 	if(n+UTFmax<=a->len || runelen(c)<=a->len-n){
-		*f->ret = runetochar((char*)a->data+n, &r);
+		*f->ret = HOSTED_API(runetochar)((char*)a->data+n, &r);
 		return;
 	}
 	*f->ret = 0;
@@ -485,7 +485,7 @@ utfnleng(char *s, int nb, int *ngood)
 			s++;
 		else {
 			if(s+UTFmax<=es || fullrune(s, es-s))
-				s += chartorune(&rune, s);
+				s += HOSTED_API(chartorune)(&rune, s);
 			else
 				break;
 		}

@@ -70,18 +70,18 @@ timeinit(char *s)
 	while (*s) {
 		cp = s;
 		do{
-			n = chartorune(&r, s);
+			n = HOSTED_API(chartorune)(&r, s);
 			if (r == ' ' || r == ',' || r == '\n')
 				break;
 			s += n;
 		} while(*s);
 		c = *s;
 		*s = 0;
-		symlook(strdup(cp), S_TIME, (void *)t)->value = (void *)t;
+		symlook(HOSTED_API(strdup)(cp), S_TIME, (void *)t)->value = (void *)t;
 		if (c)
 			*s++ = c;
 		while(*s){
-			n = chartorune(&r, s);
+			n = HOSTED_API(chartorune)(&r, s);
 			if(r != ' ' && r != ',' && r != '\n')
 				break;
 			s += n;

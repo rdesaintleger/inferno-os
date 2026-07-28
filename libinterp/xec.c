@@ -136,7 +136,7 @@ OP(cvtcl)
 	if(s == H)
 		V(d) = 0;
 	else
-		V(d) = strtoll(string2c(s), nil, 10);
+		V(d) = HOSTED_API(strtoll)(string2c(s), nil, 10);
 }
 OP(iexpw)
 {

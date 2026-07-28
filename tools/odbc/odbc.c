@@ -228,7 +228,7 @@ odbcsources(Client *c)
 			break;
 		snprint(buff, sizeof(buff), "%s:%s\n", server, source);
 		if (i == 0)
-			all = strdup(buff);
+			all = HOSTED_API(strdup)(buff);
 		else {
 			p = all;
 			all = malloc(strlen(all)+strlen(buff)+1);
@@ -724,7 +724,7 @@ newproto(char *name, int maxconv)
 	}
 
 	p = &proto[np];
-	p->name = strdup(name);
+	p->name = HOSTED_API(strdup)(name);
 	p->qid.path = QID(np, 0, Qprotodir);
 	p->qid.type = QTDIR;
 	p->x = np++;
@@ -781,7 +781,7 @@ protoclone(Proto *p, char *user)
 	if(pp >= ep)
 		return 0;
 
-	c->owner = strdup(user);
+	c->owner = HOSTED_API(strdup)(user);
 	c->perm = 0660;
 	c->state = "Open";
 	c->out = defoutput;
@@ -871,7 +871,7 @@ dbopen(Qid *qid, int omode)
 		cv->ref++;
 		if(cv->ref == 1) {
 			cv->state = "Open";
-			cv->owner = strdup(user);
+			cv->owner = HOSTED_API(strdup)(user);
 			cv->perm = 0660;
 			if(odbcnewconv(c, cv) != 0){
 				return Eodbcalloc;

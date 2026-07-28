@@ -1,7 +1,6 @@
 #ifdef __APPLE_CC__	/* look for a better way */
 #include "lib9.h"
 #undef _POSIX_C_SOURCE 
-#undef getwd
 
 #include	<unistd.h>
 #include        <pthread.h>

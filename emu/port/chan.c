@@ -1019,7 +1019,7 @@ namec(char *aname, int amode, int omode, ulong perm)
 			up->genbuf[n++] = *name++;
 		}
 		up->genbuf[n] = '\0';
-		n = chartorune(&r, up->genbuf+1)+1;
+		n = HOSTED_API(chartorune)(&r, up->genbuf+1)+1;
 		if(r == 'M')
 			error(Enoattach);
 		/*
@@ -1354,7 +1354,7 @@ validname(char *aname, int slashok)
 		/* all characters above '~' are ok */
 		c = *(uchar*)name;
 		if(c >= Runeself)
-			name += chartorune(&r, name);
+			name += HOSTED_API(chartorune)(&r, name);
 		else{
 			if(isfrog[c])
 				if(!slashok || c!='/'){

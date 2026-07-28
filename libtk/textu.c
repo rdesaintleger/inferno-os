@@ -303,7 +303,7 @@ tktindrune(TkTindex *ix)
 			ans = ix->item->istring[ix->pos];
 			break;
 		case TkTrune:
-			chartorune(&r, ix->item->istring + tktutfpos(ix->item->istring, ix->pos));
+			HOSTED_API(chartorune)(&r, ix->item->istring + tktutfpos(ix->item->istring, ix->pos));
 			ans = r;
 			break;
 		case TkTtab:
@@ -1021,7 +1021,7 @@ tktutfpos(char *s, int pos)
 			s1++;
 		}
 		else
-			s1 += chartorune(&r, s1);
+			s1 += HOSTED_API(chartorune)(&r, s1);
 	}
 	return s1 - s;
 }
@@ -1040,7 +1040,7 @@ tktalloctime(char *name)
 {
 	if(ntt >= 100)
 		abort();
-	tt[ntt].name = strdup(name);
+	tt[ntt].name = HOSTED_API(strdup)(name);
 	tt[ntt].ms = 0;
 	return ntt++;
 }

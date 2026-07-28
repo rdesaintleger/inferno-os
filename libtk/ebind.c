@@ -82,7 +82,7 @@ tkseqkey(Rune *r, char *arg)
 		*r = 0;
 		return arg;
 	}
-	narg = arg + chartorune(r, arg);
+	narg = arg + HOSTED_API(chartorune)(r, arg);
 	return narg;
 }
 
@@ -373,7 +373,7 @@ tkbind(TkTop *t, char *arg, char **ret)
 		}
 	}
 	else {
-		chartorune(&r, seq);
+		HOSTED_API(chartorune)(&r, seq);
 		event = TkKey | r;
 	}
 	if(event == 0) {
@@ -425,7 +425,7 @@ tkbind(TkTop *t, char *arg, char **ret)
 			goto err;
 		}
 
-		cmd = strdup(seq);
+		cmd = HOSTED_API(strdup)(seq);
 		if(cmd == nil) {
 			e = TkNomem;
 			goto err;
@@ -440,7 +440,7 @@ tkbind(TkTop *t, char *arg, char **ret)
 	/* documented but doesn't work */
 	if(strcmp(tag, "all") == 0) {
 		for(tk = t->root; tk; tk = tk->next) {
-			cmd = strdup(seq);
+			cmd = HOSTED_API(strdup)(seq);
 			if(cmd == nil) {
 				e = TkNomem;
 				goto err;
@@ -456,7 +456,7 @@ tkbind(TkTop *t, char *arg, char **ret)
 	/* undocumented, probably unused, and doesn't work consistently */
 	for(i = 0; i < TKwidgets; i++) {
 		if(strcmp(tag, tkmethod[i]->name) == 0) {
-			cmd = strdup(seq);
+			cmd = HOSTED_API(strdup)(seq);
 			if(cmd == nil) {
 				e = TkNomem;
 				goto err;
@@ -1014,7 +1014,7 @@ tkbindings(TkTop *t, Tk *tk, TkEbind *b, int blen)
 
 	ap = &tk->binds;
 	for(a = t->binds[tk->type]; a; a = a->link) {	/* user "defaults" */
-		cmd = strdup(a->arg);
+		cmd = HOSTED_API(strdup)(a->arg);
 		if(cmd == nil)
 			return TkNomem;
 

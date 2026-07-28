@@ -24,7 +24,7 @@ void
 installsubfont(char *name, Subfont *subfont)
 {
 	free(lastname);
-	lastname = strdup(name);
+	lastname = HOSTED_API(strdup)(name);
 	lastsubfont = subfont;	/* notice we don't free the old one; that's your business */
 }
 

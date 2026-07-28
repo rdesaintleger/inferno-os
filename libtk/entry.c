@@ -145,7 +145,7 @@ entrytextwidth(Tk *tk, int n)
 
 	f = tk->env->font;
 	if (tke->show != nil) {
-		chartorune(&c, tke->show);
+		HOSTED_API(chartorune)(&c, tke->show);
 		return n * runestringnwidth(f, &c, 1);
 	}
 	return runestringnwidth(f, tke->text, n);
@@ -309,7 +309,7 @@ tkentrytext(Image *i, Rectangle s, Tk *tk, TkEnv *env)
 
 	dp = Pt(s.min.x - (tke->x0 - tke->xv0), s.min.y);
 	if (tke->show) {
-		chartorune(&showr, tke->show);
+		HOSTED_API(chartorune)(&showr, tke->show);
 		text = mallocz(sizeof(Rune) * (tke->textlen+1), 0);
 		if (text == nil)
 			return;
@@ -790,7 +790,7 @@ tkentryinsert(Tk *tk, char *arg, char **val)
 	memmove(tke->text+ins+n, tke->text+ins, (tke->textlen-ins)*sizeof(Rune));
 	t = text;
 	for(i=0; i<n; i++)
-		t += chartorune(tke->text+ins+i, t);
+		t += HOSTED_API(chartorune)(tke->text+ins+i, t);
 	free(text);
 
 	tke->textlen += n;

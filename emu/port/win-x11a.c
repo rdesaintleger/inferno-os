@@ -1491,7 +1491,7 @@ _xgetsnarf(XDisplay *xd)
 	w = XGetSelectionOwner(xd, XA_PRIMARY);
 	if(w == xdrawable){
 	mine:
-		data = (uchar*)strdup(clip.buf);
+		data = (uchar*)HOSTED_API(strdup)(clip.buf);
 		goto out;
 	}
 
@@ -1549,7 +1549,7 @@ _xgetsnarf(XDisplay *xd)
 		data = nil;
 	}else{
 		if(xdata){
-			data = (uchar*)strdup((char*)xdata);
+			data = (uchar*)HOSTED_API(strdup)((char*)xdata);
 			XFree(xdata);
 		}else
 			data = nil;

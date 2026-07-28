@@ -41,7 +41,7 @@ applyrules(char *target, char *cnt)
 	sym = symlook(target, S_NODE, 0);
 	if(sym)
 		return (Node *)(sym->value);
-	target = strdup(target);
+	target = HOSTED_API(strdup)(target);
 	node = newnode(target);
 	head.n = 0;
 	head.next = 0;

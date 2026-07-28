@@ -937,7 +937,7 @@ tkcvsbind(Tk *tk, char *arg, char **val)
 			return TkBadsq;
 	}
 	else {
-		chartorune(&r, buf);
+		HOSTED_API(chartorune)(&r, buf);
 		event = TkKey | r;
 	}
 	if(event == 0)
@@ -967,7 +967,7 @@ tkcvsbind(Tk *tk, char *arg, char **val)
 	}
 
 	tkword(tk->env->top, arg, buf, buf+sizeof(buf), nil);
-	cmd = strdup(buf);
+	cmd = HOSTED_API(strdup)(buf);
 	if(cmd == nil)
 		return TkNomem;
 	e = tkaction(&f->prop.binds, event, TkDynamic, cmd, mode);

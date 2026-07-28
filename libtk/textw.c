@@ -840,7 +840,7 @@ tktinsert(Tk *tk, TkTindex *ins, char *s, TkTitem *tagit)
 			n = 0;
 			i->kind = TkTascii;
 			while(c != '\0' && c != '\n' && c != '\t' && n < nmax){
-				s += chartorune(&r, s);
+				s += HOSTED_API(chartorune)(&r, s);
 				c = *s;
 				n++;
 			}
@@ -3203,7 +3203,7 @@ tktextsearch(Tk *tk, char *arg, char **val)
 			case TkTrune:
 				s = tx.item->istring;
 				s += tktutfpos(s, tx.pos);
-				n = chartorune(&r, s);
+				n = HOSTED_API(chartorune)(&r, s);
 				if(strncmp(s, buf+i, n) != 0)
 					goto nomatch;
 				i += n-1;

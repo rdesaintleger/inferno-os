@@ -224,7 +224,7 @@ main(int argc, char **argv)
 				mk(tail->s);
 			else {
 				head = newword("command line arguments");
-				addrules(head, tail, strdup(""), VIR, mkinline, 0);
+				addrules(head, tail, HOSTED_API(strdup)(""), VIR, mkinline, 0);
 				mk(head->s);
 			}
 		}

@@ -305,7 +305,7 @@ resolve(char *name, char **hostv, int n, int isnumeric)
 			continue;
 
 		snprint(buf, sizeof buf, "%I", addr);
-		hostv[i++] = strdup(buf);
+		hostv[i++] = HOSTED_API(strdup)(buf);
 	}
 
 	freeaddrinfo(res0);

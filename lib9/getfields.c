@@ -14,7 +14,7 @@ getfields(char *str, char **args, int max, int mflag, char *set)
 		narg++;
 	intok = 0;
 	for(;; str += nr) {
-		nr = chartorune(&r, str);
+		nr = HOSTED_API(chartorune)(&r, str);
 		if(r == 0)
 			break;
 		if(utfrune(set, r)) {

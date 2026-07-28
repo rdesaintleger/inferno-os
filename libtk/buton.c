@@ -155,7 +155,7 @@ newbutton(TkTop *t, int btype, char *arg, char **ret)
 			strcmp(tkl->variable, tkselbut) == 0 &&
 			tkl->value == nil &&
 			tk->name != nil)
-		tkl->value = strdup(tk->name->name);
+		tkl->value = HOSTED_API(strdup)(tk->name->name);
 
 	if (tkl->variable != nil) {
 		v = tkmkvar(t, tkl->variable, 0);
@@ -207,7 +207,7 @@ tkmkbutton(TkTop *t, int btype)
 		e = tkbindings(t, tk, cb, nelem(cb));
 		break;
 	case TKradiobutton:
-		tkl->variable = strdup(tkselbut);
+		tkl->variable = HOSTED_API(strdup)(tkselbut);
 		e = tkbindings(t, tk, cb, nelem(cb));
 		break;
 	}

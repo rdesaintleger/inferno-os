@@ -27,7 +27,7 @@ md5unpickle(char *p)
 	s = malloc(sizeof(*s));
 	if(s == nil)
 		return nil;
-	s->len = strtoull(p, &p, 16);
+	s->len = HOSTED_API(strtoull)(p, &p, 16);
 	s->state[0] = strtoul(p, &p, 16);
 	s->state[1] = strtoul(p, &p, 16);
 	s->state[2] = strtoul(p, &p, 16);

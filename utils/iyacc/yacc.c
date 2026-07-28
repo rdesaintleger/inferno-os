@@ -1543,7 +1543,7 @@ defin(int nt, char *s)
 	/* establish value for token */
 	/* single character literal */
 	if(s[0] == ' ') {
-		val = chartorune(&rune, &s[1]);
+		val = HOSTED_API(chartorune)(&rune, &s[1]);
 		if(s[val+1] == 0) {
 			val = rune;
 			goto out;
@@ -1678,7 +1678,7 @@ begin:
 		i = 0;
 		while((c=Bgetrune(finput)) != '>' && c >= 0 && c != '\n' && c != '\r') {
 			rune = c;
-			c = runetochar(&tokname[i], &rune);
+			c = HOSTED_API(runetochar)(&tokname[i], &rune);
 			if(i < NAMESIZE)
 				i += c;
 		}
@@ -1713,7 +1713,7 @@ begin:
 				if(c == match)
 					break;
 			rune = c;
-			c = runetochar(&tokname[i], &rune);
+			c = HOSTED_API(runetochar)(&tokname[i], &rune);
 			if(i < NAMESIZE)
 				i += c;
 		}
@@ -1750,7 +1750,7 @@ begin:
 				if(reserve && isupper(c))
 					c += 'a'-'A';
 				rune = c;
-				c = runetochar(&tokname[i], &rune);
+				c = HOSTED_API(runetochar)(&tokname[i], &rune);
 				if(i < NAMESIZE)
 					i += c;
 				c = Bgetrune(finput);

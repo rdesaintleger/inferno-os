@@ -268,7 +268,7 @@ OP(cvtca)
 		p = (char*)a->data;
 		r = ss->Srune;
 		while(l--)
-			p += runetochar(p, r++);	
+			p += HOSTED_API(runetochar)(p, r++);	
 		goto r;
 	}
 	a = mem2array(ss->Sascii, ss->len);
@@ -407,7 +407,7 @@ string2c(String *s)
 		if(c < Runeself)
 			*p++ = c;
 		else
-			p += runetochar(p, r-1);
+			p += HOSTED_API(runetochar)(p, r-1);
 	}
 
 	*p = 0;
@@ -449,7 +449,7 @@ c2string(char *cs, int len)
 		if(c < Runeself)
 			p++;
 		else if(p+UTFmax<=(uchar*)ecs || fullrune((char*)p, (uchar*)ecs-p))
-			p += chartorune(&junk, (char*)p);
+			p += HOSTED_API(chartorune)(&junk, (char*)p);
 		else
 			break;
 		nc++;
@@ -457,7 +457,7 @@ c2string(char *cs, int len)
 	s = newrunes(nc);
 	r = s->Srune;
 	while(nc--)
-		cs += chartorune(r++, cs);
+		cs += HOSTED_API(chartorune)(r++, cs);
 
 	return s;
 }

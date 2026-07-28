@@ -137,7 +137,7 @@ gkbdputc(Queue *q, int ch)
 	}
 	if(collecting) {
 		int c;
-		nk += runetochar((char*)&kc[nk], &r);
+		nk += HOSTED_API(runetochar)((char*)&kc[nk], &r);
 		c = latin1(kc, nk);
 		if(c < -1)	/* need more keystrokes */
 			return;
@@ -148,7 +148,7 @@ gkbdputc(Queue *q, int ch)
 		}
 		r = (Rune)c;
 	}
-	n = runetochar(buf, &r);
+	n = HOSTED_API(runetochar)(buf, &r);
 	if(n == 0)
 		return;
 	/* if(!isdbgkey(r)) */ 
@@ -460,7 +460,7 @@ conswrite(Chan *c, void *va, long n, vlong offset)
 	case Qkeyboard:
 		for(x=0; x<n; ) {
 			Rune r;
-			x += chartorune(&r, &((char*)va)[x]);
+			x += HOSTED_API(chartorune)(&r, &((char*)va)[x]);
 			gkbdputc(gkbdq, r);
 		}
 		break;
@@ -473,7 +473,7 @@ conswrite(Chan *c, void *va, long n, vlong offset)
 			n = sizeof(buf)-1;
 		strncpy(buf, va, n);
 		buf[n] = '\0';
-		timeoffset = strtoll(buf, 0, 0)-osusectime();
+		timeoffset = HOSTED_API(strtoll)(buf, 0, 0)-osusectime();
 		break;
 
 	case Qhostowner:

@@ -66,7 +66,7 @@ regexec1(Reprog *progp,	/* program to run */
 		if(r < (Rune)Runeself)
 			n = 1;
 		else
-			n = chartorune(&r, s);
+			n = HOSTED_API(chartorune)(&r, s);
 
 		/* switch run lists */
 		tl = j->relist[flag];

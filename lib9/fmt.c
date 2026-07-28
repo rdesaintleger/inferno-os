@@ -129,7 +129,7 @@ _fmtdispatch(Fmt *f, void *fmt, int isrunes)
 			r = *(Rune*)fmt;
 			fmt = (Rune*)fmt + 1;
 		}else{
-			fmt = (char*)fmt + chartorune(&rune, fmt);
+			fmt = (char*)fmt + HOSTED_API(chartorune)(&rune, fmt);
 			r = rune;
 		}
 		f->r = r;

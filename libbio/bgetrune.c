@@ -26,7 +26,7 @@ Bgetrune(Biobuf *bp)
 
 		if(fullrune(str, i)) {
 			/* utf is long enough to be a rune, but could be bad. */
-			bp->runesize = chartorune(&rune, str);
+			bp->runesize = HOSTED_API(chartorune)(&rune, str);
 			if (rune == Runeerror)
 				bp->runesize = 0;	/* push back nothing */
 			else

@@ -40,8 +40,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define	getwd	infgetwd
-
 #ifndef EMU
 typedef struct Proc Proc;
 #endif
@@ -81,7 +79,7 @@ typedef uintptr_t uintptr;
  */
 
 extern	char* HOSTED_API(strecpy)(char*, char*, char*);
-extern	char*	strdup(const char*);
+extern	char*	HOSTED_API(strdup)(const char*);
 extern	int HOSTED_API(tokenize)(char*, char**, int);
 
 enum
@@ -97,8 +95,8 @@ enum
 /*
  * rune routines
  */
-extern	int	runetochar(char*, Rune*);
-extern	int	chartorune(Rune*, char*);
+extern	int	HOSTED_API(runetochar)(char*, Rune*);
+extern	int	HOSTED_API(chartorune)(Rune*, char*);
 extern	int	runelen(long);
 extern	int	runenlen(Rune*, int);
 extern	int	fullrune(char*, int);
@@ -251,12 +249,11 @@ extern	vlong	osnsec(void);
 extern	void	_assert(char*);
 extern	char*	cleanname(char*);
 extern	int	getfields(char*, char**, int, int, char*);
-extern	char*	getwd(char*, int);
+extern	char*	HOSTED_API(getwd)(char*, int);
 extern	double	ipow10(int);
-extern	vlong	strtoll(const char*, char**, int);
-#define	qsort	infqsort
-extern	void	qsort(void*, long, long, int (*)(void*, void*));
-extern	uvlong	strtoull(const char*, char**, int);
+extern	vlong	HOSTED_API(strtoll)(const char*, char**, int);
+extern	void	HOSTED_API(qsort)(void*, long, long, int (*)(void*, void*));
+extern	uvlong	HOSTED_API(strtoull)(const char*, char**, int);
 extern	int	dec64(uchar*, int, char*, int);
 extern	int	enc64(char*, int, uchar*, int);
 extern	int	dec32(uchar*, int, char*, int);
@@ -428,7 +425,7 @@ extern char *argv0;
 					argc--; argv++; break;\
 				}\
 				_argc = 0;\
-				while(*_args && (_args += chartorune(&_argc, _args)))\
+				while(*_args && (_args += HOSTED_API(chartorune)(&_argc, _args)))\
 				switch(_argc)
 #define	ARGEND		SET(_argt);USED(_argt);USED(_argc); USED(_args);}USED(argv); USED(argc);
 #define	ARGF()		(_argt=_args, _args="",\

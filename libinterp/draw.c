@@ -164,7 +164,7 @@ cacheinstall(Cache **cache, Display *d, char *name, void *ptr, char *type)
 	hash = drawhash(name);
 	c->ref = 0;	/* will be incremented by caller */
 	c->display = d;
-	c->name = strdup(name);
+	c->name = HOSTED_API(strdup)(name);
 	c->u.ptr = ptr;
 	libqlock(cacheqlock);
 	c->next = cache[hash];
@@ -2125,7 +2125,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 	int i, fd;
 
 	if(strcmp(cfname, deffontname) == 0)
-		return strdup(cfname);
+		return HOSTED_API(strdup)(cfname);
 	t = cfname;
 	if(t[0] != '/'){
 		strcpy(tmp2, fname);
@@ -2149,11 +2149,11 @@ subfontname(char *cfname, char *fname, int maxdepth)
 		fd = libopen(tmp2, OREAD);
 		if(fd >= 0){
 			libclose(fd);
-			return strdup(tmp2);
+			return HOSTED_API(strdup)(tmp2);
 		}
 	}
 
-	return strdup(t);
+	return HOSTED_API(strdup)(t);
 }
 
 void

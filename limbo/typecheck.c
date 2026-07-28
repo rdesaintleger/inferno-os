@@ -913,7 +913,7 @@ excheck(Node *n, int isglobal)
 		ids->ty = t;
 		nm = exname(ids);
 		ids->init = mksconst(&n->src, enterstring(nm, strlen(nm)));
-		/* ids->init = mksconst(&n->src, enterstring(strdup(ids->sym->name), strlen(ids->sym->name))); */
+		/* ids->init = mksconst(&n->src, enterstring(HOSTED_API(strdup)(ids->sym->name), strlen(ids->sym->name))); */
 	}
 }
 
@@ -2612,7 +2612,7 @@ fmtcheck(Node *f, Node *fmtarg, Node *va)
 			c = s[ns++];
 			switch(c){
 			default:
-				chartorune(&r, &s[ns-1]);
+				HOSTED_API(chartorune)(&r, &s[ns-1]);
 				nerror(f, "%V: invalid character %C in format '%.*s'", f, r, ns-fmtstart, &s[fmtstart]);
 				return;
 			case '.':

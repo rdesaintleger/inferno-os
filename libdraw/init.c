@@ -77,7 +77,7 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		kwerrstr("initdisplay: directory name too long");
 		return nil;
 	}
-	t = strdup(win);
+	t = HOSTED_API(strdup)(win);
 	if(t == nil)
 		return nil;
 
@@ -172,7 +172,7 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	disp->chan = image->chan;
 	disp->depth = image->depth;
 	disp->windir = t;
-	disp->devdir = strdup(dev);
+	disp->devdir = HOSTED_API(strdup)(dev);
 	disp->qlock = q;
 	libqlock(q);
 	disp->white = allocimage(disp, Rect(0, 0, 1, 1), GREY1, 1, DWhite);

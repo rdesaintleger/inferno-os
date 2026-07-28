@@ -134,19 +134,19 @@ fswstat(Qid qid, Dir *d)
 		}
 		/* ok to change name now */
 		styxfree(f->d.name);
-		f->d.name = strdup(d->name);	
+		f->d.name = HOSTED_API(strdup)(d->name);	
 	}
 	if(d->uid != nil && strcmp(d->uid, f->d.uid) != 0){
 		if(!owner)
 			return Eperm;
 		styxfree(f->d.uid);
-		f->d.uid = strdup(d->uid);
+		f->d.uid = HOSTED_API(strdup)(d->uid);
 	}
 	if(d->gid != nil && strcmp(d->gid, f->d.gid) != 0){
 		if(!owner)
 			return Eperm;
 		styxfree(f->d.gid);
-		f->d.gid = strdup(d->gid);
+		f->d.gid = HOSTED_API(strdup)(d->gid);
 	}
 	if(d->mode != ~0 && d->mode != f->d.mode){
 		if(!owner)

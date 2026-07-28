@@ -23,7 +23,7 @@ parse(char *f, int fd, int varoverride)
 		Exit();
 	}
 	ipush();
-	infile = strdup(f);
+	infile = HOSTED_API(strdup)(f);
 	mkinline = 1;
 	Binit(&in, fd, OREAD);
 	buf = newbuf();
@@ -150,7 +150,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 		pp = charin(p, termchars);	/* termchars is shell-dependent */
 		if (pp && *pp == '=') {
 			while (p != pp) {
-				n = chartorune(&r, p);
+				n = HOSTED_API(chartorune)(&r, p);
 				switch(r)
 				{
 				default:
@@ -168,7 +168,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 	}
 	if((sep == ':') && *p && (*p != ' ') && (*p != '\t')){
 		while (*p) {
-			n = chartorune(&r, p);
+			n = HOSTED_API(chartorune)(&r, p);
 			if (r == ':')
 				break;
 			p += n;
@@ -195,7 +195,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 				if (pp == 0 || *pp == 0)
 					goto eos;
 				*pp = 0;
-				*prog = strdup(p);
+				*prog = HOSTED_API(strdup)(p);
 				*pp = ':';
 				p = pp;
 				break;
@@ -257,7 +257,7 @@ rbody(Biobuf *in)
 			mkinline++;
 	}
 	insert(buf, 0);
-	p = strdup(buf->start);
+	p = HOSTED_API(strdup)(buf->start);
 	freebuf(buf);
 	return p;
 }

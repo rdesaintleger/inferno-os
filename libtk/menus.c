@@ -218,9 +218,9 @@ tkmkmenubutton(TkTop *t, char *arg, char **ret, int type, TkOption *opts)
 	}
 	if(type == TKchoicebutton){
 		if(tkl->nvalues > 0)
-			tkl->text = strdup(tkl->values[0]);
+			tkl->text = HOSTED_API(strdup)(tkl->values[0]);
 		else
-			tkl->text = strdup(NOCHOICE);
+			tkl->text = HOSTED_API(strdup)(NOCHOICE);
 	}
 	tksettransparent(tk, 
 		tkhasalpha(tk->env, TkCbackgnd) ||
@@ -311,11 +311,11 @@ tkmenubutconf(Tk *tk, char *arg, char **val)
 					break;
 			free(tkl->text);
 			if (v == nil || *v == nil) {
-				tkl->text = strdup(tkl->nvalues > 0 ? tkl->values[0] : NOCHOICE);
+				tkl->text = HOSTED_API(strdup)(tkl->nvalues > 0 ? tkl->values[0] : NOCHOICE);
 				tkl->check = 0;
 			} else {
 				tkl->check = v - tkl->values;
-				tkl->text = strdup(*v);
+				tkl->text = HOSTED_API(strdup)(*v);
 			}
 		}
 	}
@@ -367,7 +367,7 @@ mkchoicemenu(Tk *tkb)
 	menu->flag |= Tkwindow;
 	menu->geom = tkmoveresize;
 	tkw = TKobj(TkWin, menu);
-	tkw->cbname = strdup(tkb->name->name);
+	tkw->cbname = HOSTED_API(strdup)(tkb->name->name);
 	tkw->di = (void*)-1;			// XXX
 
 	for(i = tkl->nvalues - 1; i >= 0; i--){
@@ -384,7 +384,7 @@ mkchoicemenu(Tk *tkb)
 		tkcl->anchor = Tkwest;
 		tkcl->ul = -1;
 		tkcl->justify = Tkleft;
-		tkcl->text = strdup(tkl->values[i]);
+		tkcl->text = HOSTED_API(strdup)(tkl->values[i]);
 		tkcl->command = smprint("%s invoke %d", tkb->name->name, i);
 		/* XXX recover from malloc failure */
 		tksizelabel(tkc);
@@ -484,7 +484,7 @@ tkchoicebutset(Tk *tk, char *arg, char **val)
 	if (v == tkl->check)
 		return nil;
 	free(tkl->text);
-	tkl->text = strdup(tkl->values[v]);
+	tkl->text = HOSTED_API(strdup)(tkl->values[v]);
 	/* XXX recover from malloc error */
 	tkl->check = v;
 
@@ -554,7 +554,7 @@ tkchoicebutsetvalue(Tk *tk, char *arg, char **val)
 	if (*v == nil)
 		return TkBadvl;
 	free(tkl->text);
-	tkl->text = strdup(*v);
+	tkl->text = HOSTED_API(strdup)(*v);
 	/* XXX recover from malloc error */
 	tkl->check = v - tkl->values;
 
@@ -611,7 +611,7 @@ tkchoicevarchanged(Tk *tk, char *var, char *value)
 		if(v < 0 || v >= tkl->nvalues)
 			return;		/* what else can we do? */
 		free(tkl->text);
-		tkl->text = strdup(tkl->values[v]);
+		tkl->text = HOSTED_API(strdup)(tkl->values[v]);
 		/* XXX recover from malloc error */
 		tkl->check = v;
 		tk->dirty = tkrect(tk, 0);
@@ -1028,7 +1028,7 @@ tkmpost(Tk *tk, int x, int y, int cascade, int bh, int adjust)
 		return e;
 
 	if (t->ctxt->tkmenu != nil)
-		w->cascade = strdup(t->ctxt->tkmenu->name->name);
+		w->cascade = HOSTED_API(strdup)(t->ctxt->tkmenu->name->name);
 	t->ctxt->tkmenu = tk;
 	tksetmgrab(t, tk);
 

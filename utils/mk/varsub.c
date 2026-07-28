@@ -39,7 +39,7 @@ varname(char **s)
 	b = newbuf();
 	cp = *s;
 	for(;;){
-		n = chartorune(&r, cp);
+		n = HOSTED_API(chartorune)(&r, cp);
 		if (!WORDCHR(r))
 			break;
 		rinsert(b, r);
@@ -183,7 +183,7 @@ subsub(Word *v, char *s, char *end)
 					bufcpy(buf, enda, nmid);
 					insert(buf, 0);
 					free(w->s);
-					w->s = strdup(buf->start);
+					w->s = HOSTED_API(strdup)(buf->start);
 				} else {
 					bufcpy(buf, enda, nmid);
 					insert(buf, 0);
@@ -198,7 +198,7 @@ subsub(Word *v, char *s, char *end)
 					bufcpy(buf, d->s, strlen(d->s));
 					insert(buf, 0);
 					free(w->s);
-					w->s = strdup(buf->start);
+					w->s = HOSTED_API(strdup)(buf->start);
 					w->next = wdup(d->next);
 					while(w->next)
 						w = w->next;

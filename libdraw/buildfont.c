@@ -26,7 +26,7 @@ buildfont(Display *d, char *buf, char *name)
 		return 0;
 	memset(fnt, 0, sizeof(Font));
 	fnt->display = d;
-	fnt->name = strdup(name);
+	fnt->name = HOSTED_API(strdup)(name);
 	fnt->ncache = NFCACHE+NFLOOK;
 	fnt->nsubf = NFSUBF;
 	fnt->cache = malloc(fnt->ncache * sizeof(fnt->cache[0]));
@@ -100,7 +100,7 @@ buildfont(Display *d, char *buf, char *name)
 			s++;
 		*s++ = 0;
 		c->subfontname = 0;
-		c->name = strdup(t);
+		c->name = HOSTED_API(strdup)(t);
 		if(c->name == 0){
 			free(c);
 			goto Err3;

@@ -9,7 +9,7 @@ shprint(char *s, Envy *env, Bufblock *buf)
 	Rune r;
 
 	while(*s) {
-		n = chartorune(&r, s);
+		n = HOSTED_API(chartorune)(&r, s);
 		if (r == '$')
 			s = vexpand(s, env, buf);
 		else {
@@ -71,7 +71,7 @@ front(char *s)
 	int i, j;
 	char *flds[512];
 
-	q = strdup(s);
+	q = HOSTED_API(strdup)(s);
 	i = getfields(q, flds, 512, 0, " \t\n");
 	if(i > 5){
 		flds[4] = flds[i-1];

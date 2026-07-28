@@ -20,9 +20,9 @@ squote(char *cp)
 	int n;
 
 	while(*cp){
-		n = chartorune(&r, cp);
+		n = HOSTED_API(chartorune)(&r, cp);
 		if(r == '\'') {
-			n += chartorune(&r, cp+n);
+			n += HOSTED_API(chartorune)(&r, cp+n);
 			if(r != '\'')
 				return(cp);
 		}
@@ -45,7 +45,7 @@ charin(char *cp, char *pat)
 
 	vargen = 0;
 	while(*cp){
-		n = chartorune(&r, cp);
+		n = HOSTED_API(chartorune)(&r, cp);
 		switch(r){
 		case '\'':			/* skip quoted string */
 			cp = squote(cp+1);	/* n must = 1 */
@@ -90,7 +90,7 @@ expandquote(char *s, Rune r, Bufblock *b)
 	}
 
 	while(*s){
-		s += chartorune(&r, s);
+		s += HOSTED_API(chartorune)(&r, s);
 		if(r == '\'') {
 			if(*s == '\'')
 				s++;
@@ -143,7 +143,7 @@ copysingle(char *s, Bufblock *buf)
 	Rune r;
 
 	while(*s){
-		s += chartorune(&r, s);
+		s += HOSTED_API(chartorune)(&r, s);
 		rinsert(buf, r);
 		if(r == '\'')
 			break;
@@ -164,7 +164,7 @@ copyq(char *s, Rune q, Bufblock *buf)
 		return s;
 
 	while(*s){				/* copy backquoted string */
-		s += chartorune(&q, s);
+		s += HOSTED_API(chartorune)(&q, s);
 		rinsert(buf, q);
 		if(q == '}')
 			break;

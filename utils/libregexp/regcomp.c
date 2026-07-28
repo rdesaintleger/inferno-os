@@ -335,9 +335,9 @@ nextc(Rune *rp)
 		*rp = 0;
 		return 1;
 	}
-	exprp += chartorune(rp, exprp);
+	exprp += HOSTED_API(chartorune)(rp, exprp);
 	if(*rp == L'\\'){
-		exprp += chartorune(rp, exprp);
+		exprp += HOSTED_API(chartorune)(rp, exprp);
 		return 1;
 	}
 	if(*rp == 0)

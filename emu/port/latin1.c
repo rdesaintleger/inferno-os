@@ -74,7 +74,7 @@ latin1(uchar *k, int n)
 					int i = p - l->si;
 					p = l->so;
 					for(; i >= 0; i--)
-						p += chartorune(&r, p);
+						p += HOSTED_API(chartorune)(&r, p);
 					return r;
 				}
 			return -1;

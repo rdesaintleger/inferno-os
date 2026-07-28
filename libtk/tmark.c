@@ -36,7 +36,7 @@ tktaddmarkinfo(TkText *tkt, char *name, TkTmarkinfo **ret)
 	if(mi == nil)
 		return TkNomem;
 
-	mi->name = strdup(name);
+	mi->name = HOSTED_API(strdup)(name);
 	if(mi->name == nil) {
 		free(mi);
 		return TkNomem;

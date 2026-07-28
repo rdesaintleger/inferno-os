@@ -1632,7 +1632,7 @@ getroot(void)
 		}
 	}
 	if((e = getenv("ROOT")) != nil)
-		return strdup(e);
+		return HOSTED_API(strdup)(e);
 	return nil;
 }
 
@@ -1951,7 +1951,7 @@ cleann(char *s)
 	strcpy(t, s);
 	t = win2inf(t);
 	if(*t != '/'){
-		p = win2inf(getwd(buf, sizeof(buf)));
+		p = win2inf(HOSTED_API(getwd)(buf, sizeof(buf)));
 		s = malloc(strlen(p)+strlen(t)+2);
 		strcpy(s, p);
 		strcat(s, "/");

@@ -3,7 +3,6 @@
 #include	"error.h"
 
 #undef _POSIX_C_SOURCE 
-#undef getwd
 
 #include	<unistd.h>
 #include	<signal.h>

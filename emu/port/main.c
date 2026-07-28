@@ -196,7 +196,7 @@ savestartup(int argc, char *argv[])
 	if(rebootargv == nil)
 		panic("can't save startup args");
 	for(i = 0; i < argc; i++) {
-		rebootargv[i] = strdup(argv[i]);
+		rebootargv[i] = HOSTED_API(strdup)(argv[i]);
 		if(rebootargv[i] == nil)
 			panic("can't save startup args");
 	}
@@ -253,7 +253,7 @@ main(int argc, char *argv[])
 		option(envc, enva, envusage);
 	}
 	option(argc, argv, usage);
-	eve = strdup("inferno");
+	eve = HOSTED_API(strdup)("inferno");
 
 	opt = "interp";
 	if(cflag)
@@ -277,7 +277,7 @@ emuinit(void *imod)
 	e->egrp = newegrp();
 	e->errstr = e->errbuf0;
 	e->syserrstr = e->errbuf1;
-	e->user = strdup("");
+	e->user = HOSTED_API(strdup)("");
 
 	links();
 	chandevinit();
@@ -321,7 +321,7 @@ emuinit(void *imod)
 	ksetenv("emuhost", hosttype, 1);
 	wdir = malloc(1024);
 	if(wdir != nil){
-		if(getwd(wdir, 1024) != nil)
+		if(HOSTED_API(getwd)(wdir, 1024) != nil)
 			putenvq("emuwdir", wdir, 1);
 		free(wdir);
 	}

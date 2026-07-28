@@ -30,7 +30,7 @@ cachechars(Font *f, char **ss, Rune **rr, ushort *cp, int max, int *wp, char **s
 			if(r < Runeself)
 				w = 1;
 			else{
-				w = chartorune(&vr, sp);
+				w = HOSTED_API(chartorune)(&vr, sp);
 				r = vr;
 			}
 			rw = 0;

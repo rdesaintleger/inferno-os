@@ -214,7 +214,7 @@ tktaddtaginfo(Tk *tk, char *name, TkTtaginfo **ret)
 		ntagp = &tktshare->nexttag;
 	}
 	ti->id = *ntagp;
-	ti->name = strdup(name);
+	ti->name = HOSTED_API(strdup)(name);
 	if(ti->name == nil) {
 		free(ti);
 		return TkNomem;
@@ -656,7 +656,7 @@ tkttagbind(Tk *tk, char *arg, char **val)
 			return TkBadsq;
 	}
 	else {
-		chartorune(&r, buf);
+		HOSTED_API(chartorune)(&r, buf);
 		event = TkKey | r;
 	}
 	if(event == 0)
@@ -681,7 +681,7 @@ tkttagbind(Tk *tk, char *arg, char **val)
 	}
 
 	tkword(tk->env->top, arg, buf, buf+sizeof(buf), nil);
-	cmd = strdup(buf);
+	cmd = HOSTED_API(strdup)(buf);
 	if(cmd == nil)
 		return TkNomem;
 	return tkaction(&ti->binds, event, TkDynamic, cmd, mode);

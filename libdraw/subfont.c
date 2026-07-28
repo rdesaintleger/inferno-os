@@ -18,7 +18,7 @@ allocsubfont(char *name, int n, int height, int ascent, Fontchar *info, Image *i
 	f->bits = i;
 	f->ref = 1;
 	if(name){
-		f->name = strdup(name);
+		f->name = HOSTED_API(strdup)(name);
 		if(lookupsubfont(i->display, name) == 0)
 			installsubfont(name, f);
 	}else

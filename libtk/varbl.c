@@ -30,7 +30,7 @@ tksetvar(TkTop *top, char *c, char *newval)
 		free(v->value);
 	}
 
-	v->value = strdup(newval);
+	v->value = HOSTED_API(strdup)(newval);
 	if(v->value == nil)
 		return TkNomem;
 

@@ -652,7 +652,7 @@ tklook(TkTop *t, char *wp, int parent)
 		return nil;
 
 	if(parent) {
-		p = strdup(wp);
+		p = HOSTED_API(strdup)(wp);
 		if(p == nil)
 			return nil;
 		q = strrchr(p, '.');

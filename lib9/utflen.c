@@ -15,7 +15,7 @@ utflen(char *s)
 				return n;
 			s++;
 		} else
-			s += chartorune(&rune, s);
+			s += HOSTED_API(chartorune)(&rune, s);
 		n++;
 	}
 }

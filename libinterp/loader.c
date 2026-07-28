@@ -248,8 +248,8 @@ Loader_newmod(void *a)
 	m->origmp = H;
 	m->ref = 1;
 	m->ss = f->ss;
-	m->name = strdup(string2c(f->name));
-	m->path = strdup(m->name);
+	m->name = HOSTED_API(strdup)(string2c(f->name));
+	m->path = HOSTED_API(strdup)(m->name);
 	m->ntype = 1;
 	m->type = malloc(sizeof(Type*));
 	if(m->name == nil || m->path == nil || m->type == nil) {
