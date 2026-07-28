@@ -701,7 +701,6 @@ memprof(int c, void *v, ulong n)
 			j = hmsize(h)-sizeof(Heap);
 		}
 		else if(c == Mmalloc){
-			setmalloctag(v, k);
 			j = msize(v);
 		}
 		else{
@@ -711,7 +710,7 @@ memprof(int c, void *v, ulong n)
 	}
 	else{
 		if(c == Mmfree)
-			k = getmalloctag(v);
+			k = nil;
 		else if(c == Mifree)
 			k = ((ulong*)v)[1];
 		else

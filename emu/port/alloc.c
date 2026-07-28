@@ -614,8 +614,6 @@ smalloc(size_t size)
 		osmillisleep(100);
 		osleave();
 	}
-	setmalloctag(v, 0);
-	setrealloctag(v, 0);
 	return v;
 }
 
@@ -629,8 +627,6 @@ kmalloc(size_t size)
 		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
-			setmalloctag(v, 0);
-			setrealloctag(v, 0);
 		}
 		memset(v, 0, size);
 		MM(0, (ulong)v, size);
@@ -650,8 +646,6 @@ malloc(size_t size)
 		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
-			setmalloctag(v, 0);
-			setrealloctag(v, 0);
 		}
 		memset(v, 0, size);
 		MM(0, (ulong)v, size);
@@ -670,8 +664,6 @@ mallocz(ulong size, int clr)
 		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
-			setmalloctag(v, 0);
-			setrealloctag(v, 0);
 		}
 		if(clr)
 			memset(v, 0, size);
@@ -712,56 +704,9 @@ realloc(void *v, size_t size)
 	ML(nv, size);
 	if(nv != nil) {
 		nv = (ulong*)nv+Npadlong;
-		setrealloctag(nv, 0);
-		if(v == nil)
-			setmalloctag(v, 0);
 	} else 
 		print("realloc failed\n");
 	return nv;
-}
-
-void
-setmalloctag(void *v, ulong pc)
-{
-	ulong *u;
-
-	USED(v);
-	USED(pc);
-	if(Npadlong <= MallocOffset || v == nil)
-		return;
-	u = v;
-	u[-Npadlong+MallocOffset] = pc;
-}
-
-ulong
-getmalloctag(void *v)
-{
-	USED(v);
-	if(Npadlong <= MallocOffset)
-		return ~0;
-	return ((ulong*)v)[-Npadlong+MallocOffset];
-}
-
-void
-setrealloctag(void *v, ulong pc)
-{
-	ulong *u;
-
-	USED(v);
-	USED(pc);
-	if(Npadlong <= ReallocOffset || v == nil)
-		return;
-	u = v;
-	u[-Npadlong+ReallocOffset] = pc;
-}
-
-ulong
-getrealloctag(void *v)
-{
-	USED(v);
-	if(Npadlong <= ReallocOffset)
-		return ((ulong*)v)[-Npadlong+ReallocOffset];
-	return ~0;
 }
 
 ulong

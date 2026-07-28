@@ -120,10 +120,6 @@ extern	void	free(void*);
 extern	ulong	msize(void*);
 extern	void*	calloc(size_t, size_t);
 extern	void*	realloc(void*, size_t);
-extern	void		setmalloctag(void*, ulong);
-extern	void		setrealloctag(void*, ulong);
-extern	ulong	getmalloctag(void*);
-extern	ulong	getrealloctag(void*);
 extern	void*	malloctopoolblock(void*);
 
 /*
