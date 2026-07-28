@@ -133,7 +133,7 @@ Error:
 		oserror();
 	}
 
-	nf = tokenize(cmd, f, nelem(f));
+	nf = HOSTED_API(tokenize)(cmd, f, nelem(f));
 	for(i = 0; i < nf; i++){
 		if(strncmp(f[i], "break", 5) == 0){
 			tcsendbreak(fd, 0);

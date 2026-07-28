@@ -31,6 +31,15 @@
 #include <time.h>
 #include <endian.h>
 
+#ifndef _LIB9_H_
+#define _LIB9_H_
+
+#include "hosted.h"
+
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #define	getwd	infgetwd
 
 #ifndef EMU
@@ -44,18 +53,18 @@ typedef struct Proc Proc;
 
 #define	nil		((void*)0)
 
-typedef unsigned char	uchar;
-typedef signed char	schar;
-typedef unsigned int Rune;
-typedef long long int	vlong;
-typedef unsigned long long int	uvlong;
-typedef unsigned int u32int;
+typedef uint8_t uchar;
+typedef int8_t schar;
+typedef uint32_t Rune;
+typedef int64_t vlong;
+typedef uint64_t uvlong;
+typedef uint32_t u32int;
 typedef uvlong u64int;
 
-typedef unsigned int	mpdigit;	/* for /sys/include/mp.h */
-typedef unsigned short u16int;
-typedef unsigned char u8int;
-typedef unsigned long uintptr;
+typedef uint32_t mpdigit;	/* for /sys/include/mp.h */
+typedef uint16_t u16int;
+typedef uint8_t u8int;
+typedef uintptr_t uintptr;
 
 #define	USED(x)		if(x){}else{}
 #define	SET(x)
@@ -71,9 +80,9 @@ typedef unsigned long uintptr;
  * most mem and string routines are declared by ANSI/POSIX files above
  */
 
-extern	char*	strecpy(char*, char*, char*);
+extern	char* HOSTED_API(strecpy)(char*, char*, char*);
 extern	char*	strdup(const char*);
-extern	int	tokenize(char*, char**, int);
+extern	int HOSTED_API(tokenize)(char*, char**, int);
 
 enum
 {
@@ -461,3 +470,5 @@ extern	void	setfcr(ulong);
 extern	void	setfsr(ulong);
 extern	ulong	getfcr(void);
 extern	ulong	getfsr(void);
+
+#endif /* _LIB9_H_ */

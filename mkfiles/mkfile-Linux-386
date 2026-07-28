@@ -19,6 +19,7 @@ CFLAGS=		-g\
 		-Wuninitialized -Wunused-variable -Wreturn-type -Wimplicit\
 		-I$ROOT/Linux/386/include\
 		-I$ROOT/include\
+		-DHOSTED_PREFIX=hosted\
 		-DLINUX_386
 
 ANSICPP=

@@ -72,7 +72,7 @@ etoken(char *t, char *sep)
 }
 
 int
-tokenize(char *s, char **args, int maxargs)
+HOSTED_API(tokenize)(char *s, char **args, int maxargs)
 {
 	int nargs;
 

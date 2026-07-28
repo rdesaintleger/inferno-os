@@ -249,7 +249,7 @@ sqlerr(Conv *c, int sqlstatus, char *errp, char *func, char *sqlcall)
 	errp[0] = 0;
 	e = "failed";
 	if (sqlstatus == SQL_ERROR || sqlstatus == SQL_SUCCESS_WITH_INFO)
-		strecpy(errp, errp+ERRMAX, odbcerror(c, 0));
+		HOSTED_API(strecpy)(errp, errp+ERRMAX, odbcerror(c, 0));
 	if (sqlstatus == SQL_SUCCESS_WITH_INFO)
 		e = "info";
 	if (sqlstatus != SQL_SUCCESS)

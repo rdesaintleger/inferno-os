@@ -143,7 +143,7 @@ waitfor(char *msg)
 
 	if((w=wait()) == nil)
 		return -1;
-	strecpy(msg, msg+ERRMAX, w->msg);
+	HOSTED_API(strecpy)(msg, msg+ERRMAX, w->msg);
 	pid = w->pid;
 	free(w);
 	return pid;

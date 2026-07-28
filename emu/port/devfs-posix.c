@@ -806,7 +806,7 @@ fsdirread(Chan *c, uchar *va, int count, vlong offset)
 			}
 			if(de->d_ino==0 || de->d_name[0]==0 || isdots(de->d_name))
 				continue;
-			strecpy(ep, path+sizeof(path), de->d_name);
+			HOSTED_API(strecpy)(ep, path+sizeof(path), de->d_name);
 			if(xstat(path, &st) < 0) {
 				fprint(2, "dir: bad path %s\n", path);
 				continue;
@@ -850,7 +850,7 @@ fsdirread(Chan *c, uchar *va, int count, vlong offset)
 		if(de->d_ino==0 || de->d_name[0]==0 || isdots(de->d_name))
 			continue;
 
-		strecpy(ep, path+sizeof(path), de->d_name);
+		HOSTED_API(strecpy)(ep, path+sizeof(path), de->d_name);
 		if(xstat(path, &st) < 0) {
 			fprint(2, "dir: bad path %s\n", path);
 			continue;

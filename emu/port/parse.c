@@ -58,7 +58,7 @@ parsecmd(char *p, int n)
 		n--;
 	cb->buf[n] = '\0';
 
-	cb->nf = tokenize(cb->buf, cb->f, nf-1);
+	cb->nf = HOSTED_API(tokenize)(cb->buf, cb->f, nf-1);
 	cb->f[cb->nf] = nil;
 
 	return cb;

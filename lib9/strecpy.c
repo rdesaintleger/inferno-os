@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 char*
-strecpy(char *to, char *e, char *from)
+HOSTED_API(strecpy)(char *to, char *e, char *from)
 {
 	if(to >= e)
 		return to;

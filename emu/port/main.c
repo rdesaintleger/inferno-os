@@ -162,7 +162,7 @@ option(int argc, char *argv[], void (*badusage)(void))
 		tkfont = EARGF(badusage());
 		break;
 	case 'r':		/* Set inferno root */
-		strecpy(rootdir, rootdir+sizeof(rootdir), EARGF(badusage()));
+		HOSTED_API(strecpy)(rootdir, rootdir+sizeof(rootdir), EARGF(badusage()));
 		break;
 	case '7':		/* use 7 bit colormap in X */
 		xtblbit = 1;
@@ -244,11 +244,11 @@ main(int argc, char *argv[])
 	savestartup(argc, argv);
 	/* set default root now, so either $EMU or -r can override it later */
 	if((p = getenv("INFERNO")) != nil || (p = getenv("ROOT")) != nil)
-		strecpy(rootdir, rootdir+sizeof(rootdir), p);
+		HOSTED_API(strecpy)(rootdir, rootdir+sizeof(rootdir), p);
 	opt = getenv("EMU");
 	if(opt != nil && *opt != '\0') {
 		enva[0] = "emu";
-		envc = tokenize(opt, &enva[1], sizeof(enva)-1) + 1;
+		envc = HOSTED_API(tokenize)(opt, &enva[1], sizeof(enva)-1) + 1;
 		enva[envc] = 0;
 		option(envc, enva, envusage);
 	}

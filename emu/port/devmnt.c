@@ -130,7 +130,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 		qunlock(&c->umqlock);
 		poperror();
 
-		strecpy(buf, buf+sizeof buf, m->version);
+		HOSTED_API(strecpy)(buf, buf+sizeof buf, m->version);
 		k = strlen(buf);
 		if(strncmp(buf, v, k) != 0){
 			snprint(buf, sizeof buf, "incompatible 9P versions %s %s", m->version, v);
