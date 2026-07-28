@@ -683,7 +683,7 @@ fspath(Cname *c, char *name, char *path)
 		path[n++] = '/';
 	strcpy(path+n, name);
 	if(isdotdot(name))
-		cleanname(path);
+		HOSTED_API(cleanname)(path);
 /*print("->%s\n", path);*/
 }
 

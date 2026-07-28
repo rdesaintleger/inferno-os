@@ -20,5 +20,5 @@ errfmt(Fmt *f)
 	char buf[ERRMAX];
 
 	rerrstr(buf, sizeof buf);
-	return _fmtcpy(f, buf, utflen(buf), strlen(buf));
+	return _fmtcpy(f, buf, HOSTED_API(utflen)(buf), strlen(buf));
 }

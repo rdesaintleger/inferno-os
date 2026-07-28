@@ -1,3 +1,5 @@
+#include "inferno/hosted.h"
+
 ulong	FPcontrol(ulong,ulong);
 ulong	FPstatus(ulong,ulong);
 void		FPsave(void*);
@@ -28,7 +30,7 @@ int		cread(Chan*, uchar*, int, vlong);
 void		cwrite(Chan*, uchar*, int, vlong);
 Chan*	cunique(Chan*);
 void		cupdate(Chan*, uchar*, int, vlong);
-char*	cleanname(char*);
+char*	HOSTED_API(cleanname)(char*);
 Chan*	cclone(Chan*);
 void		closeegrp(Egrp*);
 void		closefgrp(Fgrp*);

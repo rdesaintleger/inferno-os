@@ -342,7 +342,7 @@ Sys_byte2char(void *fp)
 		return;
 	}
 	p = (char*)a->data+n;
-	if(n+UTFmax <= a->len || fullrune(p, a->len-n))
+	if(n+UTFmax <= a->len || HOSTED_API(fullrune)(p, a->len-n))
 		w = HOSTED_API(chartorune)(&r, p);
 	else {
 		/* insufficient data */
@@ -384,7 +384,7 @@ Sys_char2byte(void *fp)
 		return;
 	}
 	r = c;
-	if(n+UTFmax<=a->len || runelen(c)<=a->len-n){
+	if(n+UTFmax<=a->len || HOSTED_API(runelen)(c)<=a->len-n){
 		*f->ret = HOSTED_API(runetochar)((char*)a->data+n, &r);
 		return;
 	}
@@ -484,7 +484,7 @@ utfnleng(char *s, int nb, int *ngood)
 		if(c < Runeself)
 			s++;
 		else {
-			if(s+UTFmax<=es || fullrune(s, es-s))
+			if(s+UTFmax<=es || HOSTED_API(fullrune)(s, es-s))
 				s += HOSTED_API(chartorune)(&rune, s);
 			else
 				break;

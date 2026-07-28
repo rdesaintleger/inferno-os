@@ -264,7 +264,7 @@ OP(cvtca)
 	}
 	if(ss->len < 0) {
 		l = -ss->len;
-		a = mem2array(nil, runenlen(ss->Srune, l));
+		a = mem2array(nil, HOSTED_API(runenlen)(ss->Srune, l));
 		p = (char*)a->data;
 		r = ss->Srune;
 		while(l--)
@@ -448,7 +448,7 @@ c2string(char *cs, int len)
 		c = *p;
 		if(c < Runeself)
 			p++;
-		else if(p+UTFmax<=(uchar*)ecs || fullrune((char*)p, (uchar*)ecs-p))
+		else if(p+UTFmax<=(uchar*)ecs || HOSTED_API(fullrune)((char*)p, (uchar*)ecs-p))
 			p += HOSTED_API(chartorune)(&junk, (char*)p);
 		else
 			break;

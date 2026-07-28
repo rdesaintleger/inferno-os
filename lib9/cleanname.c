@@ -5,7 +5,7 @@
  */
 #define SEP(x)	((x)=='/' || (x) == 0)
 char*
-cleanname(char *name)
+HOSTED_API(cleanname)(char *name)
 {
 	char *p, *q, *dotdot;
 	int rooted, erasedprefix;

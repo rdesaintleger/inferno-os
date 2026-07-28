@@ -404,7 +404,7 @@ tktposcount(TkTitem *i)
 		n = strlen(i->istring);
 	else
 	if(i->kind == TkTrune)
-		n = utflen(i->istring);
+		n = HOSTED_API(utflen)(i->istring);
 	else
 	if(i->kind == TkTmark || i->kind == TkTcontline)
 		n = 0;

@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 int
-utfnlen(char *s, long m)
+HOSTED_API(utfnlen)(char *s, long m)
 {
 	int c;
 	long n;
@@ -17,7 +17,7 @@ utfnlen(char *s, long m)
 			s++;
 			continue;
 		}
-		if(!fullrune(s, es-s))
+		if(!HOSTED_API(fullrune)(s, es-s))
 			break;
 		s += HOSTED_API(chartorune)(&rune, s);
 	}

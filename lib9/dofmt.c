@@ -149,7 +149,7 @@ _fmtcpy(Fmt *f, void *vm, int n, int sz)
 			r = *(uchar*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
+			else if((me - m) >= UTFmax || HOSTED_API(fullrune)(m, me-m))
 				m += HOSTED_API(chartorune)(&r, m);
 			else
 				break;
@@ -170,7 +170,7 @@ _fmtcpy(Fmt *f, void *vm, int n, int sz)
 			r = *(uchar*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
+			else if((me - m) >= UTFmax || HOSTED_API(fullrune)(m, me-m))
 				m += HOSTED_API(chartorune)(&r, m);
 			else
 				break;
@@ -259,10 +259,10 @@ fmtstrcpy(Fmt *f, char *s)
 		for(i = 0; i < p; i++)
 			if(s[i] == 0)
 				break;
-		return _fmtcpy(f, s, utfnlen(s, i), i);	/* BUG?: won't print a partial rune at end */
+		return _fmtcpy(f, s, HOSTED_API(utfnlen)(s, i), i);	/* BUG?: won't print a partial rune at end */
 	}
 
-	return _fmtcpy(f, s, utflen(s), strlen(s));
+	return _fmtcpy(f, s, HOSTED_API(utflen)(s), strlen(s));
 }
 
 /* fmt out a null terminated utf string */

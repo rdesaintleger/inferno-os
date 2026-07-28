@@ -80,7 +80,7 @@ rinsert(Bufblock *buf, Rune r)
 {
 	int n;
 
-	n = runelen(r);
+	n = HOSTED_API(runelen)(r);
 	if (buf->current+n > buf->end)
 		growbuf(buf);
 	HOSTED_API(runetochar)(buf->current, &r);

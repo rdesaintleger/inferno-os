@@ -116,7 +116,7 @@ HOSTED_API(runetochar)(char *str, Rune *rune)
 }
 
 int
-runelen(long c)
+HOSTED_API(runelen)(long c)
 {
 	Rune rune;
 	char str[10];
@@ -126,7 +126,7 @@ runelen(long c)
 }
 
 int
-runenlen(Rune *r, int nrune)
+HOSTED_API(runenlen)(Rune *r, int nrune)
 {
 	int nb, i;
 	Rune c;
@@ -148,7 +148,7 @@ runenlen(Rune *r, int nrune)
 }
 
 int
-fullrune(char *str, int n)
+HOSTED_API(fullrune)(char *str, int n)
 {
 	int  i;
 	Rune c;

@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 int
-utflen(char *s)
+HOSTED_API(utflen)(char *s)
 {
 	int c;
 	long n;

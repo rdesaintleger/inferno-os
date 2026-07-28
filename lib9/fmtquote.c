@@ -50,7 +50,7 @@ _quotesetup(char *s, Rune *r, int nin, int nout, Quoteinfo *q, int sharp, int ru
 			w = HOSTED_API(chartorune)(&c, s);
 		else{
 			c = *r;
-			w = runelen(c);
+			w = HOSTED_API(runelen)(c);
 		}
 
 		if(c == '\0')
@@ -139,7 +139,7 @@ qstrfmt(char *sin, Rune *rin, Quoteinfo *q, Fmt *f)
 			r = *(uchar*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
+			else if((me - m) >= UTFmax || HOSTED_API(fullrune)(m, me-m))
 				m += HOSTED_API(chartorune)(&r, m);
 			else
 				break;

@@ -779,7 +779,7 @@ tkentryinsert(Tk *tk, char *arg, char **val)
 		return TkNomem;
 
 	tkword(top, arg, text, text+n, nil);
-	n = utflen(text);
+	n = HOSTED_API(utflen)(text);
 	etext = realloc(tke->text, (tke->textlen+n+1)*sizeof(Rune));
 	if(etext == nil) {
 		free(text);

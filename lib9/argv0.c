@@ -1,1 +1,3 @@
-char*	argv0 = 0;
+#include <stddef.h>
+
+char *argv0 = NULL;

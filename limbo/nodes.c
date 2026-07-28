@@ -437,7 +437,7 @@ efold(Node *n)
 		left = efold(left);
 		n->left = left;
 		if(left->ty == tstring && left->op == Oconst)
-			n = mkconst(&n->src, utflen(left->decl->sym->name));
+			n = mkconst(&n->src, HOSTED_API(utflen)(left->decl->sym->name));
 		break;
 	case Oslice:
 		if(right->left->op == Onothing)

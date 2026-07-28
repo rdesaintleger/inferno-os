@@ -34,11 +34,7 @@
 #ifndef _LIB9_H_
 #define _LIB9_H_
 
-#include "hosted.h"
-
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "inferno/hosted.h"
 
 #ifndef EMU
 typedef struct Proc Proc;
@@ -48,21 +44,6 @@ typedef struct Proc Proc;
  * math module dtoa
  * #define __LITTLE_ENDIAN /usr/include/endian.h under linux
  */
-
-#define	nil		((void*)0)
-
-typedef uint8_t uchar;
-typedef int8_t schar;
-typedef uint32_t Rune;
-typedef int64_t vlong;
-typedef uint64_t uvlong;
-typedef uint32_t u32int;
-typedef uvlong u64int;
-
-typedef uint32_t mpdigit;	/* for /sys/include/mp.h */
-typedef uint16_t u16int;
-typedef uint8_t u8int;
-typedef uintptr_t uintptr;
 
 #define	USED(x)		if(x){}else{}
 #define	SET(x)
@@ -78,10 +59,6 @@ typedef uintptr_t uintptr;
  * most mem and string routines are declared by ANSI/POSIX files above
  */
 
-extern	char* HOSTED_API(strecpy)(char*, char*, char*);
-extern	char*	HOSTED_API(strdup)(const char*);
-extern	int HOSTED_API(tokenize)(char*, char**, int);
-
 enum
 {
 	UTFmax		= 4,		/* maximum bytes per rune */
@@ -92,16 +69,8 @@ enum
 	Runemask	= 0x1FFFFF,	/* bits used by runes (see grep) */
 };
 
-/*
- * rune routines
- */
-extern	int	HOSTED_API(runetochar)(char*, Rune*);
-extern	int	HOSTED_API(chartorune)(Rune*, char*);
-extern	int	runelen(long);
-extern	int	runenlen(Rune*, int);
-extern	int	fullrune(char*, int);
-extern	int	utflen(char*);
-extern	int	utfnlen(char*, long);
+#include "inferno/protos/lib9.h"
+
 extern	char*	utfrune(char*, long);
 extern	char*	utfrrune(char*, long);
 extern	char*	utfutf(char*, char*);
@@ -247,7 +216,7 @@ extern	vlong	osnsec(void);
  * one-of-a-kind
  */
 extern	void	_assert(char*);
-extern	char*	cleanname(char*);
+extern	char*	HOSTED_API(cleanname)(char*);
 extern	int	getfields(char*, char**, int, int, char*);
 extern	char*	HOSTED_API(getwd)(char*, int);
 extern	double	ipow10(int);

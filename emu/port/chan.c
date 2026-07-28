@@ -874,7 +874,7 @@ cleancname(Cname *n)
 		p = strchr(n->s, '/');
 		if(p == nil)
 			return;
-		cleanname(p);
+		HOSTED_API(cleanname)(p);
 
 		/*
 		 * The correct name is #i rather than #i/,
@@ -883,7 +883,7 @@ cleancname(Cname *n)
 		if(strcmp(p, "/")==0 && n->s[1] != '/')
 			*p = '\0';
 	}else
-		cleanname(n->s);
+		HOSTED_API(cleanname)(n->s);
 	n->len = strlen(n->s);
 }
 

@@ -1963,7 +1963,7 @@ cleann(char *s)
 	}
 	free(r);
 	/* print("cleann: %s\n", p); */
-	return cleanname(s);
+	return HOSTED_API(cleanname)(s);
 }
 
 char *

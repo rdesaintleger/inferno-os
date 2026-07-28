@@ -82,7 +82,7 @@ void	_fmtunlock(void);
 	do{\
 	Rune _rune;\
 	int _runelen;\
-	if(t + UTFmax > (char*)s && t + (_runelen = runelen(r)) > (char*)s){\
+	if(t + UTFmax > (char*)s && t + (_runelen = HOSTED_API(runelen)(r)) > (char*)s){\
 		t = _fmtflush(f, t, _runelen);\
 		if(t != nil)\
 			s = f->stop;\
