@@ -713,8 +713,8 @@ alphadraw(Memdrawparam *par)
 	}
 
 	if(z->n < ndrawbuf){
-		free(z->p);
-		if((z->p = mallocz(ndrawbuf, 0)) == nil){
+		HOSTED_API(free)(z->p);
+		if((z->p = HOSTED_API(mallocz)(ndrawbuf, 0)) == nil){
 			z->inuse = 0;
 			return 0;
 		}

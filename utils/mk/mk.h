@@ -157,7 +157,7 @@ extern	char 	*shflags;
 #define	BIGBLOCK	20000
 
 #define	SEP(c)		(((c)==' ')||((c)=='\t')||((c)=='\n'))
-#define WORDCHR(r)	((r) > ' ' && !utfrune("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", (r)))
+#define WORDCHR(r)	((r) > ' ' && !HOSTED_API(utfrune)("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", (r)))
 
 #define	DEBUG(x)	(debug&(x))
 #define		D_PARSE		0x01

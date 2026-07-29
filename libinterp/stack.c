@@ -27,7 +27,7 @@ newstack(Prog *p)
 	/* 16 bytes for Stkext record keeping */
 	if(l < t->size+16)
 		l = t->size+16;
-	ns = mallocz(l, 0);
+	ns = HOSTED_API(mallocz)(l, 0);
 	if(ns == nil)
 		error(exNomem);
 
@@ -58,7 +58,7 @@ extend(void)
 	/* 16 bytes for Stkext record keeping */
 	if(l < t->size+16)
 		l = 2*t->size+16;
-	ns = mallocz(l, 0);
+	ns = HOSTED_API(mallocz)(l, 0);
 	if(ns == nil)
 		error(exNomem);
 
@@ -91,7 +91,7 @@ unextend(Frame *f)
 	t = sx->reg.TR;
 	if (t->np)
 		freeptrs(f, t);
-	free(sx);
+	HOSTED_API(free)(sx);
 }
 
 void
@@ -113,6 +113,6 @@ unframe(void)
 		sx = SEXTYPE(f);
 		R.TS = sx->reg.TS;
 		R.EX = sx->reg.EX;
-		free(sx);
+		HOSTED_API(free)(sx);
 	}
 }

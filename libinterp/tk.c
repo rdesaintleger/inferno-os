@@ -164,20 +164,20 @@ Tk_cmd(void *a)
 	e = tkexec(t, string2c(f->arg), &val);
 	unlockctxt(t->ctxt);
 	if(e == TkNomem){
-		free(val);
+		HOSTED_API(free)(val);
 		error(exNomem);		/* what about f->ret? */
 	}
 	if(e != nil && t->errx[0] != '\0'){
 		char *s = tkerrstr(t, e);
 
 		retstr(s, f->ret);
-		free(s);
+		HOSTED_API(free)(s);
 	}
 	else
 		retstr(e == nil ? val : e, f->ret);
 	if(tkwiretap != nil)
 		tkwiretap(t, string2c(f->arg), val, nil, nil);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 void
@@ -509,7 +509,7 @@ tkmkvar(TkTop *t, char *name, int type)
 	if(type == 0)
 		return nil;
 
-	v = malloc(sizeof(TkVar)+strlen(name)+1);
+	v = HOSTED_API(malloc)(sizeof(TkVar)+strlen(name)+1);
 	if(v == nil)
 		return nil;
 	strcpy(v->name, name);
@@ -535,14 +535,14 @@ tkfreevar(TkTop *t, char *name, int swept)
 			*l = p->link;
 			switch(p->type) {
 			default:
-				free(p->value);
+				HOSTED_API(free)(p->value);
 				break;
 			case TkVchan:
 				if(!swept)
 					destroy(p->value);
 				break;
 			}
-			free(p);
+			HOSTED_API(free)(p);
 			return;
 		}
 		l = &p->link;
@@ -721,7 +721,7 @@ tkaddpanelimage(TkTop *t, Draw_Image *di, Image **i)
 		}
 	}
 
-	pi = malloc(sizeof(TkPanelimage));
+	pi = HOSTED_API(malloc)(sizeof(TkPanelimage));
 	if (pi == nil)
 		return TkNomem;
 	pi->image = di;
@@ -760,7 +760,7 @@ tkdelpanelimage(TkTop *t, Image *i)
 			unlockdisplay(t->display);
 	}
 		
-	free(pi);
+	HOSTED_API(free)(pi);
 }
 
 void
@@ -988,21 +988,21 @@ tkfreetop(Heap *h, int swept)
 		nextv = v->link;
 		switch(v->type) {
 		default:
-			free(v->value);
+			HOSTED_API(free)(v->value);
 			break;
 		case TkVchan:
 			if(!swept)
 				destroy(v->value);
 			break;
 		}
-		free(v);
+		HOSTED_API(free)(v);
 	}
 
 	for (pi = t->panelimages; pi; pi = nextpi) {
 		if (!swept)
 			destroy(pi->image);
 		nextpi = pi->link;
-		free(pi);
+		HOSTED_API(free)(pi);
 	}
 
 	for(i = t->imgs; i; i = nexti) {
@@ -1209,7 +1209,7 @@ tkwreq(TkTop *top, char *fmt, ...)
 	buf = vsmprint(fmt, arg);
 	va_end(arg);
 	tktolimbo(top->wreq, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 int
@@ -1283,7 +1283,7 @@ tkcursorswitch(TkTop *top, Image *i, TkImg *img)
 	}
 	nb = ci->r.max.x/8 * ci->r.max.y;
 	maxb = 7 + 12*4 + 2*nb + 1;
-	buf = mallocz(maxb, 0);
+	buf = HOSTED_API(mallocz)(maxb, 0);
 	if(buf == nil)
 		return TkNomem;
 	n = sprint(buf, "cursor %d %d %d %d ", i->r.min.x, i->r.min.y, ci->r.max.x, ci->r.max.y);
@@ -1291,7 +1291,7 @@ tkcursorswitch(TkTop *top, Image *i, TkImg *img)
 	hexify(buf+n, nb);
 	tktolimbo(top->wreq, buf);
 	if(img != nil){
-		free(img->cursor);
+		HOSTED_API(free)(img->cursor);
 		img->cursor = buf;
 	}
 	freeimage(scratch);

@@ -180,7 +180,7 @@ addlist(Idlist **hd, int id)
 	Idlist *il;
 
 	if(frelist == nil)
-		il = (Idlist*)malloc(sizeof(Idlist));
+		il = (Idlist*)HOSTED_API(malloc)(sizeof(Idlist));
 	else{
 		il = frelist;
 		frelist = frelist->next;
@@ -550,7 +550,7 @@ bnew(int n, int bits)
 static void
 bfree(Bits b)
 {
-	free(b.b);
+	HOSTED_API(free)(b.b);
 }
 
 static void
@@ -719,7 +719,7 @@ warning(Inst *i, char *s, Decl *d, Decl *sd)
 		return;
 	}
 	n += strlen(d->sym->name);
-	f = malloc(n+1);
+	f = HOSTED_API(malloc)(n+1);
 	strcpy(f, d->sym->name);
 	for(ds = sd; ds != nil; ds = ds->next){
 		if(ds->link == d){
@@ -728,7 +728,7 @@ warning(Inst *i, char *s, Decl *d, Decl *sd)
 		}
 	}
 	warn(i->src.start, "%s: %s", f, s);
-	free(f);
+	HOSTED_API(free)(f);
 }
 
 static int
@@ -836,7 +836,7 @@ blfree(Blist *bl)
 
 	for( ; bl != nil; bl = nbl){
 		nbl = bl->next;
-		free(bl);
+		HOSTED_API(free)(bl);
 	}
 }
 
@@ -847,7 +847,7 @@ freebits(Bits *bs, int nv)
 
 	for(i = 0; i < nv; i++)
 		bfree(bs[i]);
-	free(bs);
+	HOSTED_API(free)(bs);
 }
 
 static void
@@ -863,7 +863,7 @@ freeblks(Block *b)
 		bfree(b->in);
 		bfree(b->out);
 		nb = b->next;
-		free(b);
+		HOSTED_API(free)(b);
 	}
 }
 
@@ -935,7 +935,7 @@ leader(Inst *i, Array *ab)
 			ab->a = allocmem(2*m*sizeof(Block*));
 			memcpy(ab->a, a, m*sizeof(Block*));
 			ab->m = 2*m;
-			free(a);
+			HOSTED_API(free)(a);
 		}
 		b = mkblock(i);
 		b->dfn = n;
@@ -1098,8 +1098,8 @@ mkblocks(Inst *in, int *nb)
 		}
 	}
 	*nb = ab->n;
-	free(ab->a);
-	free(ab);
+	HOSTED_API(free)(ab->a);
+	HOSTED_API(free)(ab);
 	b = firstb->next;
 	b->prev = nil;
 	return b;

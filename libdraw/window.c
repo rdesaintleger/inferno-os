@@ -19,7 +19,7 @@ allocscreen(Image *image, Image *fill, int public)
 		kwerrstr("allocscreen: image and fill on different displays");
 		return 0;
 	}
-	s = malloc(sizeof(Screen));
+	s = HOSTED_API(malloc)(sizeof(Screen));
 	if(s == 0)
 		return 0;
 	SET(id);
@@ -27,7 +27,7 @@ allocscreen(Image *image, Image *fill, int public)
 		/* loop until find a free id */
 		a = bufimage(d, 1+4+4+4+1);
 		if(a == 0){
-			free(s);
+			HOSTED_API(free)(s);
 			return 0;
 		}
 		id = ++screenid;
@@ -54,13 +54,13 @@ publicscreen(Display *d, int id, ulong chan)
 	uchar *a;
 	Screen *s;
 
-	s = malloc(sizeof(Screen));
+	s = HOSTED_API(malloc)(sizeof(Screen));
 	if(s == 0)
 		return 0;
 	a = bufimage(d, 1+4+4);
 	if(a == 0){
     Error:
-		free(s);
+		HOSTED_API(free)(s);
 		return 0;
 	}
 	a[0] = 'S';
@@ -96,7 +96,7 @@ freescreen(Screen *s)
 	 */
 	if(flushimage(d, 1) < 0)
 		return -1;
-	free(s);
+	HOSTED_API(free)(s);
 	return 1;
 }
 

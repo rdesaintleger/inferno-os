@@ -40,9 +40,9 @@ mpkaratsuba(mpdigit *a, int alen, mpdigit *b, int blen, mpdigit *p)
 	v1 = b + v0len;
 
 	// room for the partial products
-	t = mallocz(Dbytes*5*(2*n+1), 1);
+	t = HOSTED_API(mallocz)(Dbytes*5*(2*n+1), 1);
 	if(t == nil)
-		sysfatal("mpkaratsuba: %r");
+		HOSTED_API(sysfatal)("mpkaratsuba: %r");
 	u0v0 = t;
 	u1v1 = t + (2*n+1);
 	diffprod = t + 2*(2*n+1);
@@ -92,7 +92,7 @@ mpkaratsuba(mpdigit *a, int alen, mpdigit *b, int blen, mpdigit *p)
 		mpvecadd(res+n, reslen-n, diffprod, u0len+v0len, res+n);
 	memmove(p, res, (alen+blen)*Dbytes);
 
-	free(t);
+	HOSTED_API(free)(t);
 }
 
 #define KARATSUBAMIN 32

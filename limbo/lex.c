@@ -1155,7 +1155,7 @@ enterstring(char *str, int n)
 	h %= HashSize;
 	for(s = strings[h]; s != nil; s = s->next){
 		if(s->name[0] == c0 && s->len == n && memcmp(s->name, str, n) == 0){
-			free(str);
+			HOSTED_API(free)(str);
 			return s;
 		}
 	}
@@ -1434,7 +1434,7 @@ allocmem(ulong n)
 {
 	void *p;
 
-	p = malloc(n != 0? n: 1);
+	p = HOSTED_API(malloc)(n != 0? n: 1);
 	if(p == nil)
 		fatal("out of memory");
 	return p;
@@ -1444,7 +1444,7 @@ void*
 reallocmem(void *p, ulong n)
 {
 	if(p == nil)
-		p = malloc(n);
+		p = HOSTED_API(malloc)(n);
 	else
 		p = realloc(p, n);
 	if(p == nil)

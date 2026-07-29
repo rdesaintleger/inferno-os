@@ -159,7 +159,7 @@ static void
 cmdinit(void)
 {
 	cmd.maxconv = 1000;
-	cmd.conv = mallocz(sizeof(Conv*)*(cmd.maxconv+1), 1);
+	cmd.conv = HOSTED_API(mallocz)(sizeof(Conv*)*(cmd.maxconv+1), 1);
 	/* cmd.conv is checked by cmdattach, below */
 }
 
@@ -294,13 +294,13 @@ closeconv(Conv *c)
 	c->killonclose = 0;
 	c->killed = 0;
 	c->nice = 0;
-	free(c->cmd);
+	HOSTED_API(free)(c->cmd);
 	c->cmd = nil;
 	if(c->waitq != nil){
 		qfree(c->waitq);
 		c->waitq = nil;
 	}
-	free(c->error);
+	HOSTED_API(free)(c->error);
 	c->error = nil;
 }
 
@@ -448,7 +448,7 @@ cmdwrite(Chan *ch, void *a, long n, vlong offset)
 		c = cmd.conv[CONV(ch->qid)];
 		cb = parsecmd(a, n);
 		if(waserror()){
-			free(cb);
+			HOSTED_API(free)(cb);
 			nexterror();
 		}
 		ct = lookupcmd(cb, cmdtab, nelem(cmdtab));
@@ -461,7 +461,7 @@ cmdwrite(Chan *ch, void *a, long n, vlong offset)
 			qlock(&c->l);
 			if(waserror()){
 				qunlock(&c->l);
-				free(cb);
+				HOSTED_API(free)(cb);
 				nexterror();
 			}
 			if(c->child != nil || c->cmd != nil)
@@ -472,7 +472,7 @@ cmdwrite(Chan *ch, void *a, long n, vlong offset)
 			if(cb->nf < 1)
 				error(Etoosmall);
 			kproc("cmdproc", cmdproc, c, 0);	/* cmdproc held back until unlock below */
-			free(c->cmd);
+			HOSTED_API(free)(c->cmd);
 			c->cmd = cb;	/* don't free cb */
 			c->state = "Execute";
 			poperror();
@@ -505,7 +505,7 @@ cmdwrite(Chan *ch, void *a, long n, vlong offset)
 			break;
 		}
 		poperror();
-		free(cb);
+		HOSTED_API(free)(cb);
 		break;
 	case Qdata:
 		c = cmd.conv[CONV(ch->qid)];
@@ -541,11 +541,11 @@ cmdwstat(Chan *c, uchar *dp, int n)
 	case Qctl:
 	case Qdata:
 	case Qstderr:
-		d = malloc(sizeof(*d)+n);
+		d = HOSTED_API(malloc)(sizeof(*d)+n);
 		if(d == nil)
 			error(Enomem);
 		if(waserror()){
-			free(d);
+			HOSTED_API(free)(d);
 			nexterror();
 		}
 		n = convM2D(dp, n, d, (char*)&d[1]);
@@ -559,7 +559,7 @@ cmdwstat(Chan *c, uchar *dp, int n)
 		if(d->mode != ~0UL)
 			cv->perm = d->mode & 0777;
 		poperror();
-		free(d);
+		HOSTED_API(free)(d);
 		break;
 	}
 	return n;
@@ -576,7 +576,7 @@ cmdclone(char *user)
 	for(pp = cmd.conv; pp < ep; pp++) {
 		c = *pp;
 		if(c == nil) {
-			c = malloc(sizeof(Conv));
+			c = HOSTED_API(malloc)(sizeof(Conv));
 			if(c == nil)
 				error(Enomem);
 			qlock(&c->l);

@@ -129,7 +129,7 @@ Freetype_newface(void *fp)
 	release();
 	err = ftnewface(path, f->index, &face->ftface, &finfo);
 	acquire();
-	free(path);
+	HOSTED_API(free)(path);
 	if (err != nil) {
 		*f->ret = H;
 		destroy(face);

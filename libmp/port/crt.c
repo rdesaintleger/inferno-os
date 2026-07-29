@@ -23,9 +23,9 @@ crtpre(int n, mpint **m)
 	int i, j;
 	mpint *u;
 
-	crt = malloc(sizeof(CRTpre)+sizeof(mpint)*3*n);
+	crt = HOSTED_API(malloc)(sizeof(CRTpre)+sizeof(mpint)*3*n);
 	if(crt == nil)
-		sysfatal("crtpre: %r");
+		HOSTED_API(sysfatal)("crtpre: %r");
 	crt->m = crt->a;
 	crt->c = crt->a+n;
 	crt->p = crt->c+n;
@@ -68,7 +68,7 @@ crtprefree(CRTpre *crt)
 		mpfree(crt->p[i]);
 		mpfree(crt->m[i]);
 	}
-	free(crt);
+	HOSTED_API(free)(crt);
 }
 
 // convert to residues, returns a newly created structure
@@ -78,9 +78,9 @@ crtin(CRTpre *crt, mpint *x)
 	int i;
 	CRTres *res;
 
-	res = malloc(sizeof(CRTres)+sizeof(mpint)*crt->n);
+	res = HOSTED_API(malloc)(sizeof(CRTres)+sizeof(mpint)*crt->n);
 	if(res == nil)
-		sysfatal("crtin: %r");
+		HOSTED_API(sysfatal)("crtin: %r");
 	res->n = crt->n;
 	for(i = 0; i < res->n; i++){
 		res->r[i] = mpnew(0);
@@ -118,5 +118,5 @@ crtresfree(CRTres *res)
 
 	for(i = 0; i < res->n; i++)
 		mpfree(res->r[i]);
-	free(res);
+	HOSTED_API(free)(res);
 }

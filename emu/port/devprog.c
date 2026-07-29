@@ -288,26 +288,26 @@ progopen(Chan *c, int omode)
 		o->childq = c->aux;
 		break;
 	case Qns:
-		c->aux = malloc(sizeof(Mntwalk));
+		c->aux = HOSTED_API(malloc)(sizeof(Mntwalk));
 		if(c->aux == nil)
 			error(Enomem);
 		break;
 	case Qheap:
 		if(SECURE || p->group->flags&Pprivatemem || omode != ORDWR)
 			error(Eperm);
-		c->aux = malloc(sizeof(Heapqry));
+		c->aux = HOSTED_API(malloc)(sizeof(Heapqry));
 		if(c->aux == nil)
 			error(Enomem);
 		break;
 	case Qdbgctl:
 		if(SECURE || p->group->flags&Pprivatemem || omode != ORDWR)
 			error(Eperm);
-		ctl = malloc(sizeof(Progctl));
+		ctl = HOSTED_API(malloc)(sizeof(Progctl));
 		if(ctl == nil)
 			error(Enomem);
 		ctl->q = qopen(1024, Qmsg, nil, nil);
 		if(ctl->q == nil) {
-			free(ctl);
+			HOSTED_API(free)(ctl);
 			error(Enomem);
 		}
 		ctl->bpts = nil;
@@ -377,7 +377,7 @@ closedbgctl(Progctl *ctl, Prog *p)
 		}
 	}
 	qfree(ctl->q);
-	free(ctl);
+	HOSTED_API(free)(ctl);
 }
 
 static void
@@ -391,7 +391,7 @@ progclose(Chan *c)
 	switch(QID(c->qid)) {
 	case Qns:
 	case Qheap:
-		free(c->aux);
+		HOSTED_API(free)(c->aux);
 		break;
 	case Qdbgctl:
 		if((c->flag & COPEN) == 0)
@@ -1046,7 +1046,7 @@ progwrite(Chan *c, void *va, long n, vlong offset)
 	case Qctl:
 		cb = parsecmd(va, n);
 		if(waserror()){
-			free(cb);
+			HOSTED_API(free)(cb);
 			nexterror();
 		}
 		ct = lookupcmd(cb, progcmd, nelem(progcmd));
@@ -1075,12 +1075,12 @@ progwrite(Chan *c, void *va, long n, vlong offset)
 			break;
 		}
 		poperror();
-		free(cb);
+		HOSTED_API(free)(cb);
 		break;
 	case Qdbgctl:
 		cb = parsecmd(va, n);
 		if(waserror()){
-			free(cb);
+			HOSTED_API(free)(cb);
 			nexterror();
 		}
 		if(cb->nf == 1 && strncmp(cb->f[0], "step", 4) == 0)
@@ -1135,7 +1135,7 @@ progwrite(Chan *c, void *va, long n, vlong offset)
 			break;
 		}
 		poperror();
-		free(cb);
+		HOSTED_API(free)(cb);
 		break;
 	case Qheap:
 		/*
@@ -1173,7 +1173,7 @@ setbpt(Bpt *bpts, char *path, int pc)
 	Bpt *b;
 
 	n = strlen(path);
-	b = mallocz(sizeof *b + n, 0);
+	b = HOSTED_API(mallocz)(sizeof *b + n, 0);
 	if(b == nil)
 		return bpts;
 	b->pc = pc;
@@ -1195,7 +1195,7 @@ delbpt(Bpt *bpts, char *path, int pc)
 	for(b = bpts; b != nil; b = b->next){
 		if(b->pc == pc && strcmp(b->path, path) == 0) {
 			*last = b->next;
-			free(b);
+			HOSTED_API(free)(b);
 			break;
 		}
 		last = &b->next;
@@ -1210,7 +1210,7 @@ freebpts(Bpt *b)
 
 	for(; b != nil; b = next){
 		next = b->next;
-		free(b);
+		HOSTED_API(free)(b);
 	}
 }
 

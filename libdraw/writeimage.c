@@ -40,17 +40,17 @@ writeimage(int fd, Image *i, int dolock)
 	r = i->r;
 	bpl = bytesperline(r, i->depth);
 	n = Dy(r)*bpl;
-	data = malloc(n);
+	data = HOSTED_API(malloc)(n);
 	ncblock = _compblocksize(r, i->depth);
-	outbuf = malloc(ncblock);
-	hash = malloc(NHASH*sizeof(Hlist));
-	chain = malloc(NMEM*sizeof(Hlist));
+	outbuf = HOSTED_API(malloc)(ncblock);
+	hash = HOSTED_API(malloc)(NHASH*sizeof(Hlist));
+	chain = HOSTED_API(malloc)(NMEM*sizeof(Hlist));
 	if(data == 0 || outbuf == 0 || hash == 0 || chain == 0){
 	ErrOut:
-		free(data);
-		free(outbuf);
-		free(hash);
-		free(chain);
+		HOSTED_API(free)(data);
+		HOSTED_API(free)(outbuf);
+		HOSTED_API(free)(hash);
+		HOSTED_API(free)(chain);
 		return -1;
 	}
 	for(miny = r.min.y; miny != r.max.y; miny += dy){
@@ -177,9 +177,9 @@ writeimage(int fd, Image *i, int dolock)
 		libwrite(fd, outbuf, n);
 		r.min.y = r.max.y;
 	}
-	free(data);
-	free(outbuf);
-	free(hash);
-	free(chain);
+	HOSTED_API(free)(data);
+	HOSTED_API(free)(outbuf);
+	HOSTED_API(free)(hash);
+	HOSTED_API(free)(chain);
 	return 0;
 }

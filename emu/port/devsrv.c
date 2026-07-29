@@ -160,7 +160,7 @@ srvattach(char *spec)
 		}
 	}
 
-	d = malloc(sizeof(SrvFile));
+	d = HOSTED_API(malloc)(sizeof(SrvFile));
 	if(d == nil)
 		error(Enomem);
 
@@ -285,7 +285,7 @@ srvwstat(Chan *c, uchar *dp, int n)
 
 	d = smalloc(sizeof(*d)+n);
 	if(waserror()){
-		free(d);
+		HOSTED_API(free)(d);
 		nexterror();
 	}
 	n = convM2D(dp, n, d, (char*)&d[1]);
@@ -309,7 +309,7 @@ srvwstat(Chan *c, uchar *dp, int n)
 	if(d->length != (vlong)-1)
 		sf->length = d->length;
 	poperror();
-	free(d);
+	HOSTED_API(free)(d);
 	return n;
 }
 
@@ -327,10 +327,10 @@ srvputdir(SrvFile *dir)
 			*l = d->devlist;
 			break;
 		}
-	free(dir->spec);
-	free(dir->user);
-	free(dir->name);
-	free(dir);
+	HOSTED_API(free)(dir->spec);
+	HOSTED_API(free)(dir->user);
+	HOSTED_API(free)(dir->name);
+	HOSTED_API(free)(dir);
 }
 
 static void
@@ -420,9 +420,9 @@ srvchkref(SrvFile *sf)
 	if(sf->dir != nil)
 		srvputdir(sf->dir);
 
-	free(sf->user);
-	free(sf->name);
-	free(sf);
+	HOSTED_API(free)(sf->user);
+	HOSTED_API(free)(sf->name);
+	HOSTED_API(free)(sf);
 }
 
 static void
@@ -777,7 +777,7 @@ srvf2c(char *dir, char *file, Sys_FileIO *io)
 			error(Eexist);
 	}
 
-	f = malloc(sizeof(SrvFile));
+	f = HOSTED_API(malloc)(sizeof(SrvFile));
 	if(f == nil)
 		error(Enomem);
 

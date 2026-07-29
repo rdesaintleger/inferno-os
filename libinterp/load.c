@@ -143,7 +143,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 	istream = code;
 	isp = &istream;
 
-	m = malloc(sizeof(Module));
+	m = HOSTED_API(malloc)(sizeof(Module));
 	if(m == nil)
 		return nil;
 
@@ -194,7 +194,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 	}
 
 	m->nprog = isize;
-	m->prog = mallocz(isize*sizeof(Inst), 0);
+	m->prog = HOSTED_API(mallocz)(isize*sizeof(Inst), 0);
 	if(m->prog == nil) {
 		kwerrstr(exNomem);
 		goto bad;
@@ -250,7 +250,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 	}
 
 	m->ntype = hsize;
-	m->type = malloc(hsize*sizeof(Type*));
+	m->type = HOSTED_API(malloc)(hsize*sizeof(Type*));
 	if(m->type == nil) {
 		kwerrstr(exNomem);
 		goto bad;
@@ -387,7 +387,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 	while(*istream++)
 		;
 
-	l = m->ext = (Link*)malloc((lsize+1)*sizeof(Link));
+	l = m->ext = (Link*)HOSTED_API(malloc)((lsize+1)*sizeof(Link));
 	if(l == nil){
 		kwerrstr(exNomem);
 		goto bad;
@@ -415,14 +415,14 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 		Import *i1, **i2;
 
 		nl = operand(isp);
-		i2 = m->ldt = (Import**)malloc((nl+1)*sizeof(Import*));
+		i2 = m->ldt = (Import**)HOSTED_API(malloc)((nl+1)*sizeof(Import*));
 		if(i2 == nil){
 			kwerrstr(exNomem);
 			goto bad;
 		}
 		for(i = 0; i < nl; i++, i2++){
 			n = operand(isp);
-			i1 = *i2 = (Import*)malloc((n+1)*sizeof(Import));
+			i1 = *i2 = (Import*)HOSTED_API(malloc)((n+1)*sizeof(Import));
 			if(i1 == nil){
 				kwerrstr(exNomem);
 				goto bad;
@@ -447,7 +447,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 		Except *e;
 
 		nh = operand(isp);
-		m->htab = malloc((nh+1)*sizeof(Handler));
+		m->htab = HOSTED_API(malloc)((nh+1)*sizeof(Handler));
 		if(m->htab == nil){
 			kwerrstr(exNomem);
 			goto bad;
@@ -463,7 +463,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			n = operand(isp);
 			h->ne = n>>16;
 			n &= 0xffff;
-			h->etab = malloc((n+1)*sizeof(Except));
+			h->etab = HOSTED_API(malloc)((n+1)*sizeof(Except));
 			if(h->etab == nil){
 				kwerrstr(exNomem);
 				goto bad;
@@ -512,7 +512,7 @@ newmod(char *s)
 {
 	Module *m;
 
-	m = malloc(sizeof(Module));
+	m = HOSTED_API(malloc)(sizeof(Module));
 	if(m == nil)
 		error(exNomem);
 	m->ref = 1;
@@ -520,7 +520,7 @@ newmod(char *s)
 	m->origmp = H;
 	m->name = HOSTED_API(strdup)(s);
 	if(m->name == nil) {
-		free(m);
+		HOSTED_API(free)(m);
 		error(exNomem);
 	}
 	m->link = modules;
@@ -553,29 +553,29 @@ freemod(Module *m)
 	if(m->type != nil) {
 		for(i = 0; i < m->ntype; i++)
 			freetype(m->type[i]);
-		free(m->type);
+		HOSTED_API(free)(m->type);
 	}
-	free(m->name);
-	free(m->prog);
-	free(m->path);
-	free(m->pctab);
+	HOSTED_API(free)(m->name);
+	HOSTED_API(free)(m->prog);
+	HOSTED_API(free)(m->path);
+	HOSTED_API(free)(m->pctab);
 	if(m->ldt != nil){
 		for(i2 = m->ldt; *i2 != nil; i2++){
 			for(i1 = *i2; i1->name != nil; i1++)
-				free(i1->name);
-			free(*i2);
+				HOSTED_API(free)(i1->name);
+			HOSTED_API(free)(*i2);
 		}
-		free(m->ldt);
+		HOSTED_API(free)(m->ldt);
 	}
 	if(m->htab != nil){
 		for(h = m->htab; h->etab != nil; h++){
 			for(e = h->etab; e->s != nil; e++)
-				free(e->s);
-			free(h->etab);
+				HOSTED_API(free)(e->s);
+			HOSTED_API(free)(h->etab);
 		}
-		free(m->htab);
+		HOSTED_API(free)(m->htab);
 	}
-	free(m);
+	HOSTED_API(free)(m);
 }
 
 void

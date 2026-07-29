@@ -130,8 +130,8 @@ buildenv(Job *j, int slot)
 			}
 		}
 		*l = w->next;
-		free(w->s);
-		free(w);
+		HOSTED_API(free)(w->s);
+		HOSTED_API(free)(w);
 		w = *l;
 	}
 	envupd("newmember", v);

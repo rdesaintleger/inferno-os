@@ -15,7 +15,7 @@ mptole(mpint *b, uchar *p, uint n, uchar **pp)
 
 	if(p == nil){
 		n = (b->top+1)*Dbytes;
-		p = malloc(n);
+		p = HOSTED_API(malloc)(n);
 	}
 	if(pp != nil)
 		*pp = p;

@@ -148,12 +148,12 @@ mpshut(Fsdev *mp)
 	nm = mp->name;
 	mp->name = nil;		// prevent others from using this.
 	if (nm)
-		free(nm);
+		HOSTED_API(free)(nm);
 	for (i = 0; i < mp->ndevs; i++){
 		if (mp->idev[i] != nil)
 			cclose(mp->idev[i]);
 		if (mp->iname[i])
-			free(mp->iname[i]);
+			HOSTED_API(free)(mp->iname[i]);
 	}
 	memset(mp, 0, sizeof(*mp));
 }
@@ -184,7 +184,7 @@ mconfig(char* a, long n)	// "name idev0 idev1"
 	}
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		HOSTED_API(free)(cb);
 		nexterror();
 	}
 	c = oldc;
@@ -227,7 +227,7 @@ mconfig(char* a, long n)	// "name idev0 idev1"
 	}
 	setdsize(mp);
 	poperror();
-	free(cb);
+	HOSTED_API(free)(cb);
 	poperror();
 	poperror();
 	configed = 1;
@@ -265,7 +265,7 @@ rdconf(void)
 		error("config string must start with `fsdev:'");
 	kstrdup(&c, _confstr + strlen(Cfgstr));
 	if(waserror()){
-		free(c);
+		HOSTED_API(free)(c);
 		nexterror();
 	}
 	memset(_confstr, 0, sizeof(_confstr));

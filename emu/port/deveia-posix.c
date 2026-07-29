@@ -241,7 +241,7 @@ eiainit(void)
 		return;
 
 	ndir = Nqid*nports+1;
-	dp = eiadir = malloc(ndir*sizeof(Dirtab));
+	dp = eiadir = HOSTED_API(malloc)(ndir*sizeof(Dirtab));
 	if(dp == 0)
 		panic("eiainit");
 	strcpy(dp->name, ".");
@@ -249,7 +249,7 @@ eiainit(void)
 	dp->qid.type = QTDIR;
 	dp->perm = DMDIR|0555;
 	dp++;
-	eia = malloc(nports*sizeof(Eia));
+	eia = HOSTED_API(malloc)(nports*sizeof(Eia));
 	if(eia == 0)
 		panic("eiainit");
 	for(i = 0; i < nports; i++) {

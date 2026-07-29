@@ -85,7 +85,7 @@ envopen(Chan *c, int mode)
 		error(Enonexist);
 	}
 	if(mode == (OWRITE|OTRUNC) && e->val) {
-		free(e->val);
+		HOSTED_API(free)(e->val);
 		e->val = 0;
 		e->len = 0;
 		e->qid.vers++;
@@ -196,7 +196,7 @@ envwrite(Chan *c, void *a, long n, vlong offset)
 		s = smalloc(ve);
 		memmove(s, e->val, e->len);
 		if(e->val)
-			free(e->val);
+			HOSTED_API(free)(e->val);
 		e->val = s;
 		e->len = ve;
 	}
@@ -227,10 +227,10 @@ envremove(Chan *c)
 	*l = e->next;
 	eg->vers++;
 	qunlock(&eg->l);
-	free(e->var);
+	HOSTED_API(free)(e->var);
 	if(e->val != nil)
-		free(e->val);
-	free(e);
+		HOSTED_API(free)(e->val);
+	HOSTED_API(free)(e);
 }
 
 Dev envdevtab = {

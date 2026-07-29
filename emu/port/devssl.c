@@ -195,7 +195,7 @@ sslgen(Chan *c, char *dname, Dirtab *d, int nd, int s, Dir *dp)
 static void
 sslinit(void)
 {
-	if((dstate = malloc(sizeof(Dstate*) * maxdstate)) == 0)
+	if((dstate = HOSTED_API(malloc)(sizeof(Dstate*) * maxdstate)) == 0)
 		panic("sslinit");
 	alglistinit();
 }
@@ -307,7 +307,7 @@ sslwstat(Chan *c, uchar *db, int n)
 	dir = smalloc(sizeof(Dir)+n);
 	m = convM2D(db, n, &dir[0], (char*)&dir[1]);
 	if(m == 0){
-		free(dir);
+		HOSTED_API(free)(dir);
 		error(Eshortstat);
 	}
 
@@ -316,7 +316,7 @@ sslwstat(Chan *c, uchar *db, int n)
 	if(dir->mode != ~0UL)
 		s->perm = dir->mode;
 
-	free(dir);
+	HOSTED_API(free)(dir);
 	return m;
 }
 
@@ -348,12 +348,12 @@ sslclose(Chan *c)
 		sslhangup(s);
 		if(s->c)
 			cclose(s->c);
-		free(s->user);
-		free(s->in.secret);
-		free(s->out.secret);
-		free(s->in.state);
-		free(s->out.state);
-		free(s);
+		HOSTED_API(free)(s->user);
+		HOSTED_API(free)(s->in.secret);
+		HOSTED_API(free)(s->out.secret);
+		HOSTED_API(free)(s->in.state);
+		HOSTED_API(free)(s->out.state);
+		HOSTED_API(free)(s);
 	}
 }
 
@@ -731,8 +731,8 @@ sslbwrite(Chan *c, Block *b, ulong offset)
 static void
 setsecret(OneWay *w, uchar *secret, int n)
 {
-	free(w->secret);
-	w->secret = mallocz(n, 0);
+	HOSTED_API(free)(w->secret);
+	w->secret = HOSTED_API(mallocz)(n, 0);
 	if(w->secret == nil)
 		error(Enomem);
 	memmove(w->secret, secret, n);
@@ -743,8 +743,8 @@ static void
 initIDEAkey(OneWay *w)
 {
 
-	free(w->state);
-	w->state = malloc(sizeof(IDEAstate));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(IDEAstate));
 	if(w->state == nil)
 		error(Enomem);
 	if(w->slen >= 24)
@@ -759,8 +759,8 @@ static void
 initDESkey(OneWay *w)
 {
 
-	free(w->state);
-	w->state = malloc(sizeof(DESstate));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(DESstate));
 	if (!w->state)
 		error(Enomem);
 	if(w->slen >= 16)
@@ -789,8 +789,8 @@ initDESkey_40(OneWay *w)
 		key[6] &= 0x0f;
 	}
 
-	free(w->state);
-	w->state = malloc(sizeof(DESstate));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(DESstate));
 	if (!w->state)
 		error(Enomem);
 	if(w->slen >= 16)
@@ -804,8 +804,8 @@ initDESkey_40(OneWay *w)
 static void
 initRC4key(OneWay *w)
 {
-	free(w->state);
-	w->state = malloc(sizeof(RC4state));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(RC4state));
 	if (!w->state)
 		error(Enomem);
 	setupRC4state(w->state, w->secret, w->slen);
@@ -823,8 +823,8 @@ initRC4key_40(OneWay *w)
 	if(slen > 5)
 		slen = 5;
 
-	free(w->state);
-	w->state = malloc(sizeof(RC4state));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(RC4state));
 	if (!w->state)
 		error(Enomem);
 	setupRC4state(w->state, w->secret, slen);
@@ -842,8 +842,8 @@ initRC4key_128(OneWay *w)
 	if(slen > 16)
 		slen = 16;
 
-	free(w->state);
-	w->state = malloc(sizeof(RC4state));
+	HOSTED_API(free)(w->state);
+	w->state = HOSTED_API(malloc)(sizeof(RC4state));
 	if (!w->state)
 		error(Enomem);
 	setupRC4state(w->state, w->secret, slen);
@@ -938,7 +938,7 @@ alglistinit(void)
 	n = 1;
 	for(e = encrypttab; e->name != nil; e++)
 		n += strlen(e->name) + 1;
-	encalgs = malloc(n);
+	encalgs = HOSTED_API(malloc)(n);
 	if(encalgs == nil)
 		panic("sslinit");
 	n = 0;
@@ -954,7 +954,7 @@ alglistinit(void)
 	n = 1;
 	for(h = hashtab; h->name != nil; h++)
 		n += strlen(h->name) + 1;
-	hashalgs = malloc(n);
+	hashalgs = HOSTED_API(malloc)(n);
 	if(hashalgs == nil)
 		panic("sslinit");
 	n = 0;
@@ -1104,24 +1104,24 @@ sslwrite(Chan *c, void *a, long n, vlong offset)
 		m = (strlen(p)*3)/2;
 		x = smalloc(m);
 		if(waserror()){
-			free(x);
+			HOSTED_API(free)(x);
 			nexterror();
 		}
 		t = dec64(x, m, p, strlen(p));
 		setsecret(&s.s->in, x, t);
 		poperror();
-		free(x);
+		HOSTED_API(free)(x);
 	} else if(strcmp(buf, "secretout") == 0 && p != 0) {
 		m = (strlen(p)*3)/2;
 		x = smalloc(m);
 		if(waserror()){
-			free(x);
+			HOSTED_API(free)(x);
 			nexterror();
 		}
 		t = dec64(x, m, p, strlen(p));
 		setsecret(&s.s->out, x, t);
 		poperror();
-		free(x);
+		HOSTED_API(free)(x);
 	} else
 		error(Ebadarg);
 
@@ -1384,7 +1384,7 @@ dsclone(Chan *ch)
 		if(newmax > Maxdstate)
 			newmax = Maxdstate;
 
-		np = realloc(dstate, sizeof(Dstate*) * newmax);
+		np = HOSTED_API(realloc)(dstate, sizeof(Dstate*) * newmax);
 		if(np == 0)
 			error(Enomem);
 		dstate = np;
@@ -1404,7 +1404,7 @@ dsnew(Chan *ch, Dstate **pp)
 	Dstate *s;
 	int t;
 
-	*pp = s = mallocz(sizeof(*s), 1);
+	*pp = s = HOSTED_API(mallocz)(sizeof(*s), 1);
 	if(s == nil)
 		error(Enomem);
 	if(pp - dstate >= dshiwat)

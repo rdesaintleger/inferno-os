@@ -35,7 +35,7 @@ allocmemimaged(Rectangle r, ulong chan, Memdata *md)
 
 	l = wordsperline(r, d);
 
-	i = mallocz(sizeof(Memimage), 1);
+	i = HOSTED_API(mallocz)(sizeof(Memimage), 1);
 	if(i == nil)
 		return nil;
 
@@ -54,7 +54,7 @@ allocmemimaged(Rectangle r, ulong chan, Memdata *md)
 	i->layer = nil;
 	i->cmap = memdefcmap;
 	if(memsetchan(i, chan) < 0){
-		free(i);
+		HOSTED_API(free)(i);
 		return nil;
 	}
 	return i;
@@ -75,14 +75,14 @@ allocmemimage(Rectangle r, ulong chan)
 
 	l = wordsperline(r, d);
 	nw = l*Dy(r);
-	md = malloc(sizeof(Memdata));
+	md = HOSTED_API(malloc)(sizeof(Memdata));
 	if(md == nil)
 		return nil;
 
 	md->ref = 1;
 	md->base = poolalloc(imagmem, (2+nw)*sizeof(ulong));
 	if(md->base == nil){
-		free(md);
+		HOSTED_API(free)(md);
 		return nil;
 	}
 
@@ -96,7 +96,7 @@ allocmemimage(Rectangle r, ulong chan)
 	i = allocmemimaged(r, chan, md);
 	if(i == nil){
 		poolfree(imagmem, md->base);
-		free(md);
+		HOSTED_API(free)(md);
 		return nil;
 	}
 	md->imref = i;
@@ -111,9 +111,9 @@ freememimage(Memimage *i)
 	if(i->data->ref-- == 1 && i->data->allocd){
 		if(i->data->base)
 			poolfree(imagmem, i->data->base);
-		free(i->data);
+		HOSTED_API(free)(i->data);
 	}
-	free(i);
+	HOSTED_API(free)(i);
 }
 
 /*

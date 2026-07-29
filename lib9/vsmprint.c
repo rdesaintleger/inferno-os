@@ -26,9 +26,9 @@ fmtStrFlush(Fmt *f)
 	n += 256;
 	f->farg = (void*)n;
 	s = f->start;
-	f->start = realloc(s, n);
+	f->start = HOSTED_API(realloc)(s, n);
 	if(f->start == nil){
-		free(s);
+		HOSTED_API(free)(s);
 		f->to = nil;
 		f->stop = nil;
 		return 0;
@@ -45,7 +45,7 @@ fmtstrinit(Fmt *f)
 
 	memset(f, 0, sizeof(*f));
 	n = 32;
-	f->start = malloc(n);
+	f->start = HOSTED_API(malloc)(n);
 	if(f->start == nil)
 		return -1;
 	f->to = f->start;
@@ -71,7 +71,7 @@ vsmprint(char *fmt, va_list args)
 	n = dofmt(&f, fmt);
 	va_end(f.args);
 	if(n < 0){
-		free(f.start);
+		HOSTED_API(free)(f.start);
 		f.start = nil;
 		return nil;
 	}

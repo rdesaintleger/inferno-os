@@ -16,12 +16,12 @@ mprand(int bits, void (*gen)(uchar*, int), mpint *b)
 	else
 		mpbits(b, bits);
 
-	p = malloc(n*Dbytes);
+	p = HOSTED_API(malloc)(n*Dbytes);
 	if(p == nil)
 		return nil;
 	(*gen)(p, n*Dbytes);
 	betomp(p, n*Dbytes, b);
-	free(p);
+	HOSTED_API(free)(p);
 
 	// make sure we don't give too many bits
 	m = bits%Dbits;

@@ -153,7 +153,7 @@ md4(uchar *p, ulong len, uchar *digest, MD4state *s)
 	uchar *e;
 
 	if(s == nil){
-		s = malloc(sizeof(*s));
+		s = HOSTED_API(malloc)(sizeof(*s));
 		if(s == nil)
 			return nil;
 		memset(s, 0, sizeof(*s));

@@ -43,7 +43,7 @@ getdefont(Display *d)
 	hdr = p+n;
 	n = atoi(hdr);
 	p = hdr+3*12;
-	fc = malloc(sizeof(Fontchar)*(n+1));
+	fc = HOSTED_API(malloc)(sizeof(Fontchar)*(n+1));
 	if(fc == 0){
 		freeimage(i);
 		return 0;
@@ -52,7 +52,7 @@ getdefont(Display *d)
 	f = allocsubfont("*default*", n, atoi(hdr+12), atoi(hdr+24), fc, i);
 	if(f == 0){
 		freeimage(i);
-		free(fc);
+		HOSTED_API(free)(fc);
 		return 0;
 	}
 	return f;

@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 char*
-utfecpy(char *to, char *e, char *from)
+HOSTED_API(utfecpy)(char *to, char *e, char *from)
 {
 	char *end;
 

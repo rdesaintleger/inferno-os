@@ -455,11 +455,11 @@ cnewc(Type *t, void (*mover)(void), int len)
 
 	h = heap(&Tchannel);
 	c = H2D(Channel*, h);
-	c->send = malloc(sizeof(Progq));
-	c->recv = malloc(sizeof(Progq));
+	c->send = HOSTED_API(malloc)(sizeof(Progq));
+	c->recv = HOSTED_API(malloc)(sizeof(Progq));
 	if(c->send == nil || c->recv == nil){
-		free(c->send);
-		free(c->recv);
+		HOSTED_API(free)(c->send);
+		HOSTED_API(free)(c->recv);
 		error(exNomem);
 	}
 	c->send->prog = c->recv->prog = nil;
@@ -897,7 +897,7 @@ cqadd(Progq **q, Prog *p)
 		(*q)->prog = p;
 		return;
 	}
-	n = (Progq*)malloc(sizeof(Progq));
+	n = (Progq*)HOSTED_API(malloc)(sizeof(Progq));
 	if(n == nil)
 		error(exNomem);
 	n->prog = p;
@@ -917,7 +917,7 @@ cqdel(Progq **q)
 	}
 	f = *q;
 	*q = f->next;
-	free(f);
+	HOSTED_API(free)(f);
 }
 void
 cqdelp(Progq **q, Prog *p)
@@ -933,7 +933,7 @@ cqdelp(Progq **q, Prog *p)
 		if((*q)->prog == p){
 			f = *q;
 			*q = (*q)->next;
-			free(f);
+			HOSTED_API(free)(f);
 		}
 		else
 			q = &(*q)->next;
@@ -1606,7 +1606,7 @@ destroystack(REG *reg)
 			}
 		} while(f != fp);
 		ex = sx->reg.EX;
-		free(sx);
+		HOSTED_API(free)(sx);
 	}
 	destroy(reg->M);
 	reg->M = H;	/* for devprof */

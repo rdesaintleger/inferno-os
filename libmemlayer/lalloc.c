@@ -21,9 +21,9 @@ memlalloc(Memscreen *s, Rectangle screenr, Refreshfn refreshfn, void *refreshptr
 	n = allocmemimaged(screenr, s->image->chan, s->image->data);
 	if(n == nil)
 		return nil;
-	l = malloc(sizeof(Memlayer));
+	l = HOSTED_API(malloc)(sizeof(Memlayer));
 	if(l == nil){
-		free(n);
+		HOSTED_API(free)(n);
 		return nil;
 	}
 
@@ -33,8 +33,8 @@ memlalloc(Memscreen *s, Rectangle screenr, Refreshfn refreshfn, void *refreshptr
 	else{
 		l->save = allocmemimage(screenr, s->image->chan);
 		if(l->save == nil){
-			free(l);
-			free(n);
+			HOSTED_API(free)(l);
+			HOSTED_API(free)(n);
 			return nil;
 		}
 		/* allocmemimage doesn't initialize memory; this paints save area */

@@ -10,7 +10,7 @@ newpgrp(void)
 {
 	Pgrp *p;
 
-	p = malloc(sizeof(Pgrp));
+	p = HOSTED_API(malloc)(sizeof(Pgrp));
 	if(p == nil)
 		error(Enomem);
 	p->r.ref = 1;
@@ -44,7 +44,7 @@ closepgrp(Pgrp *p)
 	wunlock(&p->ns);
 	cclose(p->dot);
 	cclose(p->slash);
-	free(p);
+	HOSTED_API(free)(p);
 }
 
 void
@@ -93,7 +93,7 @@ pgrpcpy(Pgrp *to, Pgrp *from)
 				runlock(&f->lock);
 				nexterror();
 			}
-			mh = malloc(sizeof(Mhead));
+			mh = HOSTED_API(malloc)(sizeof(Mhead));
 			if(mh == nil)
 				error(Enomem);
 			mh->from = f->from;
@@ -135,7 +135,7 @@ newfgrp(Fgrp *old)
 	Fgrp *new;
 	int n;
 
-	new = malloc(sizeof(Fgrp));
+	new = HOSTED_API(malloc)(sizeof(Fgrp));
 	if(new == nil)
 		error(Enomem);
 	new->r.ref = 1;
@@ -148,9 +148,9 @@ newfgrp(Fgrp *old)
 		unlock(&old->l);
 	}
 	new->nfd = n;
-	new->fd = malloc(n*sizeof(Chan*));
+	new->fd = HOSTED_API(malloc)(n*sizeof(Chan*));
 	if(new->fd == nil){
-		free(new);
+		HOSTED_API(free)(new);
 		error(Enomem);
 	}
 	return new;
@@ -164,7 +164,7 @@ dupfgrp(Fgrp *f)
 	Fgrp *new;
 	int n;
 
-	new = malloc(sizeof(Fgrp));
+	new = HOSTED_API(malloc)(sizeof(Fgrp));
 	if(new == nil)
 		error(Enomem);
 	new->r.ref = 1;
@@ -173,10 +173,10 @@ dupfgrp(Fgrp *f)
 	if(f->maxfd >= n)
 		n = (f->maxfd+1 + DELTAFD-1)/DELTAFD * DELTAFD;
 	new->nfd = n;
-	new->fd = malloc(n*sizeof(Chan*));
+	new->fd = HOSTED_API(malloc)(n*sizeof(Chan*));
 	if(new->fd == nil){
 		unlock(&f->l);
-		free(new);
+		HOSTED_API(free)(new);
 		error(Enomem);
 	}
 	new->maxfd = f->maxfd;
@@ -202,8 +202,8 @@ closefgrp(Fgrp *f)
 		for(i = 0; i <= f->maxfd; i++)
 			if(c = f->fd[i])
 				cclose(c);
-		free(f->fd);
-		free(f);
+		HOSTED_API(free)(f->fd);
+		HOSTED_API(free)(f);
 	}
 }
 
@@ -212,7 +212,7 @@ newmount(Mhead *mh, Chan *to, int flag, char *spec)
 {
 	Mount *m;
 
-	m = malloc(sizeof(Mount));
+	m = HOSTED_API(malloc)(sizeof(Mount));
 	if(m == nil)
 		error(Enomem);
 	m->to = to;
@@ -235,8 +235,8 @@ mountfree(Mount *m)
 		f = m->next;
 		cclose(m->to);
 		m->mountid = 0;
-		free(m->spec);
-		free(m);
+		HOSTED_API(free)(m->spec);
+		HOSTED_API(free)(m);
 		m = f;
 	}
 }
@@ -250,7 +250,7 @@ closesigs(Skeyset *s)
 		return;
 	for(i=0; i<s->nkey; i++)
 		freeskey(s->keys[i]);
-	free(s);
+	HOSTED_API(free)(s);
 }
 
 void
@@ -258,7 +258,7 @@ freeskey(Signerkey *key)
 {
 	if(key == nil || decref(&key->r) != 0)
 		return;
-	free(key->owner);
+	HOSTED_API(free)(key->owner);
 	(*key->pkfree)(key->pk);
-	free(key);
+	HOSTED_API(free)(key);
 }

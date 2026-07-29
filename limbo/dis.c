@@ -573,7 +573,7 @@ disinst(Inst *in)
 	}
 	if(nibuf > 0)
 		Bwrite(bout, ibuf, nibuf);
-	free(ibuf);
+	HOSTED_API(free)(ibuf);
 	ibuf = nil;
 
 	if(debug['s'])

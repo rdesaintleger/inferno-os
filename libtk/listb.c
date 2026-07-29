@@ -150,12 +150,12 @@ tkfreelistb(Tk *tk)
 
 	for(e = l->head; e; e = next) {
 		next = e->link;
-		free(e);
+		HOSTED_API(free)(e);
 	}
 	if(l->xscroll != nil)
-		free(l->xscroll);
+		HOSTED_API(free)(l->xscroll);
 	if(l->yscroll != nil)
-		free(l->yscroll);
+		HOSTED_API(free)(l->yscroll);
 }
 
 char*
@@ -503,7 +503,7 @@ tklistbinsert(Tk *tk, char *arg, char **val)
 	n = strlen(arg);
 	if(n > Tkmaxitem) {
 		n = (n*3)/2;
-		tbuf = malloc(n);
+		tbuf = HOSTED_API(malloc)(n);
 		if(tbuf == nil)
 			return TkNomem;
 	}
@@ -514,7 +514,7 @@ tklistbinsert(Tk *tk, char *arg, char **val)
 
 	while(*arg) {
 		arg = tkword(tk->env->top, arg, tbuf, &tbuf[n], nil);
-		e = malloc(sizeof(TkLentry)+strlen(tbuf)+1);
+		e = HOSTED_API(malloc)(sizeof(TkLentry)+strlen(tbuf)+1);
 		if(e == nil)
 			return TkNomem;
 
@@ -530,7 +530,7 @@ tklistbinsert(Tk *tk, char *arg, char **val)
 	}
 
 	if(tbuf != buf)
-		free(tbuf);
+		HOSTED_API(free)(tbuf);
 
 	tklistbgeom(tk);
 	tk->dirty = tkrect(tk, 1);
@@ -643,7 +643,7 @@ tklistbdelete(Tk *tk, char *arg, char **val)
 			l->anchor = nil;
 		if (e == l->active)
 			l->active = nil;
-		free(e);
+		HOSTED_API(free)(e);
 		e = *el;
 		indx++;
 		l->nitem--;

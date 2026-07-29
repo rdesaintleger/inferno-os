@@ -218,7 +218,7 @@ loadchar(Font *f, Rune r, Cacheinfo *c, int h, int noflush, char **subfontname)
 			subf->age = 0;
 		}else{				/* too recent; grow instead */
 			of = f->subf;
-			f->subf = malloc((f->nsubf+DSUBF)*sizeof *subf);
+			f->subf = HOSTED_API(malloc)((f->nsubf+DSUBF)*sizeof *subf);
 			if(f->subf == nil){
 				f->subf = of;
 				goto Toss;
@@ -227,7 +227,7 @@ loadchar(Font *f, Rune r, Cacheinfo *c, int h, int noflush, char **subfontname)
 			memset(f->subf+f->nsubf, 0, DSUBF*sizeof *subf);
 			subf = &f->subf[f->nsubf];
 			f->nsubf += DSUBF;
-			free(of);
+			HOSTED_API(free)(of);
 		}
 	}
 	subf->age = 0;
@@ -385,10 +385,10 @@ fontresize(Font *f, int wid, int ncache, int depth)
 	f->maxdepth = depth;
 	ret = 1;
 	if(f->ncache != ncache){
-		i = malloc(ncache*sizeof f->cache[0]);
+		i = HOSTED_API(malloc)(ncache*sizeof f->cache[0]);
 		if(i != nil){
 			ret = 0;
-			free(f->cache);
+			HOSTED_API(free)(f->cache);
 			f->ncache = ncache;
 			f->cache = i;
 		}

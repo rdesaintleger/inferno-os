@@ -588,7 +588,7 @@ fncheck(Decl *d)
 	n->right = scheck(n->right, d->ty->tof, Sother);
 	if(labdep != 0)
 		fatal("unbalanced label stack in fncheck");
-	free(labstack);
+	HOSTED_API(free)(labstack);
 
 	d->locals = appdecls(popids(d->ty->ids), fndecls);
 	if(d->ty->polys != nil)
@@ -883,7 +883,7 @@ exname(Decl *d)
 	if(fndec)
 		n += strlen(fndec->sym->name)+1;
 	n += strlen(buf)+1+strlen(d->sym->name)+1;
-	s = malloc(n);
+	s = HOSTED_API(malloc)(n);
 	strcpy(s, "");
 	if(m){
 		strcat(s, m->name);
@@ -3226,7 +3226,7 @@ checklabels(Node *inits, Type *ctype, int nlab, char *title)
 			nlab -= e - (i + 1);
 		}
 	}
-	free(aux);
+	HOSTED_API(free)(aux);
 
 	c = allocmem(sizeof *c);
 	c->nlab = nlab;
@@ -3478,7 +3478,7 @@ equals(Node *n)
 			return nil;
 		if(nn->ty->kind != Texception)
 			continue;
-		e = (Elist*)malloc(sizeof(Elist));
+		e = (Elist*)HOSTED_API(malloc)(sizeof(Elist));
 		e->d = nn->decl;
 		e->nxt = el;
 		el = e;
@@ -3563,7 +3563,7 @@ raisecheck(Node *n, Elist *ql)
 					e = e->right;
 				if(e->op != Oname)
 					fatal("exception %n not a name", e);
-				el = (Elist*)malloc(sizeof(Elist));
+				el = (Elist*)HOSTED_API(malloc)(sizeof(Elist));
 				el->d = e->decl;
 				el->nxt = nil;
 				return el;

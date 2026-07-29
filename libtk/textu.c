@@ -23,7 +23,7 @@ tktnewitem(int kind, int tagextra,TkTitem **ret)
 	TkTitem *i;
 
 	n = sizeof(TkTitem) + tagextra * sizeof(ulong);
-	i = malloc(n);
+	i = HOSTED_API(malloc)(n);
 	if(i == nil)
 		return TkNomem;
 
@@ -40,7 +40,7 @@ tktnewline(int flags, TkTitem *items, TkTline *prev, TkTline *next, TkTline **re
 	TkTline *l;
 	TkTitem *i;
 
-	l = malloc(sizeof(TkTline));
+	l = HOSTED_API(malloc)(sizeof(TkTline));
 	if(l == nil)
 		return TkNomem;
 
@@ -80,7 +80,7 @@ tktfreeitems(TkText *tkt, TkTitem *i, int freewins)
 		case TkTascii:
 		case TkTrune:
 			if(i->istring != nil)
-				free(i->istring);
+				HOSTED_API(free)(i->istring);
 			break;
 		case TkTwin:
 			if (i->iwin != nil) {
@@ -98,14 +98,14 @@ tktfreeitems(TkText *tkt, TkTitem *i, int freewins)
 					}
 				}
 				if(i->iwin->create != nil)
-					free(i->iwin->create);
-				free(i->iwin);
+					HOSTED_API(free)(i->iwin->create);
+				HOSTED_API(free)(i->iwin);
 			}
 			break;
 		case TkTmark:
 			break;
 		}
-		free(i);
+		HOSTED_API(free)(i);
 		i = n;
 	}
 }
@@ -118,7 +118,7 @@ tktfreelines(TkText *tkt, TkTline *l, int freewins)
 	while(l != nil) {
 		n = l->next;
 		tktfreeitems(tkt, l->items, freewins);
-		free(l);
+		HOSTED_API(free)(l);
 		l = n;
 	}
 }
@@ -130,7 +130,7 @@ tktfreetabs(TkTtabstop *t)
 
 	while(t != nil) {
 		n = t->next;
-		free(t);
+		HOSTED_API(free)(t);
 		t = n;
 	}
 }
@@ -153,9 +153,9 @@ tkfreetext(Tk *tk)
 		tk->binds = nil;
 	tktfreemarks(tkt->marks);
 	if(tkt->xscroll != nil)
-		free(tkt->xscroll);
+		HOSTED_API(free)(tkt->xscroll);
 	if(tkt->yscroll != nil)
-		free(tkt->yscroll);
+		HOSTED_API(free)(tkt->yscroll);
 	/* don't free image because it belongs to window */
 }
 
@@ -192,7 +192,7 @@ tktremitem(TkText *tkt, TkTindex *ix)
 		l->flags = (l->flags & ~TkTlast) | (lnext->flags & TkTlast);
 		l->next = lnext->next;
 		lnext->next->prev = l;
-		free(lnext);
+		HOSTED_API(free)(lnext);
 	}
 	if(l->items == i)
 		l->items = i->next;
@@ -501,12 +501,12 @@ tktsplititem(TkTindex *p)
 		l2 = strlen(i->istring) - l1;
 		if (l2 == 0)
 			print("tktsplititem botch\n");
-		s1 = malloc(l1+1);
+		s1 = HOSTED_API(malloc)(l1+1);
 		if(s1 == nil)
 			return TkNomem;
-		s2 = malloc(l2+1);
+		s2 = HOSTED_API(malloc)(l2+1);
 		if(s2 == nil) {
-			free(s1);
+			HOSTED_API(free)(s1);
 			return TkNomem;
 		}
 
@@ -517,12 +517,12 @@ tktsplititem(TkTindex *p)
 
 		e = tktnewitem(i->kind, i->tagextra, &i2);
 		if(e != nil) {
-			free(s1);
-			free(s2);
+			HOSTED_API(free)(s1);
+			HOSTED_API(free)(s2);
 			return e;
 		}
 
-		free(i->istring);
+		HOSTED_API(free)(i->istring);
 
 		tkttagcomb(i2, i, 1);
 		i2->next = i->next;
@@ -778,7 +778,7 @@ tktextevent(Tk *tk, int event, void *data)
 				}
 				tktdeliver(tk, tkt->mouse, tagit, TkLeave, data, deltasv);
 				if(tagit)
-					free(tagit);
+					HOSTED_API(free)(tagit);
 				tagit = nil;
 			}
 			if(tktanytags(f)) {
@@ -792,7 +792,7 @@ tktextevent(Tk *tk, int event, void *data)
 			tktdeliver(tk, f, tagit, TkEnter, data, deltasv);
 			tkt->mouse = f;
 			if(tagit)
-				free(tagit);
+				HOSTED_API(free)(tagit);
 		}
 		if(tkt->mouse != nil)
 			dest = tktdeliver(tk, tkt->mouse, tkt->mouse, event, &m, deltasv);

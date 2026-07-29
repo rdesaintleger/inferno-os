@@ -182,7 +182,7 @@ subsub(Word *v, char *s, char *end)
 					bufcpy(buf, w->s, strlen(w->s));
 					bufcpy(buf, enda, nmid);
 					insert(buf, 0);
-					free(w->s);
+					HOSTED_API(free)(w->s);
 					w->s = HOSTED_API(strdup)(buf->start);
 				} else {
 					bufcpy(buf, enda, nmid);
@@ -197,7 +197,7 @@ subsub(Word *v, char *s, char *end)
 					bufcpy(buf, w->s, strlen(w->s));
 					bufcpy(buf, d->s, strlen(d->s));
 					insert(buf, 0);
-					free(w->s);
+					HOSTED_API(free)(w->s);
 					w->s = HOSTED_API(strdup)(buf->start);
 					w->next = wdup(d->next);
 					while(w->next)

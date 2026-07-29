@@ -21,7 +21,7 @@ indirattach(char *spec)
 		error(up->env->errstr);
 	}
 	if(up->env->pgrp->nodevs &&
-	   (utfrune("|esDa", d->dc) == nil || d->dc == 's' && *p!='\0'))
+	   (HOSTED_API(utfrune)("|esDa", d->dc) == nil || d->dc == 's' && *p!='\0'))
 		error(Enoattach);
 	return d->attach(p);
 }

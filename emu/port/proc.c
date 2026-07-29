@@ -8,7 +8,7 @@ newproc(void)
 {
 	Proc *p;
 
-	p = malloc(sizeof(Proc));
+	p = HOSTED_API(malloc)(sizeof(Proc));
 	if(p == nil)
 		return nil;
 
@@ -226,7 +226,7 @@ rptproc(char *s, int t, void *o, int (*active)(void*), int (*ck)(void*, int), vo
 {
 	Rept *r;
 
-	r = mallocz(sizeof(Rept), 1);
+	r = HOSTED_API(mallocz)(sizeof(Rept), 1);
 	if(r == nil)
 		return nil;
 	r->t = t;

@@ -1,7 +1,7 @@
 #include "lib9.h"
 
 char*
-utfrune(char *s, long c)
+HOSTED_API(utfrune)(char *s, long c)
 {
 	long c1;
 	Rune r;

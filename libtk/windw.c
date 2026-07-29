@@ -9,17 +9,17 @@ TkCtxt*
 tknewctxt(Display *d)
 {
 	TkCtxt *c;
-	c = malloc(sizeof(TkCtxt));
+	c = HOSTED_API(malloc)(sizeof(TkCtxt));
 	if(c == nil)
 		return nil;
 	c->lock = libqlalloc();
 	if(c->lock == nil){
-		free(c);
+		HOSTED_API(free)(c);
 		return nil;
 	}
 	if (tkextnnewctxt(c) != 0) {
-		free(c->lock);
-		free(c);
+		HOSTED_API(free)(c->lock);
+		HOSTED_API(free)(c);
 		return nil;
 	}
 	c->display = d;
@@ -45,7 +45,7 @@ tkfreectxt(TkCtxt *c)
 	if(locked)
 		unlockdisplay(d);
 	libqlfree(c->lock);
-	free(c);
+	HOSTED_API(free)(c);
 }
 
 Image*
@@ -533,7 +533,7 @@ tksortfocusorder(TkWinfo *inf, int n)
 	else
 		cmpfn = tkfcmpgen;
 
-	qsort(inf, n, sizeof(*inf), cmpfn);
+	HOSTED_API(qsort)(inf, n, sizeof(*inf), cmpfn);
 }
 
 void
@@ -554,7 +554,7 @@ tkbuildfocusorder(TkTop *tkt)
 	int n;
 
 	if (tkt->focusorder != nil)
-		free(tkt->focusorder);
+		HOSTED_API(free)(tkt->focusorder);
 	n = 0;
 	for (tk = tkt->root; tk != nil; tk = tk->siblings)
 		if (tk->flag & Tktakefocus)
@@ -564,7 +564,7 @@ tkbuildfocusorder(TkTop *tkt)
 		return;
 	}
 
-	tkt->focusorder = malloc(sizeof(*tkt->focusorder) * n);
+	tkt->focusorder = HOSTED_API(malloc)(sizeof(*tkt->focusorder) * n);
 	tkt->nfocus = 0;
 	if (tkt->focusorder == nil)
 		return;
@@ -575,7 +575,7 @@ tkbuildfocusorder(TkTop *tkt)
 void
 tkdirtyfocusorder(TkTop *tkt)
 {
-	free(tkt->focusorder);
+	HOSTED_API(free)(tkt->focusorder);
 	tkt->focusorder = nil;
 	tkt->nfocus = 0;
 }

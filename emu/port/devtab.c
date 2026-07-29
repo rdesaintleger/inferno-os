@@ -12,7 +12,7 @@ devtabread(Chan *c, void* buf, long n, vlong off)
 	char *alloc, *e, *p;
 
 	USED(c);
-	alloc = malloc(READSTR);
+	alloc = HOSTED_API(malloc)(READSTR);
 	if(alloc == nil)
 		error(Enomem);
 
@@ -24,11 +24,11 @@ devtabread(Chan *c, void* buf, long n, vlong off)
 	}
 
 	if(waserror()){
-		free(alloc);
+		HOSTED_API(free)(alloc);
 		nexterror();
 	}
 	n = readstr(off, buf, n, alloc);
-	free(alloc);
+	HOSTED_API(free)(alloc);
 	poperror();
 
 	return n;

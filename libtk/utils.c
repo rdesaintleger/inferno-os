@@ -133,7 +133,7 @@ tkcachecol(TkCtxt *c, Image *i, ulong one, ulong three)
 {
 	TkCol *cc;
 
-	cc = malloc(sizeof(*cc));
+	cc = HOSTED_API(malloc)(sizeof(*cc));
 	if(cc == nil)
 		return 0;
 	cc->rgba1 = one;
@@ -180,7 +180,7 @@ tkfreecolcache(TkCtxt *c)
 	while((cc = c->chead) != nil){
 		c->chead = cc->forw;
 		freeimage(cc->i);
-		free(cc);
+		HOSTED_API(free)(cc);
 	}
 	c->ctail = nil;
 	c->ncol = 0;
@@ -380,7 +380,7 @@ tknewenv(TkTop *t)
 {
 	TkEnv *e;
 
-	e = malloc(sizeof(TkEnv));
+	e = HOSTED_API(malloc)(sizeof(TkEnv));
 	if(e == nil)
 		return nil;
 
@@ -400,7 +400,7 @@ tkdefaultenv(TkTop *t)
 		t->env->ref++;
 		return t->env;
 	}
-	t->env = malloc(sizeof(TkEnv));
+	t->env = HOSTED_API(malloc)(sizeof(TkEnv));
 	if(t->env == nil)
 		return nil;
 
@@ -421,7 +421,7 @@ tkdefaultenv(TkTop *t)
 		}
 		env->font = font_open(d, "*default*");
 		if(env->font == nil) {
-			free(t->env);
+			HOSTED_API(free)(t->env);
 			t->env = nil;
 			return nil;
 		}
@@ -460,7 +460,7 @@ tkputenv(TkEnv *env)
 	if(locked)
 		unlockdisplay(d);
 
-	free(env);
+	HOSTED_API(free)(env);
 }
 
 TkEnv*
@@ -473,7 +473,7 @@ tkdupenv(TkEnv **env)
 	if(e->ref == 1)
 		return e;
 
-	ne = malloc(sizeof(TkEnv));
+	ne = HOSTED_API(malloc)(sizeof(TkEnv));
 	if(ne == nil)
 		return nil;
 
@@ -496,7 +496,7 @@ tknewobj(TkTop *t, int type, int n)
 {
 	Tk *tk;
 
-	tk = malloc(n);
+	tk = HOSTED_API(malloc)(n);
 	if(tk == 0)
 		return 0;
 
@@ -505,7 +505,7 @@ tknewobj(TkTop *t, int type, int n)
 	tk->relief = TKflat;
 	tk->env = tkdefaultenv(t);
 	if(tk->env == nil) {
-		free(tk);
+		HOSTED_API(free)(tk);
 		return nil;
 	}
 
@@ -520,8 +520,8 @@ tkfreebind(TkAction *a)
 	while(a != nil) {
 		next = a->link;
 		if((a->type & 0xff) == TkDynamic)
-			free(a->arg);
-		free(a);
+			HOSTED_API(free)(a->arg);
+		HOSTED_API(free)(a);
 		a = next;
 	}
 }
@@ -533,7 +533,7 @@ tkfreename(TkName *f)
 
 	while(f != nil) {
 		n = f->link;
-		free(f);
+		HOSTED_API(free)(f);
 		f = n;
 	}
 }
@@ -567,8 +567,8 @@ tkfreeobj(Tk *tk)
 	tkputenv(tk->env);
 	tkfreebind(tk->binds);
 	if(tk->name != nil)
-		free(tk->name);
-	free(tk);
+		HOSTED_API(free)(tk->name);
+	HOSTED_API(free)(tk);
 }
 
 char*
@@ -659,7 +659,7 @@ tklook(TkTop *t, char *wp, int parent)
 		if(q == nil)
 			abort();
 		if(q == p) {
-			free(p);
+			HOSTED_API(free)(p);
 			return t->root;
 		}
 		*q = '\0';	
@@ -674,7 +674,7 @@ tklook(TkTop *t, char *wp, int parent)
 		f = nil;
 
 	if (parent)
-		free(p);
+		HOSTED_API(free)(p);
 	return f;
 }
 
@@ -1095,14 +1095,14 @@ tkaction(TkAction **l, int event, int type, char *arg, int how)
 	else if(how == TkAsub){
 		tkcancela(l, event, type, arg);
 		if(type == TkDynamic)	/* should always be the case */
-			free(arg);
+			HOSTED_API(free)(arg);
 		return nil;
 	}
 
-	a = malloc(sizeof(TkAction));
+	a = HOSTED_API(malloc)(sizeof(TkAction));
 	if(a == nil) {
 		if(type == TkDynamic)
-			free(arg);
+			HOSTED_API(free)(arg);
 		return TkNomem;
 	}
 
@@ -1397,7 +1397,7 @@ tkvalue(char **val, char *fmt, ...)
 	va_start(arg, fmt);
 	fmtvprint(&fmtx, fmt, arg);
 	va_end(arg);
-	free(*val);
+	HOSTED_API(free)(*val);
 	*val = fmtstrflush(&fmtx);
 	if(*val == nil)
 		return TkNomem;
@@ -1412,7 +1412,7 @@ tkwidgetcmd(TkTop *t, Tk *tk, char *arg, char **val)
 	int bot, top, new, r;
 	char *e, *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -1439,7 +1439,7 @@ tkwidgetcmd(TkTop *t, Tk *tk, char *arg, char **val)
 		else
 			top = new - 1;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	tkdirty(tk);
 	return e;
 }
@@ -1521,7 +1521,7 @@ tksorttable(void)
 			;
 		c->ncmd = cmd - c->cmd;
 
-		qsort(c->cmd, c->ncmd, sizeof(TkCmdtab), qcmdcmp);
+		HOSTED_API(qsort)(c->cmd, c->ncmd, sizeof(TkCmdtab), qcmdcmp);
 	}
 }
 
@@ -1535,24 +1535,24 @@ tksinglecmd(TkTop *t, char *arg, char **val)
 	if(t->debug)
 		print("tk: '%s'\n", arg);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
 	arg = tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	switch(buf[0]) {
 	case '\0':
-		free(buf);
+		HOSTED_API(free)(buf);
 		return nil;
 	case '.':
 		tk = tklook(t, buf, 0);
 		if(tk == nil){
 			tkerr(t, buf);
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadwp;
 		}
 		e = tkwidgetcmd(t, tk, arg, val);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 
@@ -1573,7 +1573,7 @@ tksinglecmd(TkTop *t, char *arg, char **val)
 		else
 			top = new - 1;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }
 
@@ -1621,14 +1621,14 @@ tkexec(TkTop *t, char *arg, char **val)
 		case '[':
 			p = tkmatch('[', ']', p);
 			if(p == nil){
-				free(cmd);
+				HOSTED_API(free)(cmd);
 				return TkSyntx;
 			}
 			break;
 		case '{':
 			p = tkmatch('{', '}', p);
 			if(p == nil){
-				free(cmd);
+				HOSTED_API(free)(cmd);
 				return TkSyntx;
 			}
 			break;
@@ -1636,9 +1636,9 @@ tkexec(TkTop *t, char *arg, char **val)
 			n = p - arg - 1;
 			if(cmdsz < n)
 				cmdsz = n;
-			c = realloc(cmd, cmdsz+1);
+			c = HOSTED_API(realloc)(cmd, cmdsz+1);
 			if(c == nil){
-				free(cmd);
+				HOSTED_API(free)(cmd);
 				return TkNomem;
 			}
 			cmd = c;
@@ -1649,14 +1649,14 @@ tkexec(TkTop *t, char *arg, char **val)
 				t->err = e;
 				strncpy(t->errcmd, cmd, sizeof(t->errcmd));
 				t->errcmd[sizeof(t->errcmd)-1] = '\0';
-				free(cmd);
+				HOSTED_API(free)(cmd);
 				return e;
 			}
 			arg = p;
 			break;
 		case '\0':
 		case '\'':
-			free(cmd);
+			HOSTED_API(free)(cmd);
 			e = tksinglecmd(t, arg, val);
 			if(e != nil) {
 				t->err = e;
@@ -1745,7 +1745,7 @@ tkerr(TkTop *t, char *e)
 char*
 tkerrstr(TkTop *t, char *e)
 {
-	char *s = malloc(strlen(e)+1+strlen(t->errx)+1);
+	char *s = HOSTED_API(malloc)(strlen(e)+1+strlen(t->errx)+1);
 
 	if(s == nil)
 		return nil;

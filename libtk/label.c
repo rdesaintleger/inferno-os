@@ -189,14 +189,14 @@ tkfreelabel(Tk *tk)
 	tkl = TKobj(TkLabel, tk);
 
 	if(tkl->text != nil)
-		free(tkl->text);
+		HOSTED_API(free)(tkl->text);
 	if(tkl->command != nil)
-		free(tkl->command);
+		HOSTED_API(free)(tkl->command);
 	if(tkl->value != nil)
-		free(tkl->value);
+		HOSTED_API(free)(tkl->value);
 	if(tkl->variable != nil) {
 		tkfreevar(tk->env->top, tkl->variable, tk->flag & Tkswept);
-		free(tkl->variable);
+		HOSTED_API(free)(tkl->variable);
 	}
 	if(tkl->img != nil)
 		tkimgput(tkl->img);
@@ -209,7 +209,7 @@ tkfreelabel(Tk *tk)
 			unlockdisplay(d);
 	}
 	if(tkl->menu != nil)
-		free(tkl->menu);
+		HOSTED_API(free)(tkl->menu);
 }
 
 static void

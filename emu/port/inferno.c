@@ -444,7 +444,7 @@ Sys_fstat(void *fp)
 		f->ret->t0 = 0;
 		poperror();
 	}
-	free(d);
+	HOSTED_API(free)(d);
 }
 
 void
@@ -465,7 +465,7 @@ Sys_stat(void *fp)
 		f->ret->t0 = 0;
 		poperror();
 	}
-	free(d);
+	HOSTED_API(free)(d);
 }
 
 void
@@ -486,7 +486,7 @@ Sys_fd2path(void *fp)
 		retstr(s, f->ret);
 		poperror();
 	}
-	free(s);
+	HOSTED_API(free)(s);
 }
 
 void
@@ -522,7 +522,7 @@ Sys_wstat(void *fp)
 	release();
 	*f->ret = kdirwstat(string2c(f->s), d);
 	acquire();
-	free(d);
+	HOSTED_API(free)(d);
 }
 
 void
@@ -536,7 +536,7 @@ Sys_fwstat(void *fp)
 	release();
 	*f->ret = kdirfwstat(fdchk(f->fd), d);
 	acquire();
-	free(d);
+	HOSTED_API(free)(d);
 }
 
 void
@@ -559,7 +559,7 @@ Sys_print(void *fp)
 		n = bigxprint(p, f, &f->vargs, f->s, &b, sizeof(buf));
 	*f->ret = kwrite(1, b, n);
 	if (b != buf)
-		free(b);
+		HOSTED_API(free)(b);
 	acquire();
 }
 
@@ -579,7 +579,7 @@ Sys_fprint(void *fp)
 		n = bigxprint(p, f, &f->vargs, f->s, &b, sizeof(buf));
 	*f->ret = kwrite(fdchk(f->fd), b, n);
 	if (b != buf)
-		free(b);
+		HOSTED_API(free)(b);
 	acquire();
 }
 
@@ -696,7 +696,7 @@ Sys_stream(void *fp)
 	int nbytes, t, n;
 
 	f = fp;
-	buf = malloc(f->bufsiz);
+	buf = HOSTED_API(malloc)(f->bufsiz);
 	if(buf == nil) {
 		kwerrstr(Enomem);
 		*f->ret = -1;
@@ -731,7 +731,7 @@ Sys_stream(void *fp)
 		nbytes += t;
 	}
 	acquire();
-	free(buf);
+	HOSTED_API(free)(buf);
 	*f->ret = nbytes;
 }
 
@@ -925,11 +925,11 @@ Sys_dirread(void *fp)
 	acquire();
 	if(n <= 0) {
 		f->ret->t0 = n;
-		free(b);
+		HOSTED_API(free)(b);
 		return;
 	}
 	if(waserror()){
-		free(b);
+		HOSTED_API(free)(b);
 		return;
 	}
 	h = heaparray(Tdir, n);
@@ -941,7 +941,7 @@ Sys_dirread(void *fp)
 	}
 	f->ret->t0 = n;
 	f->ret->t1 = H2D(Array*, h);
-	free(b);
+	HOSTED_API(free)(b);
 }
 
 void

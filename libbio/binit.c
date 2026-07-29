@@ -118,7 +118,7 @@ Bopen(char *name, int mode)
 	}
 	if(f < 0)
 		return 0;
-	bp = malloc(sizeof(Biobuf));
+	bp = HOSTED_API(malloc)(sizeof(Biobuf));
 	if(bp == nil)
 		return 0;
 	Binits(bp, f, mode, bp->b, sizeof(bp->b));
@@ -137,7 +137,7 @@ Bterm(Biobuf *bp)
 		bp->flag = 0;
 		close(bp->fid);
 		bp->fid = -1;			/* prevent accidents */
-		free(bp);
+		HOSTED_API(free)(bp);
 	}
 	/* otherwise opened with Binit(s) */
 	return r;

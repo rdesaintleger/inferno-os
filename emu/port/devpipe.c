@@ -45,11 +45,11 @@ static void
 freepipe(Pipe *p)
 {
 	if(p != nil){
-		free(p->user);
-		free(p->q[0]);
-		free(p->q[1]);
-		free(p->pipedir);
-		free(p);
+		HOSTED_API(free)(p->user);
+		HOSTED_API(free)(p->q[0]);
+		HOSTED_API(free)(p->q[1]);
+		HOSTED_API(free)(p->pipedir);
+		HOSTED_API(free)(p);
 	}
 }
 
@@ -69,14 +69,14 @@ pipeattach(char *spec)
 	Chan *c;
 
 	c = devattach('|', spec);
-	p = malloc(sizeof(Pipe));
+	p = HOSTED_API(malloc)(sizeof(Pipe));
 	if(p == 0)
 		error(Enomem);
 	if(waserror()){
 		freepipe(p);
 		nexterror();
 	}
-	p->pipedir = malloc(sizeof(pipedir));
+	p->pipedir = HOSTED_API(malloc)(sizeof(pipedir));
 	if (p->pipedir == 0)
 		error(Enomem);
 	memmove(p->pipedir, pipedir, sizeof(pipedir));
@@ -418,7 +418,7 @@ pipewstat(Chan *c, uchar *dp, int n)
 		error(Eperm);
 	d = smalloc(sizeof(*d)+n);
 	if(waserror()){
-		free(d);
+		HOSTED_API(free)(d);
 		nexterror();
 	}
 	n = convM2D(dp, n, d, (char*)&d[1]);
@@ -436,7 +436,7 @@ pipewstat(Chan *c, uchar *dp, int n)
 	if(d->mode != ~0UL)
 		p->pipedir[d1 + 1].perm = d->mode & 0777;
 	poperror();
-	free(d);
+	HOSTED_API(free)(d);
 	return n;
 }
 

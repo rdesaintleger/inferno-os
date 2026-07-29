@@ -46,7 +46,7 @@ snarfopen(Chan* c, int omode)
 	if(c->qid.path == Qsnarf){
 		if(c->mode == ORDWR || c->mode == OWRITE){
 			qlock(&snarflock);
-			free(c->aux);
+			HOSTED_API(free)(c->aux);
 			c->aux = nil;
 			qunlock(&snarflock);
 		}
@@ -68,7 +68,7 @@ snarfclose(Chan* c)
 				poperror();
 			}
 		}
-		free(c->aux);
+		HOSTED_API(free)(c->aux);
 	}
 }
 
@@ -89,7 +89,7 @@ snarfread(Chan* c, void* a, long n, vlong offset)
 		if(offset == 0){
 			p = c->aux;
 			c->aux = nil;
-			free(p);
+			HOSTED_API(free)(p);
 			c->aux = clipread();
 		}
 		if(c->aux != nil)
@@ -127,7 +127,7 @@ snarfwrite(Chan* c, void* va, long n, vlong offset)
 			l = 0;
 		if(l+n > Maxsnarf)
 			error(Etoobig);
-		c->aux = realloc(c->aux, l+n+1);
+		c->aux = HOSTED_API(realloc)(c->aux, l+n+1);
 		if((p = c->aux) == nil)
 			error(Enovmem);
 		memmove(p+l, va, n);

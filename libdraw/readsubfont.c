@@ -25,16 +25,16 @@ readsubfonti(Display*d, char *name, int fd, Image *ai, int dolock)
 		return nil;
 	}
 	n = atoi(hdr);
-	p = malloc(6*(n+1));
+	p = HOSTED_API(malloc)(6*(n+1));
 	if(p == nil)
 		return nil;
 	if(libreadn(fd, p, 6*(n+1)) != 6*(n+1)){
 		kwerrstr("rdsubfonfile: fontchar read error: %r");
     Err:
-		free(p);
+		HOSTED_API(free)(p);
 		return nil;
 	}
-	fc = malloc(sizeof(Fontchar)*(n+1));
+	fc = HOSTED_API(malloc)(sizeof(Fontchar)*(n+1));
 	if(fc == nil)
 		goto Err;
 	_unpackinfo(fc, p, n);
@@ -44,10 +44,10 @@ readsubfonti(Display*d, char *name, int fd, Image *ai, int dolock)
 	if(dolock)
 		unlockdisplay(d);
 	if(f == nil){
-		free(fc);
+		HOSTED_API(free)(fc);
 		goto Err;
 	}
-	free(p);
+	HOSTED_API(free)(p);
 	return f;
 }
 

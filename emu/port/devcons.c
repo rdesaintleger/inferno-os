@@ -548,7 +548,7 @@ sysconwrite(void *va, ulong count)
 	int e;
 	cb = parsecmd(va, count);
 	if(waserror()){
-		free(cb);
+		HOSTED_API(free)(cb);
 		nexterror();
 	}
 	if(cb->nf == 0)
@@ -571,7 +571,7 @@ sysconwrite(void *va, ulong count)
 	else
 		error(Enoctl);
 	poperror();
-	free(cb);
+	HOSTED_API(free)(cb);
 	return count;
 } 
 

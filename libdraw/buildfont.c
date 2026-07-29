@@ -21,7 +21,7 @@ buildfont(Display *d, char *buf, char *name)
 	char badform[] = "bad font format: number expected (char position %d)";
 
 	s = buf;
-	fnt = malloc(sizeof(Font));
+	fnt = HOSTED_API(malloc)(sizeof(Font));
 	if(fnt == 0)
 		return 0;
 	memset(fnt, 0, sizeof(Font));
@@ -29,15 +29,15 @@ buildfont(Display *d, char *buf, char *name)
 	fnt->name = HOSTED_API(strdup)(name);
 	fnt->ncache = NFCACHE+NFLOOK;
 	fnt->nsubf = NFSUBF;
-	fnt->cache = malloc(fnt->ncache * sizeof(fnt->cache[0]));
-	fnt->subf = malloc(fnt->nsubf * sizeof(fnt->subf[0]));
+	fnt->cache = HOSTED_API(malloc)(fnt->ncache * sizeof(fnt->cache[0]));
+	fnt->subf = HOSTED_API(malloc)(fnt->nsubf * sizeof(fnt->subf[0]));
 	if(fnt->name==0 || fnt->cache==0 || fnt->subf==0){
     Err2:
-		free(fnt->name);
-		free(fnt->cache);
-		free(fnt->subf);
-		free(fnt->sub);
-		free(fnt);
+		HOSTED_API(free)(fnt->name);
+		HOSTED_API(free)(fnt->cache);
+		HOSTED_API(free)(fnt->subf);
+		HOSTED_API(free)(fnt->sub);
+		HOSTED_API(free)(fnt);
 		return 0;
 	}
 	fnt->height = strtol(s, &s, 0);
@@ -82,13 +82,13 @@ buildfont(Display *d, char *buf, char *name)
 			s = skip(t);
 		else
 			offset = 0;
-		fnt->sub = realloc(fnt->sub, (fnt->nsub+1)*sizeof(Cachefont*));
+		fnt->sub = HOSTED_API(realloc)(fnt->sub, (fnt->nsub+1)*sizeof(Cachefont*));
 		if(fnt->sub == 0){
 			/* realloc manual says fnt->sub may have been destroyed */
 			fnt->nsub = 0;
 			goto Err3;
 		}
-		c = malloc(sizeof(Cachefont));
+		c = HOSTED_API(malloc)(sizeof(Cachefont));
 		if(c == 0)
 			goto Err3;
 		fnt->sub[fnt->nsub] = c;
@@ -102,7 +102,7 @@ buildfont(Display *d, char *buf, char *name)
 		c->subfontname = 0;
 		c->name = HOSTED_API(strdup)(t);
 		if(c->name == 0){
-			free(c);
+			HOSTED_API(free)(c);
 			goto Err3;
 		}
 		s = skip(s);
@@ -123,9 +123,9 @@ freefont(Font *f)
 
 	for(i=0; i<f->nsub; i++){
 		c = f->sub[i];
-		free(c->subfontname);
-		free(c->name);
-		free(c);
+		HOSTED_API(free)(c->subfontname);
+		HOSTED_API(free)(c->name);
+		HOSTED_API(free)(c);
 	}
 	for(i=0; i<f->nsubf; i++){
 		s = f->subf[i].f;
@@ -134,9 +134,9 @@ freefont(Font *f)
 			freesubfont(s);
 	}
 	freeimage(f->cacheimage);
-	free(f->name);
-	free(f->cache);
-	free(f->subf);
-	free(f->sub);
-	free(f);
+	HOSTED_API(free)(f->name);
+	HOSTED_API(free)(f->cache);
+	HOSTED_API(free)(f->subf);
+	HOSTED_API(free)(f->sub);
+	HOSTED_API(free)(f);
 }

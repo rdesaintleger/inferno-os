@@ -29,7 +29,7 @@ memldelete(Memimage *i)
 		s->frontmost = nil;
 		s->rearmost = nil;
 	}
-	free(l);
+	HOSTED_API(free)(l);
 	freememimage(i);
 }
 
@@ -43,7 +43,7 @@ memlfree(Memimage *i)
 
 	l = i->layer;
 	freememimage(l->save);
-	free(l);
+	HOSTED_API(free)(l);
 	freememimage(i);
 }
 

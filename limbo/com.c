@@ -420,10 +420,10 @@ fncom(Decl *decl)
 	/* decl->endpc = lastinst; */
 	if(labdep != 0)
 		fatal("unbalanced label stack");
-	free(breaks);
-	free(conts);
-	free(labels);
-	free(bcscps);
+	HOSTED_API(free)(breaks);
+	HOSTED_API(free)(conts);
+	HOSTED_API(free)(labels);
+	HOSTED_API(free)(bcscps);
 
 	loc = declsort(appdecls(vars(decl->locals), tdecls()));
 	decl->offset = idoffsets(loc, decl->offset, MaxAlign);
@@ -1140,7 +1140,7 @@ altcom(Node *nalt)
 		jmps = j;
 	}
 	patch(jmps, nextinst());
-	free(comm);
+	HOSTED_API(free)(comm);
 
 	c->iwild = wild;
 

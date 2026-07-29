@@ -14,7 +14,7 @@ to64(mpint *b, char *buf, int len)
 	if(n < 0)
 		return -1;
 	rv = enc64(buf, len, p, n);
-	free(p);
+	HOSTED_API(free)(p);
 	return rv;
 }
 
@@ -26,7 +26,7 @@ to32(mpint *b, char *buf, int len)
 
 	// leave room for a multiple of 5 buffer size
 	n = b->top*Dbytes + 5;
-	p = malloc(n);
+	p = HOSTED_API(malloc)(n);
 	if(p == nil)
 		return -1;
 	n = mptobe(b, p, n, nil);
@@ -37,7 +37,7 @@ to32(mpint *b, char *buf, int len)
 	if(n%5)
 		n += 5 - (n%5);
 	rv = enc32(buf, len, p, n);
-	free(p);
+	HOSTED_API(free)(p);
 	return rv;
 }
 
@@ -141,7 +141,7 @@ mpfmt(Fmt *fmt)
 		return fmtstrcpy(fmt, "*");
 	else{
 		fmtstrcpy(fmt, p);
-		free(p);
+		HOSTED_API(free)(p);
 		return 0;
 	}
 }
@@ -155,7 +155,7 @@ mptoa(mpint *b, int base, char *buf, int len)
 	alloced = 0;
 	if(buf == nil){
 		len = ((b->top+1)*Dbits+2)/3 + 1;
-		buf = malloc(len);
+		buf = HOSTED_API(malloc)(len);
 		if(buf == nil)
 			return nil;
 		alloced = 1;
@@ -186,7 +186,7 @@ mptoa(mpint *b, int base, char *buf, int len)
 	}
 	if(rv < 0){
 		if(alloced)
-			free(buf);
+			HOSTED_API(free)(buf);
 		return nil;
 	}
 	return buf;

@@ -22,13 +22,13 @@ closeegrp(Egrp *e)
 	if(e == nil || decref(&e->r) != 0)
 		return;
 	for (el = e->entries; el != nil; el = nl) {
-		free(el->var);
+		HOSTED_API(free)(el->var);
 		if (el->val)
-			free(el->val);
+			HOSTED_API(free)(el->val);
 		nl = el->next;
-		free(el);
+		HOSTED_API(free)(el);
 	}
-	free(e);
+	HOSTED_API(free)(e);
 }
 
 void

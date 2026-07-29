@@ -93,7 +93,7 @@ tkseqparse(char *seq)
 	int i, event;
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return -1;
 
@@ -109,7 +109,7 @@ tkseqparse(char *seq)
 		if(i >= nelem(etab)) {
 			seq = tkextnparseseq(buf, seq, &event);
 			if (seq == nil) {
-				free(buf);
+				HOSTED_API(free)(buf);
 				return -1;
 			}
 			continue;
@@ -123,7 +123,7 @@ tkseqparse(char *seq)
 		case Cctl:
 			seq = tkseqkey(&r, seq);
 			if(r == 0) {
-				free(buf);
+				HOSTED_API(free)(buf);
 				return -1;
 			}
 			if(r <= '~')
@@ -140,7 +140,7 @@ tkseqparse(char *seq)
 			seq = tkseqitem(buf, seq);
 			switch(buf[0]) {
 			default:
-				free(buf);
+				HOSTED_API(free)(buf);
 				return -1;
 			case '\0':
 				event |= TkEpress;
@@ -169,7 +169,7 @@ tkseqparse(char *seq)
 			seq = tkseqitem(buf, seq);
 			switch(buf[0]) {
 			default:
-				free(buf);
+				HOSTED_API(free)(buf);
 				return -1;
 			case '\0':
 				event |= TkErelease;
@@ -196,7 +196,7 @@ tkseqparse(char *seq)
 			break;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return event;
 }
 
@@ -212,7 +212,7 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 
 	if(s == nil)
 		return;
-	cmd = malloc(2*Tkmaxitem);
+	cmd = HOSTED_API(malloc)(2*Tkmaxitem);
 	if (cmd == nil) {
 		print("tk: bind command \"%s\": %s\n",
 			tk->name ? tk->name->name : "(noname)", TkNomem);
@@ -319,7 +319,7 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 	t->execdepth = -1;
 
 	if(e == nil) {
-		free(cmd);
+		HOSTED_API(free)(cmd);
 		return;
 	}
 
@@ -332,9 +332,9 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 			s = e;
 		print("tk: bind command \"%s\": %s: %s\n", tk->name->name, cmd, s);
 		if(s != e)
-			free(s);
+			HOSTED_API(free)(s);
 	}
-	free(cmd);
+	HOSTED_API(free)(cmd);
 }
 
 char*
@@ -349,12 +349,12 @@ tkbind(TkTop *t, char *arg, char **ret)
 
 	USED(ret);
 
-	tag = mallocz(Tkmaxitem, 0);
+	tag = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(tag == nil)
 		return TkNomem;
-	seq = mallocz(Tkmaxitem, 0);
+	seq = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(seq == nil) {
-		free(tag);
+		HOSTED_API(free)(tag);
 		return TkNomem;
 	}
 
@@ -433,8 +433,8 @@ tkbind(TkTop *t, char *arg, char **ret)
 		e = tkaction(&tk->binds, event, TkDynamic, cmd, mode);
 		if(e != nil)
 			goto err;	/* tkaction does free(cmd) */
-		free(tag);
-		free(seq);
+		HOSTED_API(free)(tag);
+		HOSTED_API(free)(seq);
 		return nil;
 	}
 	/* documented but doesn't work */
@@ -449,8 +449,8 @@ tkbind(TkTop *t, char *arg, char **ret)
 			if(e != nil)
 				goto err;
 		}
-		free(tag);
-		free(seq);
+		HOSTED_API(free)(tag);
+		HOSTED_API(free)(seq);
 		return nil;
 	}
 	/* undocumented, probably unused, and doesn't work consistently */
@@ -464,16 +464,16 @@ tkbind(TkTop *t, char *arg, char **ret)
 			e = tkaction(t->binds + i,event, TkDynamic, cmd, mode);
 			if(e != nil)
 				goto err;
-			free(tag);
-			free(seq);
+			HOSTED_API(free)(tag);
+			HOSTED_API(free)(seq);
 			return nil;
 		}
 	}
 
 	e = TkBadtg;
 err:
-	free(tag);
-	free(seq);
+	HOSTED_API(free)(tag);
+	HOSTED_API(free)(seq);
 
 	return e;
 }
@@ -487,13 +487,13 @@ tksend(TkTop *t, char *arg, char **ret)
 
 	USED(ret);
 
-	var = mallocz(Tkmaxitem, 0);
+	var = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(var == nil)
 		return TkNomem;
 
 	arg = tkword(t, arg, var, var+Tkmaxitem, nil);
 	v = tkmkvar(t, var, 0);
-	free(var);
+	HOSTED_API(free)(var);
 	if(v == nil)
 		return TkBadvr;
 	if(v->type != TkVchan)
@@ -628,7 +628,7 @@ tkfocus(TkTop *top, char *arg, char **ret)
 		return nil;
 	}
 
-	wp = mallocz(Tkmaxitem, 0);
+	wp = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(wp == nil)
 		return TkNomem;
 
@@ -646,12 +646,12 @@ tkfocus(TkTop *top, char *arg, char **ret)
 		tk = tklook(top, wp, 0);
 		if(tk == nil){
 			tkerr(top, wp);
-			free(wp);
+			HOSTED_API(free)(wp);
 			return TkBadwp;
 		}
 		dir = 0;
 	}
-	free(wp);
+	HOSTED_API(free)(wp);
 
 	tksetkeyfocus(top, tk, dir);
 	return nil;
@@ -665,17 +665,17 @@ tkraise(TkTop *t, char *arg, char **ret)
 
 	USED(ret);
 
-	wp = mallocz(Tkmaxitem, 0);
+	wp = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(wp == nil)
 		return TkNomem;
 	tkword(t, arg, wp, wp+Tkmaxitem, nil);
 	tk = tklook(t, wp, 0);
 	if(tk == nil){
 		tkerr(t, wp);
-		free(wp);
+		HOSTED_API(free)(wp);
 		return TkBadwp;
 	}
-	free(wp);
+	HOSTED_API(free)(wp);
 
 	if((tk->flag & Tkwindow) == 0)
 		return TkNotwm;
@@ -691,17 +691,17 @@ tklower(TkTop *t, char *arg, char **ret)
 	char *wp;
 
 	USED(ret);
-	wp = mallocz(Tkmaxitem, 0);
+	wp = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(wp == nil)
 		return TkNomem;
 	tkword(t, arg, wp, wp+Tkmaxitem, nil);
 	tk = tklook(t, wp, 0);
 	if(tk == nil){
 		tkerr(t, wp);
-		free(wp);
+		HOSTED_API(free)(wp);
 		return TkBadwp;
 	}
-	free(wp);
+	HOSTED_API(free)(wp);
 
 	if((tk->flag & Tkwindow) == 0)
 		return TkNotwm;
@@ -719,13 +719,13 @@ tkgrab(TkTop *t, char *arg, char **ret)
 
 	USED(ret);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
-	wp = mallocz(Tkmaxitem, 0);
+	wp = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(wp == nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkNomem;
 	}
 	arg = tkword(t, arg, buf, buf+Tkmaxitem, nil);
@@ -733,38 +733,38 @@ tkgrab(TkTop *t, char *arg, char **ret)
 	tkword(t, arg, wp, wp+Tkmaxitem, nil);
 	tk = tklook(t, wp, 0);
 	if(tk == nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		tkerr(t, wp);
-		free(wp);
+		HOSTED_API(free)(wp);
 		return TkBadwp;
 	}
-	free(wp);
+	HOSTED_API(free)(wp);
 
 	c = t->ctxt;
 	if(strcmp(buf, "release") == 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		if(c->mgrab == tk)
 			tksetmgrab(t, nil);
 		return nil;
 	}
 	if(strcmp(buf, "set") == 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tksetmgrab(t, tk);
 	}
 	if(strcmp(buf, "ifunset") == 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		if(c->mgrab == nil)
 			return tksetmgrab(t, tk);
 		return nil;
 	}
 	if(strcmp(buf, "status") == 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		r = "none";
 		if ((c->mgrab != nil) && (c->mgrab->name != nil))
 			r = c->mgrab->name->name;
 		return tkvalue(ret, "%s", r);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return TkBadcm;
 }
 
@@ -775,12 +775,12 @@ tkputs(TkTop *t, char *arg, char **ret)
 
 	USED(ret);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	print("%s\n", buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return nil;
 }
 
@@ -792,7 +792,7 @@ tkdestroy(TkTop *t, char *arg, char **ret)
 	char *n, *e, *buf;
 
 	USED(ret);
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	e = nil;
@@ -820,7 +820,7 @@ tkdestroy(TkTop *t, char *arg, char **ret)
 			break;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	for(tk = t->root; tk; tk = tk->siblings) {
 		if((tk->flag & Tkdestroy) == 0)
@@ -916,30 +916,30 @@ tkwinfo(TkTop *t, char *arg, char **ret)
 	Tk *tk;
 	char *cmd, *arg1;
 
-	cmd = mallocz(Tkmaxitem, 0);
+	cmd = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(cmd == nil)
 		return TkNomem;
 
 	arg = tkword(t, arg, cmd, cmd+Tkmaxitem, nil);
 	if(strcmp(cmd, "class") == 0) {
-		arg1 = mallocz(Tkmaxitem, 0);
+		arg1 = HOSTED_API(mallocz)(Tkmaxitem, 0);
 		if(arg1 == nil) {
-			free(cmd);
+			HOSTED_API(free)(cmd);
 			return TkNomem;
 		}
 		tkword(t, arg, arg1, arg1+Tkmaxitem, nil);
 		tk = tklook(t, arg1, 0);
 		if(tk == nil){
 			tkerr(t, arg1);
-			free(arg1);
-			free(cmd);
+			HOSTED_API(free)(arg1);
+			HOSTED_API(free)(cmd);
 			return TkBadwp;
 		}
-		free(arg1);
-		free(cmd);
+		HOSTED_API(free)(arg1);
+		HOSTED_API(free)(cmd);
 		return tkvalue(ret, "%s", tkmethod[tk->type]->name);
 	}
-	free(cmd);
+	HOSTED_API(free)(cmd);
 	return TkBadvl;
 }
 

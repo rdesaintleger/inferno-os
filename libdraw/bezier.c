@@ -16,9 +16,9 @@ appendpt(Plist *l, Point p)
 	if(l->np == -1)
 		return;
 	if(l->np == 0)
-		l->p = malloc(PINC*sizeof(Point));
+		l->p = HOSTED_API(malloc)(PINC*sizeof(Point));
 	else if(l->np%PINC == 0)
-		l->p = realloc(l->p, (l->np+PINC)*sizeof(Point));
+		l->p = HOSTED_API(realloc)(l->p, (l->np+PINC)*sizeof(Point));
 	if(l->p == 0){
 		l->np = -1;
 		return;
@@ -165,7 +165,7 @@ bezierop(Image *dst, Point p0, Point p1, Point p2, Point p3, int end0, int end1,
 		return 0;
 	if(l.np != 0){
 		polyop(dst, l.p, l.np, end0, end1, radius, src, addpt(subpt(sp, p0), l.p[0]), op);
-		free(l.p);
+		HOSTED_API(free)(l.p);
 	}
 	return 1;
 }
@@ -187,7 +187,7 @@ bezsplineop(Image *dst, Point *pt, int npt, int end0, int end1, int radius, Imag
 		return 0;
 	if(l.np != 0){
 		polyop(dst, l.p, l.np, end0, end1, radius, src, addpt(subpt(sp, pt[0]), l.p[0]), op);
-		free(l.p);
+		HOSTED_API(free)(l.p);
 	}
 	return 1;
 }
@@ -203,7 +203,7 @@ fillbezierop(Image *dst, Point p0, Point p1, Point p2, Point p3, int w, Image *s
 		return 0;
 	if(l.np != 0){
 		fillpolyop(dst, l.p, l.np, w, src, addpt(subpt(sp, p0), l.p[0]), op);
-		free(l.p);
+		HOSTED_API(free)(l.p);
 	}
 	return 1;
 }
@@ -225,7 +225,7 @@ fillbezsplineop(Image *dst, Point *pt, int npt, int w, Image *src, Point sp, Dra
 		return 0;
 	if(l.np > 0){
 		fillpolyop(dst, l.p, l.np, w, src, addpt(subpt(sp, pt[0]), l.p[0]), op);
-		free(l.p);
+		HOSTED_API(free)(l.p);
 	}
 	return 1;
 }

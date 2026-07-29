@@ -17,7 +17,7 @@ graph(char *target)
 
 	cnt = rulecnt();
 	node = applyrules(target, cnt);
-	free(cnt);
+	HOSTED_API(free)(cnt);
 	cyclechk(node);
 	node->flags |= PROBABLE;	/* make sure it doesn't get deleted */
 	vacuous(node);

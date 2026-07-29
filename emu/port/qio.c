@@ -80,7 +80,7 @@ freeb(Block *b)
 	b->lim = (void*)0xdeadbabe;
 	b->base = (void*)0xdeadbabe;
 
-	free(b);
+	HOSTED_API(free)(b);
 }
 
 /* 
@@ -853,7 +853,7 @@ qbypass(void (*bypass)(void*, Block*), void *arg)
 {
 	Queue *q;
 
-	q = malloc(sizeof(Queue));
+	q = HOSTED_API(malloc)(sizeof(Queue));
 	if(q == 0)
 		return 0;
 
@@ -1381,7 +1381,7 @@ void
 qfree(Queue *q)
 {
 	qclose(q);
-	free(q);
+	HOSTED_API(free)(q);
 }
 
 /*

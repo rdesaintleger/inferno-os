@@ -607,7 +607,7 @@ smalloc(size_t size)
 	void *v;
 
 	for(;;){
-		v = malloc(size);
+		v = HOSTED_API(malloc)(size);
 		if(v != nil)
 			break;
 		osenter();
@@ -637,7 +637,7 @@ kmalloc(size_t size)
 
 
 void*
-malloc(size_t size)
+HOSTED_API(malloc)(size_t size)
 {
 	void *v;
 
@@ -655,7 +655,7 @@ malloc(size_t size)
 }
 
 void*
-mallocz(ulong size, int clr)
+HOSTED_API(mallocz)(ulong size, int clr)
 {
 	void *v;
 
@@ -674,7 +674,7 @@ mallocz(ulong size, int clr)
 }
 
 void
-free(void *v)
+HOSTED_API(free)(void *v)
 {
 	Bhdr *b;
 
@@ -689,12 +689,12 @@ free(void *v)
 }
 
 void*
-realloc(void *v, size_t size)
+HOSTED_API(realloc)(void *v, size_t size)
 {
 	void *nv;
 
 	if(size == 0)
-		return malloc(size);	/* temporary change until realloc calls can be checked */
+		return HOSTED_API(malloc)(size);	/* temporary change until realloc calls can be checked */
 	if(v != nil)
 		v = (ulong*)v-Npadlong;
 	if(Npadlong!=0 && size!=0)
@@ -718,9 +718,9 @@ msize(void *v)
 }
 
 void*
-calloc(size_t n, size_t szelem)
+HOSTED_API(calloc)(size_t n, size_t szelem)
 {
-	return malloc(n*szelem);
+	return HOSTED_API(malloc)(n*szelem);
 }
 
 /*

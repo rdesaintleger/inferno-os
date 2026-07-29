@@ -192,7 +192,7 @@ savestartup(int argc, char *argv[])
 	int i;
 
 	rebootargc = argc;
-	rebootargv = malloc((argc+1)*sizeof(char*));
+	rebootargv = HOSTED_API(malloc)((argc+1)*sizeof(char*));
 	if(rebootargv == nil)
 		panic("can't save startup args");
 	for(i = 0; i < argc; i++) {
@@ -208,7 +208,7 @@ putenvq(char *name, char *val, int conf)
 {
 	val = smprint("%q", val);
 	ksetenv(name, val, conf);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 void
@@ -223,7 +223,7 @@ putenvqv(char *name, char **v, int n, int conf)
 		fmtprint(&f, "%s%q", i?" ":"", v[i]);
 	val = fmtstrflush(&f);
 	ksetenv(name, val, conf);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 void
@@ -319,11 +319,11 @@ emuinit(void *imod)
 	putenvqv("emuargs", rebootargv, rebootargc, 1);
 	putenvq("emuroot", rootdir, 1);
 	ksetenv("emuhost", hosttype, 1);
-	wdir = malloc(1024);
+	wdir = HOSTED_API(malloc)(1024);
 	if(wdir != nil){
 		if(HOSTED_API(getwd)(wdir, 1024) != nil)
 			putenvq("emuwdir", wdir, 1);
-		free(wdir);
+		HOSTED_API(free)(wdir);
 	}
 
 	kproc("main", disinit, imod, KPDUPFDG|KPDUPPG|KPDUPENVG);
@@ -428,21 +428,6 @@ void
 _assert(char *fmt)
 {
 	panic("assert failed: %s", fmt);
-}
-
-/*
- * mainly for libmp
- */
-void
-sysfatal(char *fmt, ...)
-{
-	va_list arg;
-	char buf[64];
-
-	va_start(arg, fmt);
-	vsnprint(buf, sizeof(buf), fmt, arg);
-	va_end(arg);
-	error(buf);
 }
 
 void

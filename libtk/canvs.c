@@ -234,7 +234,7 @@ tkcvsfocusorder(Tk *tk)
 	if (n == 0)
 		return;
 
-	inf = malloc(sizeof(*inf) * n);
+	inf = HOSTED_API(malloc)(sizeof(*inf) * n);
 	if (inf == nil)
 		return;
 
@@ -326,7 +326,7 @@ tkcvsfreeitem(TkCitem *i)
 
 	tkfreepoint(&i->p);
 	tkputenv(i->env);
-	free(i);
+	HOSTED_API(free)(i);
 }
 
 void
@@ -346,23 +346,23 @@ tkfreecanv(Tk *tk)
 	}
 
 	if(c->xscroll != nil)
-		free(c->xscroll);
+		HOSTED_API(free)(c->xscroll);
 	if(c->yscroll != nil)
-		free(c->yscroll);
+		HOSTED_API(free)(c->yscroll);
 
 	for(j = 0; j < TkChash; j++) {
 		for(n = c->thash[j]; n; n = nn) {
 			nn = n->link;
 			for(t = n->obj; t; t = tt) {
 				tt = t->taglist;
-				free(t);
+				HOSTED_API(free)(t);
 			}
 			tkfreebind(n->prop.binds);
-			free(n);
+			HOSTED_API(free)(n);
 		}
 	}
 
-	free(c->current);
+	HOSTED_API(free)(c->current);
 
 	if((c->ialloc && c->image != nil) || c->mask != nil) {
 		if (c->ialloc && c->image != nil)
@@ -842,10 +842,10 @@ tksweepcanv(Tk *tk)
 			if(n->ref == 0) {
 				for(t = n->obj; t != nil; t = tt) {
 					tt = t->taglist;
-					free(t);
+					HOSTED_API(free)(t);
 				}
 				tkfreebind(n->prop.binds);
-				free(n);
+				HOSTED_API(free)(n);
 				*np = nn;
 			} else {
 				np = &n->link;
@@ -1244,7 +1244,7 @@ tkcvsdtag(Tk *tk, char *arg, char **val)
 			}
 
 			tf = t->taglist;
-			free(t);
+			HOSTED_API(free)(t);
 		}
 		f->obj = nil;
 		return nil;
@@ -1272,7 +1272,7 @@ tkcvsdtag(Tk *tk, char *arg, char **val)
 					}
 					l = &tf->itemlist;
 				}
-				free(it);
+				HOSTED_API(free)(it);
 				break;
 			}
 			l = &it->taglist;
@@ -1500,7 +1500,7 @@ tkcvsfreename(TkCanvas *c, TkName *n)
 		if(f == n){
 			*l = f->link;
 			tkfreebind(f->prop.binds);
-			free(f);
+			HOSTED_API(free)(f);
 			return;
 		}
 }
@@ -1535,7 +1535,7 @@ tkcvsdelete(Tk *tk, char *arg, char **val)
 						*l = dit->taglist;
 						if(dit != t){
 							tkcvsfreename(c, dit->name);
-							free(dit);
+							HOSTED_API(free)(dit);
 						}
 						break;
 					}
@@ -1568,7 +1568,7 @@ tkcvsdelete(Tk *tk, char *arg, char **val)
 				c->grab = nil;
 
 			tkcvsfreeitem(item);
-			free(t);
+			HOSTED_API(free)(t);
 		}
 	}
 	return nil;

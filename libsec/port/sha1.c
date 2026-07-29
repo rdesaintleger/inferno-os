@@ -19,7 +19,7 @@ sha1(uchar *p, ulong len, uchar *digest, SHA1state *s)
 	uchar *e;
 
 	if(s == nil){
-		s = malloc(sizeof(*s));
+		s = HOSTED_API(malloc)(sizeof(*s));
 		if(s == nil)
 			return nil;
 		memset(s, 0, sizeof(*s));
@@ -103,7 +103,7 @@ sha1(uchar *p, ulong len, uchar *digest, SHA1state *s)
 	/* return result and free state */
 	encode(digest, s->state, SHA1dlen);
 	if(s->malloced == 1)
-		free(s);
+		HOSTED_API(free)(s);
 	return nil;
 }
 

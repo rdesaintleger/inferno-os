@@ -46,7 +46,7 @@ parsecmd(char *p, int n)
 	cb->buf = (char*)(&cb->f[nf]);
 
 	if(up!=nil && waserror()){
-		free(cb);
+		HOSTED_API(free)(cb);
 		nexterror();
 	}
 	memmove(cb->buf, p, n);

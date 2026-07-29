@@ -102,7 +102,7 @@ freestring(Heap *h, int swept)
 	USED(swept);
 	s = H2D(String*, h);
 	if(s->tmp != nil)
-		free(s->tmp);
+		HOSTED_API(free)(s->tmp);
 }
 
 void
@@ -129,8 +129,8 @@ freearray(Heap *h, int swept)
 		}
 	}
 	if(t->ref-- == 1) {
-		free(t->initialize);
-		free(t);
+		HOSTED_API(free)(t->initialize);
+		HOSTED_API(free)(t);
 	}
 }
 
@@ -149,8 +149,8 @@ freelist(Heap *h, int swept)
 			freeptrs(l->data, t);
 		t->ref--;
 		if(t->ref == 0) {
-			free(t->initialize);
-			free(t);
+			HOSTED_API(free)(t->initialize);
+			HOSTED_API(free)(t);
 		}
 	}
 	if(swept)
@@ -167,8 +167,8 @@ freelist(Heap *h, int swept)
 				freeptrs(l->data, t);
 			t->ref--;
 			if(t->ref == 0) {
-				free(t->initialize);
-				free(t);
+				HOSTED_API(free)(t->initialize);
+				HOSTED_API(free)(t);
 			}
 		}
 		l = l->tail;
@@ -234,7 +234,7 @@ dtype(void (*destroy)(Heap*, int), int size, uchar *map, int mapsize)
 {
 	Type *t;
 
-	t = malloc(sizeof(Type)-sizeof(t->map)+mapsize);
+	t = HOSTED_API(malloc)(sizeof(Type)-sizeof(t->map)+mapsize);
 	if(t != nil) {
 		t->ref = 1;
 		t->free = destroy;
@@ -269,8 +269,8 @@ freetype(Type *t)
 	if(t == nil || --t->ref > 0)
 		return;
 
-	free(t->initialize);
-	free(t);
+	HOSTED_API(free)(t->initialize);
+	HOSTED_API(free)(t);
 }
 
 void

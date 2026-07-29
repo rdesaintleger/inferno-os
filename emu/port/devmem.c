@@ -424,18 +424,18 @@ memread(Chan *c, void *va, long count, vlong offset)
 		}
 		return m-(uchar*)va;
 	case Qgc:
-		s = malloc(READSTR);
+		s = HOSTED_API(malloc)(READSTR);
 		if(s == nil)
 			error(Enomem);
 		if(waserror()){
-			free(s);
+			HOSTED_API(free)(s);
 			nexterror();
 		}
 		snprint(s, READSTR, "runs: %lud\nsweeps: %lud\nbchain: %lud\nhalted: %lud\nepochs: %lud\ndestroy: %llud\ninspects: %llud\nbusy: %llud\nidle: %llud\nidlepass: %llud\npartial: %llud\n",
 			gcnruns, gcsweeps, gcbroken, gchalted, gcepochs, gcdestroys, gcinspects, gcbusy, gcidle, gcidlepass, gcpartial);
 		count = readstr(offset, va, count, s);
 		poperror();
-		free(s);
+		HOSTED_API(free)(s);
 		return count;
 	}
 }

@@ -23,7 +23,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 	TkText *tkt;
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -55,7 +55,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 
 		s = strchr(buf, ',');
 		if(s == nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadix;
 		}
 		*s = '\0';
@@ -69,7 +69,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 
 		s = strchr(buf, '.');
 		if(s == nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadix;
 		}
 		*s = '\0';
@@ -103,7 +103,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 				ans->line = lend;
 		}
 		if(ans->line == lend) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadix;
 		}
 	}
@@ -111,7 +111,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 		s = strchr(buf, '.');
 		if(s == nil) {
 			if(tktmarkind(tk, buf, ans) == 0) {
-				free(buf);
+				HOSTED_API(free)(buf);
 				return TkBadix;
 			}
 		}
@@ -121,26 +121,26 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 			*s = '\0';
 			if(strcmp(s+1, "first") == 0) {
 				if(tkttagind(tk, buf, 1, ans) == 0) {
-					free(buf);
+					HOSTED_API(free)(buf);
 					return TkBadix;
 				}
 			}
 			else
 			if(strcmp(s+1, "last") == 0) {
 				if(tkttagind(tk, buf, 0, ans) == 0) {
-					free(buf);
+					HOSTED_API(free)(buf);
 					return TkBadix;
 				}
 			}
 			else {
-				free(buf);
+				HOSTED_API(free)(buf);
 				return TkBadix;
 			}
 		}
 	}
 
 	if(modstart == 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return nil;
 	}
 
@@ -201,7 +201,7 @@ tktindparse(Tk *tk, char **pspec, TkTindex *ans)
 			mod++;
 	}
 
-	free(buf);
+	HOSTED_API(free)(buf);
 	return nil;
 }
 

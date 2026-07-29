@@ -126,7 +126,7 @@ kstrdup(char **p, char *s)
 	memmove(t, s, n);
 	prev = *p;
 	*p = t;
-	free(prev);
+	HOSTED_API(free)(prev);
 }
 
 static char isfrog[256]=
@@ -163,7 +163,7 @@ newchan(void)
 	unlock(&chanalloc.l);
 
 	if(c == nil) {
-		c = malloc(sizeof(Chan));
+		c = HOSTED_API(malloc)(sizeof(Chan));
 		if(c == nil)
 			error(Enomem);
 		lock(&chanalloc.l);
@@ -222,8 +222,8 @@ cnameclose(Cname *n)
 	if(decref(&n->r))
 		return;
 	decref(&ncname);
-	free(n->s);
-	free(n);
+	HOSTED_API(free)(n->s);
+	HOSTED_API(free)(n);
 }
 
 Cname*
@@ -248,7 +248,7 @@ addelem(Cname *n, char *s)
 		a = n->len+1+i+1 + CNAMESLOP;
 		t = smalloc(a);
 		memmove(t, n->s, n->len+1);
-		free(n->s);
+		HOSTED_API(free)(n->s);
 		n->s = t;
 		n->alen = a;
 	}
@@ -580,7 +580,7 @@ cclone(Chan *c)
 	if(wq == nil)
 		error("clone failed");
 	nc = wq->clone;
-	free(wq);
+	HOSTED_API(free)(wq);
 	nc->name = c->name;
 	if(c->name)
 		incref(&c->name->r);
@@ -791,7 +791,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 							*nerror = nhave+wq->nqid;
 						strcpy(up->env->errstr, Enotdir);
 					}
-					free(wq);
+					HOSTED_API(free)(wq);
 					if(mh != nil)
 						putmhead(mh);
 					return -1;
@@ -812,7 +812,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 		c = nc;
 		putmhead(mh);
 		mh = nmh;
-		free(wq);
+		HOSTED_API(free)(wq);
 	}
 
 	putmhead(mh);
@@ -897,11 +897,11 @@ growparse(Elemlist *e)
 	if(e->nelems % Delta == 0){
 		new = smalloc((e->nelems+Delta) * sizeof(char*));
 		memmove(new, e->elems, e->nelems*sizeof(char*));
-		free(e->elems);
+		HOSTED_API(free)(e->elems);
 		e->elems = new;
 		inew = smalloc((e->nelems+Delta+1) * sizeof(int));
 		memmove(inew, e->off, e->nelems*sizeof(int));
-		free(e->off);
+		HOSTED_API(free)(e->off);
 		e->off = inew;
 	}
 }
@@ -935,7 +935,7 @@ parsename(char *name, Elemlist *e)
 		growparse(e);
 		
 		e->elems[e->nelems++] = name;
-		slash = utfrune(name, '/');
+		slash = HOSTED_API(utfrune)(name, '/');
 		if(slash == nil){
 			e->off[e->nelems] = name+strlen(name) - e->name;
 			e->mustbedir = 0;
@@ -1031,7 +1031,7 @@ namec(char *aname, int amode, int omode, ulong perm)
 		 *	a private TLS name space
 		 */
 		if(up->env->pgrp->nodevs &&
-		   (utfrune("|esDa", r) == nil || r == 's' && up->genbuf[n]!='\0'))
+		   (HOSTED_API(utfrune)("|esDa", r) == nil || r == 's' && up->genbuf[n]!='\0'))
 			error(Enoattach);
 		t = devno(r, 1);
 		if(t == -1)
@@ -1052,9 +1052,9 @@ namec(char *aname, int amode, int omode, ulong perm)
 	e.nelems = 0;
 	if(waserror()){
 		cclose(c);
-		free(e.name);
-		free(e.elems);
-		free(e.off);
+		HOSTED_API(free)(e.name);
+		HOSTED_API(free)(e.elems);
+		HOSTED_API(free)(e.off);
 //dumpmount();
 		nexterror();
 	}
@@ -1309,9 +1309,9 @@ if(c->umh != nil){
 		kstrcpy(up->genbuf, e.elems[e.nelems-1], sizeof up->genbuf);
 	else
 		kstrcpy(up->genbuf, ".", sizeof up->genbuf);
-	free(e.name);
-	free(e.elems);
-	free(e.off);
+	HOSTED_API(free)(e.name);
+	HOSTED_API(free)(e.elems);
+	HOSTED_API(free)(e.off);
 
 	return c;
 }
@@ -1398,6 +1398,6 @@ putmhead(Mhead *m)
 {
 	if(m && decref(&m->r) == 0){
 		m->mount = (Mount*)0xCafeBeef;
-		free(m);
+		HOSTED_API(free)(m);
 	}
 }

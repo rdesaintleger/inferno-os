@@ -47,13 +47,13 @@ readmod(char *path, Module *m, int sync)
 		goto done;
 	}
 	length = d->length;
-	code = mallocz(length, 0);
+	code = HOSTED_API(mallocz)(length, 0);
 	if(code == nil)
 		goto done;
 
 	n = kread(fd, code, length);
 	if(n != length) {
-		free(code);
+		HOSTED_API(free)(code);
 		code = nil;
 	}
 done:
@@ -66,8 +66,8 @@ done1:
 		unload(m);
 	if(code != nil) {
 		ans = parsemod(path, code, length, d);
-		free(code);
+		HOSTED_API(free)(code);
 	}
-	free(d);
+	HOSTED_API(free)(d);
 	return ans;
 }

@@ -7,7 +7,7 @@
 static void
 newlink(Link *l, char *fn, int sig, Type *t)
 {
-	l->name = malloc(strlen(fn)+1);
+	l->name = HOSTED_API(malloc)(strlen(fn)+1);
 	if(l->name == nil)
 		error(exNomem);
 	strcpy(l->name, fn);
@@ -125,6 +125,6 @@ destroylinks(Module *m)
 	Link *l;
 
 	for(l = m->ext; l->name; l++)
-		free(l->name);
-	free(m->ext);
+		HOSTED_API(free)(l->name);
+	HOSTED_API(free)(m->ext);
 }

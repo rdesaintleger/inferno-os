@@ -162,7 +162,7 @@ tkfreescrlb(Tk *tk)
 	TkScroll *tks = TKobj(TkScroll, tk);
 
 	if(tks->cmd != nil)
-		free(tks->cmd);
+		HOSTED_API(free)(tks->cmd);
 }
 
 static void

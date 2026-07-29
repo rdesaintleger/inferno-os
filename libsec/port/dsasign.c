@@ -25,7 +25,7 @@ dsasign(DSApriv *priv, mpint *m)
 			continue;
 		mpextendedgcd(k, q, r, kinv, s);
 		if(mpcmp(r, mpone) != 0)
-			sysfatal("dsasign: pub->q not prime");
+			HOSTED_API(sysfatal)("dsasign: pub->q not prime");
 		break;
 	}
 

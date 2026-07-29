@@ -87,7 +87,7 @@ parse(char *f, int fd, int varoverride)
 /*
 char *cp;
 dumpw("tail", tail);
-cp = wtos(tail, ' '); print("assign %s to %s\n", head->s, cp); free(cp);
+cp = wtos(tail, ' '); print("assign %s to %s\n", head->s, cp); HOSTED_API(free)(cp);
 */
 				setvar(head->s, (void *) tail);
 				symlook(head->s, S_WESET, (void *)"");
@@ -191,7 +191,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 				*attr |= NOREC;
 				break;
 			case 'P':
-				pp = utfrune(p, ':');
+				pp = HOSTED_API(utfrune)(p, ':');
 				if (pp == 0 || *pp == 0)
 					goto eos;
 				*pp = 0;
@@ -305,5 +305,5 @@ ipop(void)
 	}
 	infile = me->file;
 	mkinline = me->line;
-	free((char *)me);
+	HOSTED_API(free)((char *)me);
 }

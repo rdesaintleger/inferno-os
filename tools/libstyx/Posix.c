@@ -84,7 +84,7 @@ styxinitwait(Styxserver *server)
 {
 	Fdset *fs;
 
-	server->priv = fs = malloc(sizeof(Fdset));
+	server->priv = fs = HOSTED_API(malloc)(sizeof(Fdset));
 	FD_ZERO(&fs->infds);
 	FD_ZERO(&fs->outfds);
 	FD_ZERO(&fs->excfds);

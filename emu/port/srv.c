@@ -50,7 +50,7 @@ Srv_iph2a(void *fp)
 		n = strlen(hostv[i]);
 		ss = newstring(n);
 		memmove(ss->Sascii, hostv[i], n);
-		free(hostv[i]);
+		HOSTED_API(free)(hostv[i]);
 
 		hpt = nheap(sizeof(List) + IBY2WD);
 		hpt->t = &Tlist;
@@ -102,7 +102,7 @@ Srv_ipa2h(void *fp)
 		n = strlen(hostv[i]);
 		ss = newstring(n);
 		memmove(ss->Sascii, hostv[i], n);
-		free(hostv[i]);
+		HOSTED_API(free)(hostv[i]);
 
 		hpt = nheap(sizeof(List) + IBY2WD);
 		hpt->t = &Tlist;

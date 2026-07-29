@@ -2931,3 +2931,15 @@ gtnm(void)
 		error("out of space");
 	return c;
 }
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
+}

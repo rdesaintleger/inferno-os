@@ -47,14 +47,14 @@ decodePEM(char *s, char *type, int *len, char **new_s)
 	if(new_s)
 		*new_s = tt+1;
 	n = ((tt - t) * 6 + 7) / 8;
-	d = malloc(n);
+	d = HOSTED_API(malloc)(n);
 	if(d == nil){
 		werrstr("out of memory");
 		return nil;
 	}
 	n = dec64(d, n, t, tt - t);
 	if(n < 0){
-		free(d);
+		HOSTED_API(free)(d);
 		werrstr("incorrect .pem file format: bad base64 encoded data");
 		return nil;
 	}
@@ -75,7 +75,7 @@ decodepemchain(char *s, char *type)
 		d = decodePEM(s, type, &n, &s);
 		if(d == nil)
 			break;
-		chp = malloc(sizeof(PEMChain));
+		chp = HOSTED_API(malloc)(sizeof(PEMChain));
 		chp->next = nil;
 		chp->pem = d;
 		chp->pemlen = n;

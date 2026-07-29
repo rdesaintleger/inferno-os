@@ -89,7 +89,7 @@ oscmd(char **args, int nice, char *dir, int *fd)
 	Targ *t;
 	int r, fd0[2], fd1[2], fd2[2], wfd[2], n, pid;
 
-	t = mallocz(sizeof(*t), 1);
+	t = HOSTED_API(mallocz)(sizeof(*t), 1);
 	if(t == nil)
 		return nil;
 
@@ -143,7 +143,7 @@ oscmd(char **args, int nice, char *dir, int *fd)
 		close(fd0[1]);
 		close(fd1[0]);
 		close(fd2[0]);
-		free(t);
+		HOSTED_API(free)(t);
 		up->genbuf[n] = 0;
 		if(Debug)
 			print("oscmd: bad exec: %q\n", up->genbuf);
@@ -209,5 +209,5 @@ oscmdwait(void *a, char *buf, int n)
 void
 oscmdfree(void *a)
 {
-	free(a);
+	HOSTED_API(free)(a);
 }

@@ -1624,7 +1624,7 @@ getroot(void)
 				if(l != nil)
 					*l = '\0';
 				if((n = strlen(e)) > 0){
-					s = malloc(n+1);
+					s = HOSTED_API(malloc)(n+1);
 					strcpy(s, e);
 					return s;
 				}
@@ -1793,11 +1793,11 @@ main(int argc, char *argv[])
 	if((root = getroot()) != nil){
 		char *r;
 
-		r = malloc(strlen(root)+strlen(SLASHMOD)+1);
+		r = HOSTED_API(malloc)(strlen(root)+strlen(SLASHMOD)+1);
 		strcpy(r, root);
 		strcat(r, SLASHMOD);
 		addinclude(r);
-		free(root);
+		HOSTED_API(free)(root);
 	}
 	else
 		addinclude(INCPATH);
@@ -1848,7 +1848,7 @@ mkfileext(char *file, char *oldext, char *ext)
 	n2 = strlen(oldext);
 	if(n >= n2 && strcmp(&file[n-n2], oldext) == 0)
 		n -= n2;
-	ofile = malloc(n + strlen(ext) + 1);
+	ofile = HOSTED_API(malloc)(n + strlen(ext) + 1);
 	memmove(ofile, file, n);
 	strcpy(ofile+n, ext);
 	return ofile;
@@ -1947,21 +1947,21 @@ cleann(char *s)
 	char *p, *r, *t;
 	char buf[256];
 
-	r = t = malloc(strlen(s)+1);
+	r = t = HOSTED_API(malloc)(strlen(s)+1);
 	strcpy(t, s);
 	t = win2inf(t);
 	if(*t != '/'){
 		p = win2inf(HOSTED_API(getwd)(buf, sizeof(buf)));
-		s = malloc(strlen(p)+strlen(t)+2);
+		s = HOSTED_API(malloc)(strlen(p)+strlen(t)+2);
 		strcpy(s, p);
 		strcat(s, "/");
 		strcat(s, t);
 	}
 	else{
-		s = malloc(strlen(t)+1);
+		s = HOSTED_API(malloc)(strlen(t)+1);
 		strcpy(s, t);
 	}
-	free(r);
+	HOSTED_API(free)(r);
 	/* print("cleann: %s\n", p); */
 	return HOSTED_API(cleanname)(s);
 }
@@ -1976,13 +1976,13 @@ srcpath(char *name, int nlen)
 	r = getroot();
 	if(r == nil){
 		l1 = strlen(INCPATH);
-		r = malloc(l1+1);
+		r = HOSTED_API(malloc)(l1+1);
 		strcpy(r, INCPATH);
 		if(l1 >= strlen(SLASHMOD) && strcmp(r+l1-strlen(SLASHMOD), SLASHMOD) == 0)
 			r[l1-strlen(SLASHMOD)] = '\0';
 	}
 	t = cleann(r);
-	free(r);
+	HOSTED_API(free)(r);
 	r = t;
 	/* srcp relative to r */
 	l1 = strlen(srcp);
@@ -1993,8 +1993,20 @@ srcpath(char *name, int nlen)
 		l2 = 0;
 	strncpy(name, srcp+l2, nlen);
 	name[nlen-1] = '\0';
-	free(r);
-	free(srcp);
+	HOSTED_API(free)(r);
+	HOSTED_API(free)(srcp);
 	/* print("srcpath: %s\n", name); */
 	return name;
+}
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
 }

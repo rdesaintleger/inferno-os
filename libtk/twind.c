@@ -325,7 +325,7 @@ tktwincreate(Tk *tk, char *arg, char **val)
 	if(e != nil)
 		return e;
 
-	i->iwin = malloc(sizeof(TkTwind));
+	i->iwin = HOSTED_API(malloc)(sizeof(TkTwind));
 	if(i->iwin == nil) {
 		tktfreeitems(tkt, i, 1);
 		return TkNomem;

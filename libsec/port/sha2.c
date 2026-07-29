@@ -28,7 +28,7 @@ sha256init(void)
 {
 	SHA256state *s;
 
-	s = malloc(sizeof(*s));
+	s = HOSTED_API(malloc)(sizeof(*s));
 	if(s == nil)
 		return nil;
 	s->malloced = 1;
@@ -154,7 +154,7 @@ sha256x(uchar *p, ulong len, uchar *digest, SHA256state *s, int smaller)
 
 	sha256finish(s, digest, smaller);
 	if(s->malloced == 1)
-		free(s);
+		HOSTED_API(free)(s);
 	return nil;
 }
 
@@ -176,7 +176,7 @@ sha512init(void)
 {
 	SHA512state *s;
 
-	s = malloc(sizeof(*s));
+	s = HOSTED_API(malloc)(sizeof(*s));
 	if(s == nil)
 		return nil;
 	s->malloced = 1;
@@ -264,7 +264,7 @@ sha512x(uchar *p, ulong len, uchar *digest, SHA512state *s, int smaller)
 
 	sha512finish(s, digest, smaller);
 	if(s->malloced == 1)
-		free(s);
+		HOSTED_API(free)(s);
 	return nil;
 }
 

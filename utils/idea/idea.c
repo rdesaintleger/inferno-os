@@ -206,8 +206,8 @@ main(int argc, char **argv)
 		key[i] = argv[2][i];
 	idea_key_setup(key, edkey);
 	m = om = 0;
-	bin = (Biobuf*)malloc(sizeof(Biobuf));
-	bout = (Biobuf*)malloc(sizeof(Biobuf));
+	bin = (Biobuf*)HOSTED_API(malloc)(sizeof(Biobuf));
+	bout = (Biobuf*)HOSTED_API(malloc)(sizeof(Biobuf));
 	Binit(bin, stdin, OREAD);
 	Binit(bout, stdout, OWRITE);
 	for(;;){
@@ -251,4 +251,16 @@ main(int argc, char **argv)
 	Bflush(bout);
 	Bterm(bin);
 	Bterm(bout);
-}	
+}
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
+}

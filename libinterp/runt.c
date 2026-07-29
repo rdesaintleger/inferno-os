@@ -170,13 +170,13 @@ bigxprint(Prog *xp, void *vfp, void *vva, String *s1, char **buf, int s)
 	m = s;
 	for (;;) {
 		m *= 2;
-		b = malloc(m);
+		b = HOSTED_API(malloc)(m);
 		if (b == nil)
 			error(exNomem);
 		n = xprint(xp, vfp, vva, s1, b, m);
 		if (n < m-UTFmax-2)
 			break;
-		free(b);
+		HOSTED_API(free)(b);
 	}
 	*buf = b;
 	return n;
@@ -196,7 +196,7 @@ Sys_sprint(void *fp)
 	b[n] = '\0';
 	retstr(b, f->ret);
 	if (b != buf)
-		free(b);
+		HOSTED_API(free)(b);
 }
 
 void
@@ -213,7 +213,7 @@ Sys_aprint(void *fp)
 	destroy(*f->ret);
 	*f->ret = mem2array(b, n);
 	if (b != buf)
-		free(b);
+		HOSTED_API(free)(b);
 }
 
 static int
@@ -407,7 +407,7 @@ builtinmod(char *name, void *vr, int rlen)
 		}
 		r = vr;
 	}
-	l = m->ext = (Link*)malloc((rlen+1)*sizeof(Link));
+	l = m->ext = (Link*)HOSTED_API(malloc)((rlen+1)*sizeof(Link));
 	if(l == nil){
 		freemod(m);
 		return nil;

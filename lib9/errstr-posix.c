@@ -29,14 +29,14 @@ oserrstr(char *buf, uint nerr)
 		s = strerror(errno);
 	else
 		s = "interrupted";
-	utfecpy(buf, buf+nerr, s);
+	HOSTED_API(utfecpy)(buf, buf+nerr, s);
 }
 
 int
 errstr(char *buf, uint nerr)
 {
 	if(errno == Magic)
-		utfecpy(buf, buf+nerr, errstring);
+		HOSTED_API(utfecpy)(buf, buf+nerr, errstring);
 	else
 		oserrstr(buf, nerr);
 	return 1;

@@ -330,7 +330,7 @@ newproto(char *name, int type, int maxconv)
 void
 ipinit(void)
 {
-	ipfs[0] = malloc(sizeof(Fs));
+	ipfs[0] = HOSTED_API(malloc)(sizeof(Fs));
 	if(ipfs[0] == nil)
 		panic("no memory for IP stack");
 
@@ -576,13 +576,13 @@ ipread(Chan *ch, void *a, long n, vlong off)
 		c = x->conv[CONV(ch->qid)];
 		s = smalloc(Statelen);
 		if(waserror()){
-			free(s);
+			HOSTED_API(free)(s);
 			nexterror();
 		}
 		snprint(s, Statelen, "%s\n", ipstates[c->state]);
 		n = readstr(offset, p, n, s);
 		poperror();
-		free(s);
+		HOSTED_API(free)(s);
 		return n;
 	case Qdata:
 		x = f->p[PROTO(ch->qid)];
@@ -859,7 +859,7 @@ ipwrite(Chan *ch, void *a, long n, vlong off)
 		qlock(&c->l);
 		if(waserror()){
 			qunlock(&c->l);
-			free(cb);
+			HOSTED_API(free)(cb);
 			nexterror();
 		}
 		if(cb->nf < 1)
@@ -913,7 +913,7 @@ ipwrite(Chan *ch, void *a, long n, vlong off)
 			error(Enoctl);
 		poperror();
 		qunlock(&c->l);
-		free(cb);
+		HOSTED_API(free)(cb);
 		break;
 	}
 	return n;
@@ -939,7 +939,7 @@ ipwstat(Chan *c, uchar *dp, int n)
 
 	d = smalloc(sizeof(*d)+n);
 	if(waserror()){
-		free(d);
+		HOSTED_API(free)(d);
 		nexterror();
 	}
 	n = convM2D(dp, n, d, (char*)&d[1]);
@@ -954,7 +954,7 @@ ipwstat(Chan *c, uchar *dp, int n)
 	if(d->mode != ~0UL)
 		cv->perm = d->mode & 0777;
 	poperror();
-	free(d);
+	HOSTED_API(free)(d);
 	return n;
 }
 
@@ -992,7 +992,7 @@ protoclone(Proto *p, char *user, int nfd)
 		maxconv = 2 * p->nc;
 		if(maxconv > MAXCONV)
 			maxconv = MAXCONV;
-		np = realloc(p->conv, sizeof(Conv*) * maxconv);
+		np = HOSTED_API(realloc)(p->conv, sizeof(Conv*) * maxconv);
 		if(np == nil)
 			error(Enomem);
 		p->conv = np;
@@ -1027,7 +1027,7 @@ newconv(Proto *p, Conv **pp)
 {
 	Conv *c;
 
-	*pp = c = malloc(sizeof(Conv));
+	*pp = c = HOSTED_API(malloc)(sizeof(Conv));
 	if(c == 0)
 		error(Enomem);
 	qlock(&c->l);
@@ -1098,7 +1098,7 @@ Fsproto(Fs *f, Proto *p)
 
 	p->qid.type = QTDIR;
 	p->qid.path = QID(f->np, 0, Qprotodir);
-	p->conv = malloc(sizeof(Conv*)*(p->nc+1));
+	p->conv = HOSTED_API(malloc)(sizeof(Conv*)*(p->nc+1));
 	if(p->conv == nil)
 		panic("Fsproto");
 

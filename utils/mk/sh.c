@@ -61,11 +61,11 @@ charin(char *cp, char *pat)
 		case '}':
 			if(vargen)
 				vargen = 0;
-			else if(utfrune(pat, r))
+			else if(HOSTED_API(utfrune)(pat, r))
 				return cp;
 			break;
 		default:
-			if(vargen == 0 && utfrune(pat, r))
+			if(vargen == 0 && HOSTED_API(utfrune)(pat, r))
 				return cp;
 			break;
 		}

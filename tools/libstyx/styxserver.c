@@ -81,7 +81,7 @@ styxassert(int vtrue, char *reason)
 void *
 styxmalloc(int bytes)
 {
-	char *m = malloc(bytes);
+	char *m = HOSTED_API(malloc)(bytes);
 	if(m == nil)
 		styxfatal(Enomem);
 	memset(m, 0, bytes);
@@ -939,7 +939,7 @@ styxinit(Styxserver *server, Styxops *ops, char *port, int perm, int needfile)
 	server->ops = ops;
 	server->clients = nil;
 	server->root = nil;
-	server->ftab = (Styxfile**)malloc(TABSZ*sizeof(Styxfile*));
+	server->ftab = (Styxfile**)HOSTED_API(malloc)(TABSZ*sizeof(Styxfile*));
 	for(i = 0; i < TABSZ; i++)
 		server->ftab[i] = nil;
 	server->qidgen = Qroot+1;

@@ -261,7 +261,7 @@ tkcvslinehit(TkCitem *i, Point p)
 	if (l->smooth == BoolT) {
 		np = getbezsplinepts(i->p.drawpt, i->p.npoint, &pp);
 		r = tklinehit(pp, np, w, p);
-		free(pp);
+		HOSTED_API(free)(pp);
 	} else
 		r = tklinehit(i->p.drawpt, i->p.npoint, w, p);
 	return r;

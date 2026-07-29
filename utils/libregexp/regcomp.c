@@ -252,7 +252,7 @@ optimize(Reprog *pp)
 	 *  and then relocate the code.
 	 */
 	size = sizeof(Reprog) + (freep - pp->firstinst)*sizeof(Reinst);
-	npp = (Reprog *)realloc(pp, size);
+	npp = (Reprog *)HOSTED_API(realloc)(pp, size);
 	if(npp==0 || npp==pp)
 		return pp;
 	diff = (char *)npp - (char *)pp;
@@ -477,7 +477,7 @@ regcomp1(char *s, int literal, int dot_type)
 	Reprog *pp;
 
 	/* get memory for the program */
-	pp = (Reprog *)malloc(sizeof(Reprog) + 6*sizeof(Reinst)*strlen(s));
+	pp = (Reprog *)HOSTED_API(malloc)(sizeof(Reprog) + 6*sizeof(Reinst)*strlen(s));
 	if(pp == 0){
 		regerror("out of memory");
 		return 0;
@@ -532,7 +532,7 @@ regcomp1(char *s, int literal, int dot_type)
 #endif
 out:
 	if(errors){
-		free(pp);
+		HOSTED_API(free)(pp);
 		pp = 0;
 	}
 	return pp;

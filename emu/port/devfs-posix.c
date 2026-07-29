@@ -100,7 +100,7 @@ static void
 fsfree(Chan *c)
 {
 	cnameclose(FS(c)->name);
-	free(FS(c));
+	HOSTED_API(free)(FS(c));
 }
 
 Chan*
@@ -163,7 +163,7 @@ fswalk(Chan *c, Chan *nc, char **name, int nname)
 		if(alloc && wq->clone != nil)
 			cclose(wq->clone);
 		cnameclose(current);
-		free(wq);
+		HOSTED_API(free)(wq);
 		return nil;
 	}
 	if(nc == nil){
@@ -537,7 +537,7 @@ fswstat(Chan *c, uchar *buf, int nb)
 		if(stat(FS(c)->name->s, &st) < 0)
 			oserror();
 	}
-	d = malloc(sizeof(*d)+nb);
+	d = HOSTED_API(malloc)(sizeof(*d)+nb);
 	if(d == nil)
 		error(Enomem);
 	if(waserror()){
@@ -637,7 +637,7 @@ fswstat(Chan *c, uchar *buf, int nb)
 	}
 
 	poperror();
-	free(d);
+	HOSTED_API(free)(d);
 	if(tsync && FS(c)->fd >= 0 && fsync(FS(c)->fd) < 0)
 		oserror();
 	return nb;
@@ -949,9 +949,9 @@ static void
 freeuser(User *u)
 {
 	if(u != nil){
-		free(u->name);
-		free(u->mem);
-		free(u);
+		HOSTED_API(free)(u->name);
+		HOSTED_API(free)(u->mem);
+		HOSTED_API(free)(u);
 	}
 }
 
@@ -960,20 +960,20 @@ newuser(int id, int gid, char *name, int nmem)
 {
 	User *u;
 
-	u = malloc(sizeof(*u));
+	u = HOSTED_API(malloc)(sizeof(*u));
 	if(u == nil)
 		return nil;
 	u->name = HOSTED_API(strdup)(name);
 	if(u->name == nil){
-		free(u);
+		HOSTED_API(free)(u);
 		return nil;
 	}
 	u->nmem = nmem;
 	if(nmem){
-		u->mem = malloc(nmem*sizeof(*u->mem));
+		u->mem = HOSTED_API(malloc)(nmem*sizeof(*u->mem));
 		if(u->mem == nil){
-			free(u->name);
-			free(u);
+			HOSTED_API(free)(u->name);
+			HOSTED_API(free)(u);
 			return nil;
 		}
 	}else

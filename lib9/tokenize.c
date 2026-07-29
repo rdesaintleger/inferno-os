@@ -10,7 +10,7 @@ qtoken(char *s, char *sep)
 
 	quoting = 0;
 	t = s;	/* s is output string, t is input string */
-	while(*t!='\0' && (quoting || utfrune(sep, *t)==nil)){
+	while(*t!='\0' && (quoting || HOSTED_API(utfrune)(sep, *t)==nil)){
 		if(*t != '\''){
 			*s++ = *t++;
 			continue;
@@ -47,7 +47,7 @@ etoken(char *t, char *sep)
 
 	/* move to end of next token */
 	quoting = 0;
-	while(*t!='\0' && (quoting || utfrune(sep, *t)==nil)){
+	while(*t!='\0' && (quoting || HOSTED_API(utfrune)(sep, *t)==nil)){
 		if(*t != '\''){
 			t++;
 			continue;
@@ -77,7 +77,7 @@ HOSTED_API(tokenize)(char *s, char **args, int maxargs)
 	int nargs;
 
 	for(nargs=0; nargs<maxargs; nargs++){
-		while(*s!='\0' && utfrune(qsep, *s)!=nil)
+		while(*s!='\0' && HOSTED_API(utfrune)(qsep, *s)!=nil)
 			s++;
 		if(*s == '\0')
 			break;

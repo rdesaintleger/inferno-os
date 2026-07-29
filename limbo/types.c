@@ -751,7 +751,7 @@ moddecled(Node *n)
 			if(ids->sym == im->sym){
 				isimp = 1;
 				d = ids;
-				dm = malloc(sizeof(Dlist));
+				dm = HOSTED_API(malloc)(sizeof(Dlist));
 				dm->d = ids;
 				dm->next = nil;
 				if(impdecls == nil)
@@ -2465,7 +2465,7 @@ enterdesc(uchar *map, long size, long nmap)
 		if(d->size == size && d->nmap == nmap){
 			c = memcmp(d->map, map, nmap);
 			if(c == 0){
-				free(map);
+				HOSTED_API(free)(map);
 				return d;
 			}
 			if(c > 0)
@@ -3580,7 +3580,7 @@ sign(Decl *d)
 		t->sig ^= md5sig[i+0] | (md5sig[i+1]<<8) | (md5sig[i+2]<<16) | (md5sig[i+3]<<24);
 	if(debug['S'])
 		print("signed %D type %T len %d sig %#lux\n", d, t, sigend, t->sig);
-	free(sig);
+	HOSTED_API(free)(sig);
 	return t->sig;
 }
 

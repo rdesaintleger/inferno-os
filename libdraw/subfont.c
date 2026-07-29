@@ -8,7 +8,7 @@ allocsubfont(char *name, int n, int height, int ascent, Fontchar *info, Image *i
 
 	assert(height != 0 /* allocsubfont */);
 
-	f = malloc(sizeof(Subfont));
+	f = HOSTED_API(malloc)(sizeof(Subfont));
 	if(f == 0)
 		return 0;
 	f->n = n;

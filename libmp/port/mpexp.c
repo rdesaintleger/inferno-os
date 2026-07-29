@@ -28,7 +28,7 @@ mpexp(mpint *b, mpint *e, mpint *m, mpint *res)
 		return;
 	}
 	if(i<0)
-		sysfatal("mpexp: negative exponent");
+		HOSTED_API(sysfatal)("mpexp: negative exponent");
 
 	t[0] = mpcopy(b);
 	t[1] = res;

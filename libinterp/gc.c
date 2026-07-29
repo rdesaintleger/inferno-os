@@ -53,7 +53,7 @@ ptradd(Heap *v)
 
 	if ((p = ptrfree) != nil)
 		ptrfree = p->next;
-	else if ((p = malloc(sizeof (Ptrhash))) == nil)
+	else if ((p = HOSTED_API(malloc)(sizeof (Ptrhash))) == nil)
 		error("ptradd malloc");
 	h = HASHPTR(v);
 	p->value = v;

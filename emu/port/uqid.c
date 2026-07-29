@@ -59,7 +59,7 @@ uqidalloc(Uqidtab *tab, Chan *c)
 		qunlock(&tab->l);
 		return q;
 	}
-	q = mallocz(sizeof(*q), 1);
+	q = HOSTED_API(mallocz)(sizeof(*q), 1);
 	if(q == nil){
 		qunlock(&tab->l);
 		error(Enomem);
@@ -93,7 +93,7 @@ freeuqid(Uqidtab *tab, Uqid *q)
 		for(; *hp != nil; hp = &(*hp)->next)
 			if(*hp == q){
 				*hp = q->next;
-				free(q);
+				HOSTED_API(free)(q);
 				break;
 			}
 	}

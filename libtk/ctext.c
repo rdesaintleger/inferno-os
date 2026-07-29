@@ -261,7 +261,7 @@ tkcvstextfree(TkCitem *i)
 	if(t->pen != nil)
 		freeimage(t->pen);
 	if(t->text != nil)
-		free(t->text);
+		HOSTED_API(free)(t->text);
 }
 
 void
@@ -517,15 +517,15 @@ tkcvstextinsert(Tk *tk, TkCitem *i, char *arg)
 	if(*arg == '\0')
 		return nil;
 
-	text = malloc(Tkcvstextins);
+	text = HOSTED_API(malloc)(Tkcvstextins);
 	if(text == nil)
 		return TkNomem;
 
 	tkword(top, arg, text, text+Tkcvstextins, nil);
 	n = strlen(text);
-	t->text = realloc(t->text, t->tlen+n+1);
+	t->text = HOSTED_API(realloc)(t->text, t->tlen+n+1);
 	if(t->text == nil) {
-		free(text);
+		HOSTED_API(free)(text);
 		return TkNomem;
 	}
 	if(t->tlen == 0)
@@ -536,7 +536,7 @@ tkcvstextinsert(Tk *tk, TkCitem *i, char *arg)
 	memmove(t->text+first+n, t->text+first, t->tlen-first+1);
 	memmove(t->text+first, text, n);
 	t->tlen += n;
-	free(text);
+	HOSTED_API(free)(text);
 
 	tkcvstextsize(i);
 	tkbbmax(&TKobj(TkCanvas, tk)->update, &i->p.bb);

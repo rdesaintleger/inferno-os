@@ -51,14 +51,14 @@ libqlalloc(void)
 {
 	QLock *q;
 
-	q = mallocz(sizeof(QLock)+sizeof(Prog*), 1);
+	q = HOSTED_API(mallocz)(sizeof(QLock)+sizeof(Prog*), 1);
 	return q;
 }
 
 void
 libqlfree(void *l)
 {
-	free(l);
+	HOSTED_API(free)(l);
 }
 
 vlong

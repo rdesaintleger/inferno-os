@@ -51,7 +51,7 @@ makememones(void)
 		return;
 	drawreset();
 	/* set up screen pixmap */
-	xm = malloc(sizeof(Xmem));
+	xm = HOSTED_API(malloc)(sizeof(Xmem));
 	if(xm == nil){
 		print("can't alloc for screen pixmap\n");
 		return;
@@ -80,20 +80,20 @@ memlalloc(Memscreen *s, Rectangle screenr, Refreshfn refreshfn, void *refreshptr
 	Memlayer *l;
 	Xmem *xm, *sxm;
 
-	n = malloc(sizeof(Memimage));
+	n = HOSTED_API(malloc)(sizeof(Memimage));
 	if(n == nil)
 		return nil;
 
-	l = malloc(sizeof(Memlayer));
+	l = HOSTED_API(malloc)(sizeof(Memlayer));
 	if(l == nil){
-		free(n);
+		HOSTED_API(free)(n);
 		return nil;
 	}
 
-	xm = malloc(sizeof(Xmem));
+	xm = HOSTED_API(malloc)(sizeof(Xmem));
 	if(xm == nil){
-		free(l);
-		free(n);
+		HOSTED_API(free)(l);
+		HOSTED_API(free)(n);
 		return nil;
 	}
 
@@ -103,9 +103,9 @@ memlalloc(Memscreen *s, Rectangle screenr, Refreshfn refreshfn, void *refreshptr
 	else{
 		l->save = allocmemimage(screenr, s->image->ldepth);
 		if(l->save == nil){
-			free(l);
-			free(n);
-			free(xm);
+			HOSTED_API(free)(l);
+			HOSTED_API(free)(n);
+			HOSTED_API(free)(xm);
 			return nil;
 		}
 
@@ -168,9 +168,9 @@ memlalloc(Memscreen *s, Rectangle screenr, Refreshfn refreshfn, void *refreshptr
 			if(xpaint == nil) {
 				if(l->save != nil)
 					freememimage(l->save);
-				free(l);
-				free(n);
-				free(xm);
+				HOSTED_API(free)(l);
+				HOSTED_API(free)(n);
+				HOSTED_API(free)(xm);
 				return nil;
 			}
 			xpaint->clipr = paint.clipr;

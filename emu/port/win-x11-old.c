@@ -175,7 +175,7 @@ gotcursor(ICursor c)
 	XFreePixmap(xdisplay, xsrc);
 	XFreePixmap(xdisplay, xmask);
 	XFlush(xdisplay);
-	free(c.src);
+	HOSTED_API(free)(c.src);
 }
 
 void
@@ -207,7 +207,7 @@ drawcursor(Drawcursor* c)
 		bpl = bytesperline(ir, 1);
 
 		i = h*bpl;
-		src = malloc(2*i);
+		src = HOSTED_API(malloc)(2*i);
 		if(src == nil)
 			return;
 		mask = src + i;

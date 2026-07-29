@@ -14,7 +14,7 @@ timeof(char *name, int force)
 	Symtab *sym;
 	long t;
 
-	if(utfrune(name, '('))
+	if(HOSTED_API(utfrune)(name, '('))
 		return atimeof(force, name);	/* archive */
 
 	if(force)
@@ -40,7 +40,7 @@ touch(char *name)
 	if(nflag)
 		return;
 
-	if(utfrune(name, '('))
+	if(HOSTED_API(utfrune)(name, '('))
 		atouch(name);		/* archive */
 	else if(chgtime(name) < 0) {
 		perror(name);
@@ -51,7 +51,7 @@ touch(char *name)
 void
 delete(char *name)
 {
-	if(utfrune(name, '(') == 0) {		/* file */
+	if(HOSTED_API(utfrune)(name, '(') == 0) {		/* file */
 		if(remove(name) < 0)
 			perror(name);
 	} else

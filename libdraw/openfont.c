@@ -20,18 +20,18 @@ openfont(Display *d, char *name)
 		return 0;
 	}
 	n = dir->length;
-	free(dir);
-	buf = malloc(n+1);
+	HOSTED_API(free)(dir);
+	buf = HOSTED_API(malloc)(n+1);
 	if(buf == 0)
 		goto Err0;
 	buf[n] = 0;
 	i = libreadn(fd, buf, n);
 	libclose(fd);
 	if(i != n){
-		free(buf);
+		HOSTED_API(free)(buf);
 		return 0;
 	}
 	fnt = buildfont(d, buf, name);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return fnt;
 }

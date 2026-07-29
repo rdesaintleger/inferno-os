@@ -240,7 +240,7 @@ Loader_newmod(void *a)
 		return;
 	}
 
-	m = malloc(sizeof(Module));
+	m = HOSTED_API(malloc)(sizeof(Module));
 	if(m == nil) {
 		kwerrstr(exNomem);
 		return;
@@ -251,7 +251,7 @@ Loader_newmod(void *a)
 	m->name = HOSTED_API(strdup)(string2c(f->name));
 	m->path = HOSTED_API(strdup)(m->name);
 	m->ntype = 1;
-	m->type = malloc(sizeof(Type*));
+	m->type = HOSTED_API(malloc)(sizeof(Type*));
 	if(m->name == nil || m->path == nil || m->type == nil) {
 		kwerrstr(exNomem);
 		goto bad;
@@ -265,7 +265,7 @@ Loader_newmod(void *a)
 
 	ia = f->inst;
 	m->nprog = ia->len;
-	m->prog = malloc(m->nprog*sizeof(Inst));
+	m->prog = HOSTED_API(malloc)(m->nprog*sizeof(Inst));
 	if(m->prog == nil)
 		goto bad;
 	i = m->prog;
@@ -336,7 +336,7 @@ Loader_tnew(void *a)
 		m->type[m->ntype++] = t;
 		return;
 	}
-	nt = realloc(m->type, mem);
+	nt = HOSTED_API(realloc)(m->type, mem);
 	if(nt == nil) {
 		kwerrstr(exNomem);
 		return;

@@ -15,7 +15,7 @@ mpdiv(mpint *dividend, mpint *divisor, mpint *quotient, mpint *remainder)
 
 	// divide bv zero
 	if(divisor->top == 0)
-		sysfatal("mpdiv: divide by zero");
+		HOSTED_API(sysfatal)("mpdiv: divide by zero");
 
 	// quick check
 	if(mpmagcmp(dividend, divisor) < 0){

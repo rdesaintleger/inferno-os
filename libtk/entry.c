@@ -293,9 +293,9 @@ tkfreeentry(Tk *tk)
 {
 	TkEntry *tke = TKobj(TkEntry, tk);
 
-	free(tke->xscroll);
-	free(tke->text);
-	free(tke->show);
+	HOSTED_API(free)(tke->xscroll);
+	HOSTED_API(free)(tke->text);
+	HOSTED_API(free)(tke->show);
 }
 
 static void
@@ -310,7 +310,7 @@ tkentrytext(Image *i, Rectangle s, Tk *tk, TkEnv *env)
 	dp = Pt(s.min.x - (tke->x0 - tke->xv0), s.min.y);
 	if (tke->show) {
 		HOSTED_API(chartorune)(&showr, tke->show);
-		text = mallocz(sizeof(Rune) * (tke->textlen+1), 0);
+		text = HOSTED_API(mallocz)(sizeof(Rune) * (tke->textlen+1), 0);
 		if (text == nil)
 			return;
 		for (j = 0; j < tke->textlen; j++)
@@ -352,7 +352,7 @@ tkentrytext(Image *i, Rectangle s, Tk *tk, TkEnv *env)
 		draw(i, rectaddpt(r, s.min), tkgc(env, TkCforegnd), nil, ZP);
 	}
 	if (tke->show)
-		free(text);
+		HOSTED_API(free)(text);
 }
 
 char*
@@ -417,21 +417,21 @@ tkentrysh(Tk *tk)
 		}
 	}
 
-	val = mallocz(Tkminitem, 0);
+	val = HOSTED_API(mallocz)(Tkminitem, 0);
 	if(val == nil)
 		return TkNomem;
 	v = tkfprint(val, bot);
 	*v++ = ' ';
 	tkfprint(v, top);
-	cmd = mallocz(Tkminitem, 0);
+	cmd = HOSTED_API(mallocz)(Tkminitem, 0);
 	if(cmd == nil) {
-		free(val);
+		HOSTED_API(free)(val);
 		return TkNomem;
 	}
 	sprint(cmd, "%s %s", tke->xscroll, val);
 	e = tkexec(tk->env->top, cmd, nil);
-	free(cmd);
-	free(val);
+	HOSTED_API(free)(cmd);
+	HOSTED_API(free)(val);
 	return e;
 }
 
@@ -608,12 +608,12 @@ tkentryseecmd(Tk *tk, char *arg, char **val)
 
 	USED(val);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	e = tkentryparseindex(tk, buf, &index);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(e != nil)
 		return e;
 
@@ -631,12 +631,12 @@ tkentrybboxcmd(Tk *tk, char *arg, char **val)
 	int index;
 	Rectangle bbox;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	r = tkentryparseindex(tk, buf, &index);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(r != nil)
 		return r;
 	bbox = rectaddpt(tkentrybbox(tk, index), Pt(xinset(tk) - tke->x0, yinset(tk)));
@@ -649,12 +649,12 @@ tkentryindex(Tk *tk, char *arg, char **val)
 	int index;
 	char *r, *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	r = tkentryparseindex(tk, buf, &index);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(r != nil)
 		return r;
 	return tkvalue(val, "%d", index);
@@ -668,12 +668,12 @@ tkentryicursor(Tk *tk, char *arg, char **val)
 	char *r, *buf;
 
 	USED(val);
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	r = tkentryparseindex(tk, buf, &index);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(r != nil)
 		return r;
 	tke->icursor = index;
@@ -722,13 +722,13 @@ tkentryget(Tk *tk, char *arg, char **val)
 		return tkvalue(val, "%.*S", tke->textlen, tke->text);
 
 	top = tk->env->top;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(top, arg, buf, buf+Tkmaxitem, nil);
 	e = tkentryparseindex(tk, buf, &first);
 	if(e != nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 	last = first+1;
@@ -736,11 +736,11 @@ tkentryget(Tk *tk, char *arg, char **val)
 	if(buf[0] != '\0') {
 		e = tkentryparseindex(tk, buf, &last);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(last <= first || tke->textlen == 0 || first == tke->textlen)
 		return tkvalue(val, "%S", L"");
 	return tkvalue(val, "%.*S", last-first, tke->text+first);
@@ -759,12 +759,12 @@ tkentryinsert(Tk *tk, char *arg, char **val)
 	tke = TKobj(TkEntry, tk);
 
 	top = tk->env->top;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(top, arg, buf, buf+Tkmaxitem, nil);
 	e = tkentryparseindex(tk, buf, &ins);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(e != nil)
 		return e;
 
@@ -774,15 +774,15 @@ tkentryinsert(Tk *tk, char *arg, char **val)
 	n = strlen(arg) + 1;
 	if(n < Tkmaxitem)
 		n = Tkmaxitem;
-	text = malloc(n);
+	text = HOSTED_API(malloc)(n);
 	if(text == nil)
 		return TkNomem;
 
 	tkword(top, arg, text, text+n, nil);
 	n = HOSTED_API(utflen)(text);
-	etext = realloc(tke->text, (tke->textlen+n+1)*sizeof(Rune));
+	etext = HOSTED_API(realloc)(tke->text, (tke->textlen+n+1)*sizeof(Rune));
 	if(etext == nil) {
-		free(text);
+		HOSTED_API(free)(text);
 		return TkNomem;
 	}
 	tke->text = etext;
@@ -791,7 +791,7 @@ tkentryinsert(Tk *tk, char *arg, char **val)
 	t = text;
 	for(i=0; i<n; i++)
 		t += HOSTED_API(chartorune)(tke->text+ins+i, t);
-	free(text);
+	HOSTED_API(free)(text);
 
 	tke->textlen += n;
 
@@ -828,13 +828,13 @@ tkentrydelete(Tk *tk, char *arg, char **val)
 	tke = TKobj(TkEntry, tk);
 
 	top = tk->env->top;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(top, arg, buf, buf+Tkmaxitem, nil);
 	e = tkentryparseindex(tk, buf, &d0);
 	if(e != nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 
@@ -843,18 +843,18 @@ tkentrydelete(Tk *tk, char *arg, char **val)
 	if(buf[0] != '\0') {
 		e = tkentryparseindex(tk, buf, &d1);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(d1 <= d0 || tke->textlen == 0 || d0 >= tke->textlen)
 		return nil;
 
 	memmove(tke->text+d0, tke->text+d1, (tke->textlen-d1)*sizeof(Rune));
 	tke->textlen -= d1 - d0;
 
-	text = realloc(tke->text, (tke->textlen+1) * sizeof(Rune));
+	text = HOSTED_API(realloc)(tke->text, (tke->textlen+1) * sizeof(Rune));
 	if (text != nil)
 		tke->text = text;
 	tke->sel0 = adjustfordel(d0, d1, tke->sel0);
@@ -898,7 +898,7 @@ tkentrybs(Tk *tk, char *arg, char **val)
 	if(tke->sel0 < tke->sel1)
 		return tkentrydelete(tk, "sel.first sel.last", nil);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
@@ -906,26 +906,26 @@ tkentrybs(Tk *tk, char *arg, char **val)
 	if(buf[0] != '\0') {
 		e = tkentryparseindex(tk, buf, &ix);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
 	if(ix > -1) {			/* DEL */
 		if(tke->icursor >= tke->textlen) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return nil;
 		}
 	}
 	else {				/* backspace */
 		if(tke->icursor == 0) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return nil;
 		}
 		tke->icursor--;
 	}
 	snprint(buf, Tkmaxitem, "%d", tke->icursor);
 	e = tkentrydelete(tk, buf, nil);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }
 
@@ -963,7 +963,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 	TkEntry *tke;
 	char *e, *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -980,7 +980,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &tke->anchor);
 		tke->flag &= ~Ewordsel;
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 	else
@@ -988,7 +988,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &to);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		
@@ -1016,7 +1016,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &start);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		from = start;
@@ -1038,7 +1038,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 	else
 	if(strcmp(buf, "present") == 0) {
 		e = tkvalue(val, "%d", tke->sel1 > tke->sel0);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 	else
@@ -1046,13 +1046,13 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		arg = tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &from);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &to);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		tke->sel0 = from;
@@ -1067,7 +1067,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		tkword(top, arg, buf, buf+Tkmaxitem, nil);
 		e = tkentryparseindex(tk, buf, &to);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		if(tke->sel0 == 0 && tke->sel1 == 0) {
@@ -1091,7 +1091,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 		}
 	}
 	else {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadcm;
 	}
 	locked = lockdisplay(tk->env->top->display);
@@ -1100,7 +1100,7 @@ tkentryselect(Tk *tk, char *arg, char **val)
 	if (locked)
 		unlockdisplay(tk->env->top->display);
 	tk->dirty = tkrect(tk, 1);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return nil;
 }
 
@@ -1114,7 +1114,7 @@ tkentryb2p(Tk *tk, char *arg, char **val)
 	USED(val);
 
 	tke = TKobj(TkEntry, tk);
-	buf = malloc(Tkmaxitem);
+	buf = HOSTED_API(malloc)(Tkmaxitem);
 	if (buf == nil)
 		return TkNomem;
 
@@ -1137,7 +1137,7 @@ tkentryxview(Tk *tk, char *arg, char **val)
 	env = tk->env;
 	dx = tk->act.width - 2*xinset(tk);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -1153,7 +1153,7 @@ tkentryxview(Tk *tk, char *arg, char **val)
 		*v++ = ' ';
 		tkfprint(v, top);
 		e = tkvalue(val, "%s", buf);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 
@@ -1161,7 +1161,7 @@ tkentryxview(Tk *tk, char *arg, char **val)
 	if(strcmp(buf, "moveto") == 0) {
 		e = tkfracword(env->top, &arg, &top, nil);
 		if (e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		tke->x0 = TKF2I(top*tke->xlen);
@@ -1183,7 +1183,7 @@ tkentryxview(Tk *tk, char *arg, char **val)
 	else {
 		e = tkentryparseindex(tk, buf, &ix);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 		locked = lockdisplay(env->top->display);
@@ -1191,7 +1191,7 @@ tkentryxview(Tk *tk, char *arg, char **val)
 		if (locked)
 			unlockdisplay(env->top->display);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	if (tke->x0 > tke->xlen - dx)
 		tke->x0 = tke->xlen - dx;

@@ -127,7 +127,7 @@ export(int fd, char *dir, int async)
 	dc = namec(dir, Atodir, 0, 0);
 	poperror();
 
-	fs = malloc(sizeof(Export));
+	fs = HOSTED_API(malloc)(sizeof(Export));
 	if(fs == nil){
 		cclose(c);
 		cclose(dc);
@@ -253,7 +253,7 @@ exportproc(void *a)
 		if(msize == 0)
 			msize = MAXRPCDEF;
 		for(n=0;; n++){	/* we don't use smalloc, to avoid memset */
-			q = mallocz(sizeof(*q)+msize, 0);
+			q = HOSTED_API(mallocz)(sizeof(*q)+msize, 0);
 			if(q != nil || n > 6000)
 				break;
 			if(n%600 == 0)
@@ -344,7 +344,7 @@ exportproc(void *a)
 			print("exportproc %ld shut down\n", up->pid);
 	}
 
-	free(q);
+	HOSTED_API(free)(q);
 	exshutdown(fs);
 	async = fs->async;
 	exfree(fs);
@@ -413,10 +413,10 @@ exfreeq(Exq *q)
 	while((fq = q->flush) != nil){
 		q->flush = fq->next;
 		exfree(fq->export);
-		free(fq);
+		HOSTED_API(free)(fq);
 	}
 	exfree(q->export);
-	free(q);
+	HOSTED_API(free)(q);
 }
 
 static void
@@ -460,7 +460,7 @@ exfreefids(Export *fs)
 				if(f->chan != nil)
 					cclose(f->chan);
 				freeuqid(&fs->uqids, f->qid);
-				free(f);
+				HOSTED_API(free)(f);
 			} else
 				print("exfreefids: busy fid\n");
 		}
@@ -480,8 +480,8 @@ exfree(Export *fs)
 	cclose(fs->root);
 	cclose(fs->io);
 	exfreefids(fs);
-	free(fs->user);
-	free(fs);
+	HOSTED_API(free)(fs->user);
+	HOSTED_API(free)(fs);
 }
 
 static int
@@ -658,7 +658,7 @@ Exmkfid(Export *fs, ulong fid)
 	ulong h;
 	Fid *f, *nf;
 
-	nf = malloc(sizeof(Fid));
+	nf = HOSTED_API(malloc)(sizeof(Fid));
 	if(nf == nil)
 		return nil;
 	lock(&fs->fidlock);
@@ -666,7 +666,7 @@ Exmkfid(Export *fs, ulong fid)
 	for(f = fs->fid[h]; f != nil; f = f->next){
 		if(f->fid == fid){
 			unlock(&fs->fidlock);
-			free(nf);
+			HOSTED_API(free)(nf);
 			return nil;
 		}
 	}
@@ -723,7 +723,7 @@ Exputfid(Export *fs, Fid *f)
 			f->next->last = f->last;
 		unlock(&fs->fidlock);
 		freeuqid(&fs->uqids, f->qid);
-		free(f);
+		HOSTED_API(free)(f);
 		if(c != nil)
 			cclose(c);
 		return;

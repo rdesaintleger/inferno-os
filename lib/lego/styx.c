@@ -207,7 +207,7 @@ itoa(char *buf, short value)
 Reader *
 readercreate(ushort tag, ushort fid, ushort offset, ushort count)
 {
-	Reader *rp = malloc(sizeof(Reader));
+	Reader *rp = HOSTED_API(malloc)(sizeof(Reader));
 	rp->tag = tag;
 	rp->fid = fid;
 	rp->offset = offset;
@@ -527,7 +527,7 @@ Fid *
 fidcreate(ushort fid, const uchar qid[8])
 {
 	Fid *fp;
-	fp = malloc(sizeof(Fid));
+	fp = HOSTED_API(malloc)(sizeof(Fid));
 	ASSERT(fp);
 	fp->open = 0;
 	fp->fid = fid;

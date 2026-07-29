@@ -214,7 +214,7 @@ tktext(TkTop *t, char* arg, char **ret)
 		tkt->inswidth = 0;
 
 	if(tkt->tabs == nil) {
-		tkt->tabs = malloc(sizeof(TkTtabstop));
+		tkt->tabs = HOSTED_API(malloc)(sizeof(TkTtabstop));
 		if(tkt->tabs == nil) 
 			goto err;
 		tkt->tabs->pos = 8*tk->env->wzero;
@@ -493,12 +493,12 @@ tktdrawline(Image *i, Tk *tk, TkTline *l, Point deltait)
 	int o, bd, ul, ov, h, w, la, lh, cursorx, join;
 	char *err;
 
-	env = mallocz(sizeof(TkEnv), 0);
+	env = HOSTED_API(mallocz)(sizeof(TkEnv), 0);
 	if(env == nil)
 		return TkNomem;
-	opts = mallocz(TkTnumopts*sizeof(int), 0);
+	opts = HOSTED_API(mallocz)(TkTnumopts*sizeof(int), 0);
 	if(opts == nil) {
-		free(env);
+		HOSTED_API(free)(env);
 		return TkNomem;
 	}
 	tkt = TKobj(TkText, tk);
@@ -627,8 +627,8 @@ tktdrawline(Image *i, Tk *tk, TkTline *l, Point deltait)
 				sub->dirty = tkrect(sub, 1);
 				err = tkdrawslaves(sub, p, &dirty);
 				if(err != nil) {
-					free(opts);
-					free(env);
+					HOSTED_API(free)(opts);
+					HOSTED_API(free)(env);
 					return err;
 				}
 			}
@@ -652,8 +652,8 @@ tktdrawline(Image *i, Tk *tk, TkTline *l, Point deltait)
 			tktextcursordraw(tk, TkCforegnd);
 	}
 
-	free(opts);
-	free(env);
+	HOSTED_API(free)(opts);
+	HOSTED_API(free)(env);
 	return nil;
 }
 
@@ -818,7 +818,7 @@ tktinsert(Tk *tk, TkTindex *ins, char *s, TkTitem *tagit)
 		e = tktnewitem(TkTascii, nextra, &i);
 		if(e != nil) {
 			if(utagit != nil)
-				free(utagit);
+				HOSTED_API(free)(utagit);
 			return e;
 		}
 
@@ -850,11 +850,11 @@ tktinsert(Tk *tk, TkTindex *ins, char *s, TkTitem *tagit)
 			if(s - p > n)
 				i->kind = TkTrune;
 			n = s - p;
-			i->istring = malloc(n+1);
+			i->istring = HOSTED_API(malloc)(n+1);
 			if(i->istring == nil) {
 				tktfreeitems(tkt, i, 1);
 				if(utagit != nil)
-					free(utagit);
+					HOSTED_API(free)(utagit);
 				return TkNomem;
 			}
 			memmove(i->istring, p, n);
@@ -863,14 +863,14 @@ tktinsert(Tk *tk, TkTindex *ins, char *s, TkTitem *tagit)
 		e = tktiteminsert(tkt, ins, i);
 		if(e != nil) {
 			if(utagit != nil)
-				free(utagit);
+				HOSTED_API(free)(utagit);
 			tktfreeitems(tkt, i, 1);
 			return e;
 		}
 	}
 
 	if(utagit != nil)
-		free(utagit);
+		HOSTED_API(free)(utagit);
 	return nil;
 }
 
@@ -974,20 +974,20 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 	rest.lo = oldi.hi;
 	rest.hi = rest.lo + 1000; /* get background after end, too */
 
-	opts = mallocz(TkTnumopts*sizeof(int), 0);
+	opts = HOSTED_API(mallocz)(TkTnumopts*sizeof(int), 0);
 	if(opts == nil)
 		return TkNomem;
-	env = mallocz(sizeof(TkEnv), 0);
+	env = HOSTED_API(mallocz)(sizeof(TkEnv), 0);
 	if(env == nil) {
-		free(opts);
+		HOSTED_API(free)(opts);
 		return TkNomem;
 	}
 
 	for(l = l1->next; l != lafter; l = l->next) {
 		if(tktdbg && l == nil) {
 			print("tktfixgeom: botch 2\n");
-			free(opts);
-			free(env);
+			HOSTED_API(free)(opts);
+			HOSTED_API(free)(env);
 			return nil;
 		}
 
@@ -1071,8 +1071,8 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 				it = l->next->items;
 				if(tktdbg && (it == nil || it->kind == TkTnewline || it->kind == TkTcontline)) {
 					print("tktfixgeom: botch 3\n");
-					free(opts);
-					free(env);
+					HOSTED_API(free)(opts);
+					HOSTED_API(free)(env);
 					return nil;
 				}
 				if(iprev == nil)
@@ -1175,8 +1175,8 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 					needsplit = 1;
 					e = tktsplititem(&ix);
 					if(e != nil) {
-						free(opts);
-						free(env);
+						HOSTED_API(free)(opts);
+						HOSTED_API(free)(env);
 						return e;
 					}
 				}
@@ -1185,15 +1185,15 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 
 				e = tktnewitem(TkTcontline, 0, &it);
 				if(e != nil) {
-					free(opts);
-					free(env);
+					HOSTED_API(free)(opts);
+					HOSTED_API(free)(env);
 					return e;
 				}
 				e = tktiteminsert(tkt, &ix, it);
 				if(e != nil) {
 					tktfreeitems(tkt, it, 1);
-					free(opts);
-					free(env);
+					HOSTED_API(free)(opts);
+					HOSTED_API(free)(env);
 					return e;
 				}
 
@@ -1245,10 +1245,10 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 			     tktsametags(i, it)) {
 				n = strlen(i->istring);
 				j = strlen(it->istring);
-				s = realloc(i->istring, n + j + 1);
+				s = HOSTED_API(realloc)(i->istring, n + j + 1);
 				if(s == nil) {
-					free(opts);
-					free(env);
+					HOSTED_API(free)(opts);
+					HOSTED_API(free)(env);
 					return TkNomem;
 				}
 				i->istring = s;
@@ -1312,8 +1312,8 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 		if(l->flags&TkTlast)
 			y += sp3;
 	}
-	free(opts);
-	free(env);
+	HOSTED_API(free)(opts);
+	HOSTED_API(free)(env);
 
 	tktdrawbg(tk, oldi.lo, oldi.hi, 0);
 
@@ -1363,7 +1363,7 @@ tktpostspace(Tk *tk, TkTline *l)
 	TkEnv env;
 	int *opts;
 
-	opts = mallocz(TkTnumopts*sizeof(int), 0);
+	opts = HOSTED_API(mallocz)(TkTnumopts*sizeof(int), 0);
 	if(opts == nil)
 		return 0;
 	ans = 0;
@@ -1373,7 +1373,7 @@ tktpostspace(Tk *tk, TkTline *l)
 		tkttagopts(tk, i, opts, &env, nil, 1);
 		ans = opts[TkTspacing3];
 	}
-	free(opts);
+	HOSTED_API(free)(opts);
 	return ans;
 }
 
@@ -1385,7 +1385,7 @@ tktprespace(Tk *tk, TkTline *l)
 	TkEnv env;
 	int *opts;
 	
-	opts = mallocz(TkTnumopts*sizeof(int), 0);
+	opts = HOSTED_API(mallocz)(TkTnumopts*sizeof(int), 0);
 	if(opts == nil)
 		return 0;
 
@@ -1399,7 +1399,7 @@ tktprespace(Tk *tk, TkTline *l)
 		else
 			ans = opts[TkTspacing2];
 	}
-	free(opts);
+	HOSTED_API(free)(opts);
 	return ans;
 }
 
@@ -1749,12 +1749,12 @@ tktsetscroll(Tk *tk, int orient)
 	tkt->scrolltop[orient] = top;
 	tkt->scrollbot[orient] = bot;
 
-	val = mallocz(Tkminitem, 0);
+	val = HOSTED_API(mallocz)(Tkminitem, 0);
 	if(val == nil)
 		return TkNomem;
-	cmd = mallocz(Tkmaxitem, 0);
+	cmd = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(cmd == nil) {
-		free(val);
+		HOSTED_API(free)(val);
 		return TkNomem;
 	}
 
@@ -1763,8 +1763,8 @@ tktsetscroll(Tk *tk, int orient)
 	tkfprint(v, bot);
 	snprint(cmd, Tkmaxitem, "%s %s", s, val);
 	e = tkexec(tk->env->top, cmd, nil);
-	free(cmd);
-	free(val);
+	HOSTED_API(free)(cmd);
+	HOSTED_API(free)(val);
 	return e;
 }
 
@@ -2072,12 +2072,12 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 
 	iprev = nil;
 	fmtstrinit(&fmt);
-	buf = mallocz(100, 0);
+	buf = HOSTED_API(mallocz)(100, 0);
 	if(buf == nil)
 		return TkNomem;
 	if(sgml) {
-		stack = malloc((tkt->nexttag+1)*sizeof(int));
-		tmpstack = malloc((tkt->nexttag+1)*sizeof(int));
+		stack = HOSTED_API(malloc)((tkt->nexttag+1)*sizeof(int));
+		tmpstack = HOSTED_API(malloc)((tkt->nexttag+1)*sizeof(int));
 		if(stack == nil || tmpstack == nil)
 			goto nomemret;
 		nstack = 0;
@@ -2162,15 +2162,15 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 	}
 
 	*val = fmtstrflush(&fmt);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return nil;
 
 nomemret:
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(stack != nil)
-		free(stack);
+		HOSTED_API(free)(stack);
 	if(tmpstack != nil)
-		free(tmpstack);
+		HOSTED_API(free)(tmpstack);
 	return TkNomem;
 }
 
@@ -2373,7 +2373,7 @@ tktextcompare(Tk *tk, char *arg, char **val)
 	if(*arg == '\0')
 		return TkBadcm;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -2386,18 +2386,18 @@ tktextcompare(Tk *tk, char *arg, char **val)
 			break;
 		}
 	if(op == -1) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadcm;
 	}
 
 	e = tktindparse(tk, &arg, &i2);
 	if(e != nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 
 	e = tkvalue(val, tktindcompare(tkt, &i1, op, &i2)? "1" : "0");
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }
 
@@ -2896,12 +2896,12 @@ tktextinsert(Tk *tk, char *arg, char **val)
 	n = strlen(arg) + 1;
 	if(n < Tkmaxitem)
 		n = Tkmaxitem;
-	tbuf = malloc(n);
+	tbuf = HOSTED_API(malloc)(n);
 	if(tbuf == nil)
 		return TkNomem;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil) {
-		free(tbuf);
+		HOSTED_API(free)(tbuf);
 		return TkNomem;
 	}
 
@@ -2913,8 +2913,8 @@ tktextinsert(Tk *tk, char *arg, char **val)
 			/* tag list spec -- add some slop to tagextra for added tags */
 			e = tktnewitem(TkTascii, (tkt->nexttag-1)/32 + 1, &tagit);
 			if(e != nil) {
-				free(tbuf);
-				free(buf);
+				HOSTED_API(free)(tbuf);
+				HOSTED_API(free)(buf);
 				return e;
 			}
 			arg = tkword(top, arg, buf, buf+Tkmaxitem, nil);
@@ -2933,9 +2933,9 @@ tktextinsert(Tk *tk, char *arg, char **val)
 					e = tktaddtaginfo(tk, p, &ti);
 					if(e != nil) {
 						if(tagit != nil)
-							free(tagit);
-						free(tbuf);
-						free(buf);
+							HOSTED_API(free)(tagit);
+						HOSTED_API(free)(tbuf);
+						HOSTED_API(free)(buf);
 						return e;
 					}
 				}
@@ -2948,12 +2948,12 @@ tktextinsert(Tk *tk, char *arg, char **val)
 		}
 		e = tktinsert(tk, &ins, tbuf, tagit);
 		if(tagit != nil) {
-			free(tagit);
+			HOSTED_API(free)(tagit);
 			tagit = nil;
 		}
 		if(e != nil) {
-			free(tbuf);
-			free(buf);
+			HOSTED_API(free)(tbuf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
@@ -2961,8 +2961,8 @@ tktextinsert(Tk *tk, char *arg, char **val)
 	tktfixgeom(tk, lmin, ins.line, 0);
 	tktextsize(tk, 1);
 
-	free(tbuf);
-	free(buf);
+	HOSTED_API(free)(tbuf);
+	HOSTED_API(free)(buf);
 
 	return nil;
 }
@@ -2981,7 +2981,7 @@ tktextinserti(Tk *tk, char *arg, char **val)
 	if(tk->flag&Tkdisabled)
 		return nil;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -2990,9 +2990,9 @@ tktextinserti(Tk *tk, char *arg, char **val)
 	if(n < Tkmaxitem)
 		tkword(tk->env->top, arg, buf, buf+sizeof(buf), nil);
 	else {
-		tbuf = malloc(n);
+		tbuf = HOSTED_API(malloc)(n);
 		if(tbuf == nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkNomem;
 		}
 		tkword(tk->env->top, arg, tbuf, buf+n, nil);
@@ -3020,8 +3020,8 @@ tktextinserti(Tk *tk, char *arg, char **val)
 	tktextsize(tk, 1);
 Ret:
 	if(tbuf != nil)
-		free(tbuf);
-	free(buf);
+		HOSTED_API(free)(tbuf);
+	HOSTED_API(free)(buf);
 	return nil;
 }
 
@@ -3031,17 +3031,17 @@ tktextmark(Tk *tk, char *arg, char **val)
 	char *buf;
 	TkCmdtab *cmd;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	for(cmd = tktmarkcmd; cmd->name != nil; cmd++) {
 		if(strcmp(cmd->name, buf) == 0) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return cmd->fn(tk, arg, val);
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return TkBadcm;
 }
 
@@ -3461,12 +3461,12 @@ tktprevwrapline(Tk *tk, TkTline *l)
 			break;
 	if(i == nil || i->kind == TkTnewline)	/* can't use !tkanytags(i) because it doesn't check env */
 		return l->prev;
-	opts = mallocz(TkTnumopts*sizeof(int), 0);
+	opts = HOSTED_API(mallocz)(TkTnumopts*sizeof(int), 0);
 	if(opts == nil)
 		return l->prev;	/* in worst case gets word wrap wrong */
 	tkttagopts(tk, i, opts, &env, nil, 1);
 	wrapmode = opts[TkTwrap];
-	free(opts);
+	HOSTED_API(free)(opts);
 	if(wrapmode != Tkwrapword)
 		return l->prev;
 	if(l->prev != &tkt->start)
@@ -3507,17 +3507,17 @@ tktexttag(Tk *tk, char *arg, char **val)
 	char *buf;
 	TkCmdtab *cmd;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	for(cmd = tkttagcmd; cmd->name != nil; cmd++) {
 		if(strcmp(cmd->name, buf) == 0) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return cmd->fn(tk, arg, val);
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return TkBadcm;
 }
 

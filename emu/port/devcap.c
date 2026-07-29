@@ -56,7 +56,7 @@ capwatch(void *a)
 		for(l = &allcaps.caps; (c = *l) != nil;)
 			if(++c->time > Captimeout){
 				*l = c->next;
-				free(c);
+				HOSTED_API(free)(c);
 			}else
 				l = &c->next;
 		if(allcaps.caps == nil){
@@ -138,7 +138,7 @@ capwritehash(uchar *a, int l)
 
 	if(l != SHA1dlen)
 		return -1;
-	c = malloc(sizeof(*c));
+	c = HOSTED_API(malloc)(sizeof(*c));
 	if(c == nil)
 		return -1;
 	memmove(c->hash, a, l);
@@ -187,7 +187,7 @@ capwriteuse(uchar *a, int len)
 		if(memcmp(c->hash, digest, sizeof(c->hash)) == 0){
 			*l = c->next;
 			qunlock(&allcaps.l);
-			free(c);
+			HOSTED_API(free)(c);
 			if(n == 2 && strcmp(up->env->user, users[0]) != 0)
 				return -1;
 			setid(users[1], 0);	/* could use users[2] to mean `host OS user' */

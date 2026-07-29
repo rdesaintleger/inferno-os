@@ -31,3 +31,15 @@ main(int argc, char *argv[])
 	Bprint(&bout, "int %slen = %ld;\n", argv[1], len);
 	exits(0);
 }
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
+}

@@ -42,7 +42,7 @@ void
 mpsetminbits(int n)
 {
 	if(n < 0)
-		sysfatal("mpsetminbits: n < 0");
+		HOSTED_API(sysfatal)("mpsetminbits: n < 0");
 	if(n == 0)
 		n = 1;
 	mpmindigits = DIGITS(n);
@@ -55,17 +55,17 @@ mpnew(int n)
 	mpint *b;
 
 	if(n < 0)
-		sysfatal("mpsetminbits: n < 0");
+		HOSTED_API(sysfatal)("mpsetminbits: n < 0");
 
-	b = mallocz(sizeof(mpint), 1);
+	b = HOSTED_API(mallocz)(sizeof(mpint), 1);
 	if(b == nil)
-		sysfatal("mpnew: %r");
+		HOSTED_API(sysfatal)("mpnew: %r");
 	n = DIGITS(n);
 	if(n < mpmindigits)
 		n = mpmindigits;
-	b->p = (mpdigit*)mallocz(n*Dbytes, 1);
+	b->p = (mpdigit*)HOSTED_API(mallocz)(n*Dbytes, 1);
 	if(b->p == nil)
-		sysfatal("mpnew: %r");
+		HOSTED_API(sysfatal)("mpnew: %r");
 	b->size = n;
 	b->sign = 1;
 
@@ -86,9 +86,9 @@ mpbits(mpint *b, int m)
 		b->top = n;
 		return;
 	}
-	b->p = (mpdigit*)realloc(b->p, n*Dbytes);
+	b->p = (mpdigit*)HOSTED_API(realloc)(b->p, n*Dbytes);
 	if(b->p == nil)
-		sysfatal("mpbits: %r");
+		HOSTED_API(sysfatal)("mpbits: %r");
 	memset(&b->p[b->top], 0, Dbytes*(n - b->top));
 	b->size = n;
 	b->top = n;
@@ -100,10 +100,10 @@ mpfree(mpint *b)
 	if(b == nil)
 		return;
 	if(b->flags & MPstatic)
-		sysfatal("freeing mp constant");
+		HOSTED_API(sysfatal)("freeing mp constant");
 	memset(b->p, 0, b->size*Dbytes);	// information hiding
-	free(b->p);
-	free(b);
+	HOSTED_API(free)(b->p);
+	HOSTED_API(free)(b);
 }
 
 void

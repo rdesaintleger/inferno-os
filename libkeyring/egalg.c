@@ -191,7 +191,7 @@ elgamalinit(void)
 {
 	SigAlgVec *vec;
 
-	vec = malloc(sizeof(SigAlgVec));
+	vec = HOSTED_API(malloc)(sizeof(SigAlgVec));
 	if(vec == nil)
 		return nil;
 

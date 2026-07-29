@@ -37,25 +37,25 @@ testconv(char *str)
 	p = mptoa(b, 10, nil, 0);
 	print("%s = ", p);
 	strtomp(p, nil, 10, b);
-	free(p);
+	HOSTED_API(free)(p);
 	print("%B\n", b);
 
 	p = mptoa(b, 16, nil, 0);
 	print("%s = ", p);
 	strtomp(p, nil, 16, b);
-	free(p);
+	HOSTED_API(free)(p);
 	print("%B\n", b);
 
 	p = mptoa(b, 32, nil, 0);
 	print("%s = ", p);
 	strtomp(p, nil, 32, b);
-	free(p);
+	HOSTED_API(free)(p);
 	print("%B\n", b);
 
 	p = mptoa(b, 64, nil, 0);
 	print("%s = ", p);
 	strtomp(p, nil, 64, b);
-	free(p);
+	HOSTED_API(free)(p);
 	print("%B\n", b);
 
 	mpfree(b);

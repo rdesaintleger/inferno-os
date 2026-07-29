@@ -127,7 +127,7 @@ main(int argc, char **argv)
 		assignment args become null strings
 	*/
 	temp = 0;
-	for(i = 0; argv[i]; i++) if(utfrune(argv[i], '=')){
+	for(i = 0; argv[i]; i++) if(HOSTED_API(utfrune)(argv[i], '=')){
 		bufcpy(buf, argv[i], strlen(argv[i]));
 		insert(buf, ' ');
 		if(tfd < 0){
@@ -247,7 +247,7 @@ Malloc(int n)
 {
 	register void *s;
 
-	s = malloc(n);
+	s = HOSTED_API(malloc)(n);
 	if(!s) {
 		fprint(2, "mk: cannot alloc %d bytes\n", n);
 		Exit();
@@ -259,9 +259,9 @@ void *
 Realloc(void *s, int n)
 {
 	if(s)
-		s = realloc(s, n);
+		s = HOSTED_API(realloc)(s, n);
 	else
-		s = malloc(n);
+		s = HOSTED_API(malloc)(n);
 	if(!s) {
 		fprint(2, "mk: cannot alloc %d bytes\n", n);
 		Exit();
@@ -288,4 +288,20 @@ regerror(char *s)
 		fprint(2, "mk: %s:%d: regular expression error; %s\n",
 			infile, mkinline, s);
 	Exit();
+}
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
+}
+
+void *HOSTED_API(realloc)(void *v, size_t size) {
+    return realloc(v, size);
 }

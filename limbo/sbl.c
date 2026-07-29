@@ -181,7 +181,7 @@ sblinst(Inst *inst, long ninst)
 		Bprint(bsym, "%s%d\n", sblsrcconv(buf, buf+sizeof(buf), &in->src), b);
 		src = in->src;
 	}
-	free(sblblocks);
+	HOSTED_API(free)(sblblocks);
 }
 
 void

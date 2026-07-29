@@ -27,7 +27,7 @@ tksetvar(TkTop *top, char *c, char *newval)
 	if(v->value != nil) {
 		if (strcmp(v->value, newval) == 0)
 			return nil;
-		free(v->value);
+		HOSTED_API(free)(v->value);
 	}
 
 	v->value = HOSTED_API(strdup)(newval);
@@ -56,7 +56,7 @@ tkvariable(TkTop *t, char *arg, char **ret)
 	int l;
 
 	l = strlen(arg) + 2;
-	buf = malloc(l);
+	buf = HOSTED_API(malloc)(l);
 	if(buf == nil)
 		return TkNomem;
 	ebuf = buf+l;
@@ -65,7 +65,7 @@ tkvariable(TkTop *t, char *arg, char **ret)
 	arg = tkskip(arg, " \t");
 	if (*arg == '\0') {
 		if(strcmp(buf, "lasterror") == 0) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			if(t->err == nil)
 				return nil;
 			fmt = "%s: %s";
@@ -76,7 +76,7 @@ tkvariable(TkTop *t, char *arg, char **ret)
 			return e;
 		}
 		v = tkmkvar(t, buf, 0);
-		free(buf);
+		HOSTED_API(free)(buf);
 		if(v == nil || v->value == nil)
 			return nil;
 		if(v->type != TkVstring)
@@ -86,6 +86,6 @@ tkvariable(TkTop *t, char *arg, char **ret)
 	val = buf+strlen(buf)+1;
 	tkword(t, arg, val, ebuf, nil);
 	e = tksetvar(t, buf, val);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }

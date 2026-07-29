@@ -89,7 +89,7 @@ devattach(int tc, char *spec)
 	buf = smalloc(4+strlen(spec)+1);
 	sprint(buf, "#%C%s", tc, spec);
 	c->name = newcname(buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return c;
 }
 
@@ -132,7 +132,7 @@ devwalk(Chan *c, Chan *nc, char **name, int nname, Dirtab *tab, int ntab, Devgen
 	if(waserror()){
 		if(alloc && wq->clone!=nil)
 			cclose(wq->clone);
-		free(wq);
+		HOSTED_API(free)(wq);
 		return nil;
 	}
 	if(nc == nil){

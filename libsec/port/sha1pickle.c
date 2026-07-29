@@ -8,7 +8,7 @@ sha1pickle(SHA1state *s)
 	int m, n;
 
 	m = 5*9+4*((s->blen+3)/3);
-	p = malloc(m);
+	p = HOSTED_API(malloc)(m);
 	if(p == nil)
 		return p;
 	n = sprint(p, "%8.8ux %8.8ux %8.8ux %8.8ux %8.8ux ",
@@ -23,7 +23,7 @@ sha1unpickle(char *p)
 {
 	SHA1state *s;
 
-	s = malloc(sizeof(*s));
+	s = HOSTED_API(malloc)(sizeof(*s));
 	if(s == nil)
 		return nil;
 	s->state[0] = strtoul(p, &p, 16);

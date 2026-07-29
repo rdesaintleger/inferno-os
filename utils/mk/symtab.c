@@ -12,7 +12,7 @@ syminit(void)
 	for(s = hash; s < &hash[NHASH]; s++){
 		for(ss = *s; ss; ss = next){
 			next = ss->next;
-			free((char *)ss);
+			HOSTED_API(free)((char *)ss);
 		}
 		*s = 0;
 	}
@@ -64,7 +64,7 @@ symdel(char *sym, int space)
 				ls->next = s->next;
 			else
 				hash[h] = s->next;
-			free((char *)s);
+			HOSTED_API(free)((char *)s);
 		}
 }
 

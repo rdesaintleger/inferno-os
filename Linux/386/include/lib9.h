@@ -1,3 +1,6 @@
+#ifndef _LIB9_LINUX_H_
+#define _LIB9_LINUX_H_
+
 /* define _BSD_SOURCE to use ISO C, POSIX, and 4.3BSD things. */
 #define	USE_PTHREADS
 #ifndef _DEFAULT_SOURCE
@@ -31,110 +34,23 @@
 #include <time.h>
 #include <endian.h>
 
-#ifndef _LIB9_H_
-#define _LIB9_H_
-
-#include "inferno/hosted.h"
-
-#ifndef EMU
-typedef struct Proc Proc;
-#endif
+#include "inferno/protos/lib9.h"
 
 /*
  * math module dtoa
  * #define __LITTLE_ENDIAN /usr/include/endian.h under linux
  */
 
-#define	USED(x)		if(x){}else{}
-#define	SET(x)
-
-#undef nelem
-#define	nelem(x)	(sizeof(x)/sizeof((x)[0]))
-#undef offsetof
-#define	offsetof(s, m)	(ulong)(&(((s*)0)->m))
-#undef assert
-#define	assert(x)	if(x){}else _assert("x")
-
 /*
  * most mem and string routines are declared by ANSI/POSIX files above
  */
 
-enum
-{
-	UTFmax		= 4,		/* maximum bytes per rune */
-	Runesync	= 0x80,		/* cannot represent part of a UTF sequence (<) */
-	Runeself	= 0x80,		/* rune and UTF sequences are the same (<) */
-	Runeerror	= 0xFFFD,	/* decoding error in UTF */
-	Runemax		= 0x10FFFF,	/* 21-bit rune */
-	Runemask	= 0x1FFFFF,	/* bits used by runes (see grep) */
-};
-
-#include "inferno/protos/lib9.h"
-
-extern	char*	utfrune(char*, long);
-extern	char*	utfrrune(char*, long);
-extern	char*	utfutf(char*, char*);
-extern	char*	utfecpy(char*, char*, char*);
-
-extern	Rune*	runestrcat(Rune*, Rune*);
-extern	Rune*	runestrchr(Rune*, Rune);
-extern	int	runestrcmp(Rune*, Rune*);
-extern	Rune*	runestrcpy(Rune*, Rune*);
-extern	Rune*	runestrncpy(Rune*, Rune*, long);
-extern	Rune*	runestrecpy(Rune*, Rune*, Rune*);
-extern	Rune*	runestrdup(Rune*);
-extern	Rune*	runestrncat(Rune*, Rune*, long);
-extern	int	runestrncmp(Rune*, Rune*, long);
-extern	Rune*	runestrstr(Rune*, Rune*);
-
-/*
- * malloc
- */
-extern	void*	malloc(size_t);
-extern	void*	mallocz(ulong, int);
-extern	void	free(void*);
 extern	ulong	msize(void*);
-extern	void*	calloc(size_t, size_t);
-extern	void*	realloc(void*, size_t);
 extern	void*	malloctopoolblock(void*);
 
 /*
  * print routines
  */
-typedef struct Fmt	Fmt;
-struct Fmt{
-	uchar	runes;			/* output buffer is runes or chars? */
-	void	*start;			/* of buffer */
-	void	*to;			/* current place in the buffer */
-	void	*stop;			/* end of the buffer; overwritten if flush fails */
-	int	(*flush)(Fmt *);	/* called when to == stop */
-	void	*farg;			/* to make flush a closure */
-	int	nfmt;			/* num chars formatted so far */
-	va_list	args;			/* args passed to dofmt */
-	int	r;			/* % format Rune */
-	int	width;
-	int	prec;
-	ulong	flags;
-};
-
-enum{
-	FmtWidth	= 1,
-	FmtLeft		= FmtWidth << 1,
-	FmtPrec		= FmtLeft << 1,
-	FmtSharp	= FmtPrec << 1,
-	FmtSpace	= FmtSharp << 1,
-	FmtSign		= FmtSpace << 1,
-	FmtZero		= FmtSign << 1,
-	FmtUnsigned	= FmtZero << 1,
-	FmtShort	= FmtUnsigned << 1,
-	FmtLong		= FmtShort << 1,
-	FmtVLong	= FmtLong << 1,
-	FmtComma	= FmtVLong << 1,
-	FmtByte	= FmtComma << 1,
-
-	FmtFlag		= FmtByte << 1
-};
-
 extern	int	print(char*, ...);
 extern	char*	seprint(char*, char*, char*, ...);
 extern	char*	vseprint(char*, char*, char*, va_list);
@@ -170,9 +86,7 @@ extern	int	errfmt(Fmt *f);
  * quoted strings
  */
 extern	char	*unquotestrdup(char*);
-extern	Rune	*unquoterunestrdup(Rune*);
 extern	char	*quotestrdup(char*);
-extern	Rune	*quoterunestrdup(Rune*);
 extern	int	quotestrfmt(Fmt*);
 extern	int	quoterunestrfmt(Fmt*);
 extern	void	quotefmtinstall(void);
@@ -195,20 +109,6 @@ extern	int	isInf(double, int);
 /*
  * Time-of-day
  */
-
-typedef struct Tm Tm;
-struct Tm {
-	int	sec;
-	int	min;
-	int	hour;
-	int	mday;
-	int	mon;
-	int	year;
-	int	wday;
-	int	yday;
-	char	zone[4];
-	int	tzoff;
-};
 extern	vlong	osnsec(void);
 #define	nsec	osnsec
 	
@@ -223,6 +123,7 @@ extern	double	ipow10(int);
 extern	vlong	HOSTED_API(strtoll)(const char*, char**, int);
 extern	void	HOSTED_API(qsort)(void*, long, long, int (*)(void*, void*));
 extern	uvlong	HOSTED_API(strtoull)(const char*, char**, int);
+extern	void	HOSTED_API(sysfatal)(char*, ...);
 extern	int	dec64(uchar*, int, char*, int);
 extern	int	enc64(char*, int, uchar*, int);
 extern	int	dec32(uchar*, int, char*, int);
@@ -234,40 +135,16 @@ extern	int	encodefmt(Fmt*);
 /*
  *  synchronization
  */
-typedef
-struct Lock {
-	int	val;
-	int	pid;
-} Lock;
-
 extern int	_tas(int*);
 
 extern	void	lock(Lock*);
 extern	void	unlock(Lock*);
 extern	int	canlock(Lock*);
 
-typedef struct QLock QLock;
-struct QLock
-{
-	Lock	use;			/* to access Qlock structure */
-	Proc	*head;			/* next process waiting for object */
-	Proc	*tail;			/* last process waiting for object */
-	int	locked;			/* flag */
-};
-
 extern	void	qlock(QLock*);
 extern	void	qunlock(QLock*);
 extern	int	canqlock(QLock*);
 extern	void	_qlockinit(ulong (*)(ulong, ulong));	/* called only by the thread library */
-
-typedef
-struct RWLock
-{
-	Lock	l;			/* Lock modify lock */
-	QLock	x;			/* Mutual exclusion lock */
-	QLock	k;			/* Lock for waiting writers */
-	int	readers;		/* Count of readers in lock */
-} RWLock;
 
 extern	int	canrlock(RWLock*);
 extern	int	canwlock(RWLock*);
@@ -276,98 +153,12 @@ extern	void	runlock(RWLock*);
 extern	void	wlock(RWLock*);
 extern	void	wunlock(RWLock*);
 
-/*
- * network dialing
- */
-#define NETPATHLEN 40
-
-/*
- * system calls
- *
- */
-#define	STATMAX	65535U	/* max length of machine-independent stat structure */
-#define	DIRMAX	(sizeof(Dir)+STATMAX)	/* max length of Dir structure */
-#define	ERRMAX	128	/* max length of error string */
-
-#define	MORDER	0x0003	/* mask for bits defining order of mounting */
-#define	MREPL	0x0000	/* mount replaces object */
-#define	MBEFORE	0x0001	/* mount goes before others in union directory */
-#define	MAFTER	0x0002	/* mount goes after others in union directory */
-#define	MCREATE	0x0004	/* permit creation in mounted directory */
-#define	MCACHE	0x0010	/* cache some data */
-#define	MMASK	0x0017	/* all bits on */
-
-#define	OREAD	0	/* open for read */
-#define	OWRITE	1	/* write */
-#define	ORDWR	2	/* read and write */
-#define	OEXEC	3	/* execute, == read but check execute permission */
-#define	OTRUNC	16	/* or'ed in (except for exec), truncate file first */
-#define	OCEXEC	32	/* or'ed in, close on exec */
-#define	ORCLOSE	64	/* or'ed in, remove on close */
-#define	OEXCL	0x1000	/* or'ed in, exclusive use (create only) */
-
-#define	AEXIST	0	/* accessible: exists */
-#define	AEXEC	1	/* execute access */
-#define	AWRITE	2	/* write access */
-#define	AREAD	4	/* read access */
-
-/* bits in Qid.type */
-#define QTDIR		0x80		/* type bit for directories */
-#define QTAPPEND	0x40		/* type bit for append only files */
-#define QTEXCL		0x20		/* type bit for exclusive use files */
-#define QTMOUNT		0x10		/* type bit for mounted channel */
-#define QTAUTH		0x08		/* type bit for authentication file */
-#define QTFILE		0x00		/* plain file */
-
-/* bits in Dir.mode */
-#define DMDIR		0x80000000	/* mode bit for directories */
-#define DMAPPEND	0x40000000	/* mode bit for append only files */
-#define DMEXCL		0x20000000	/* mode bit for exclusive use files */
-#define DMMOUNT		0x10000000	/* mode bit for mounted channel */
-#define DMAUTH		0x08000000	/* mode bit for authentication file */
-#define DMREAD		0x4		/* mode bit for read permission */
-#define DMWRITE		0x2		/* mode bit for write permission */
-#define DMEXEC		0x1		/* mode bit for execute permission */
-
-typedef
-struct Qid
-{
-	uvlong	path;
-	ulong	vers;
-	uchar	type;
-} Qid;
-
-typedef
-struct Dir {
-	/* system-modified data */
-	ushort	type;	/* server type */
-	uint	dev;	/* server subtype */
-	/* file data */
-	Qid	qid;	/* unique id from server */
-	ulong	mode;	/* permissions */
-	ulong	atime;	/* last read time */
-	ulong	mtime;	/* last write time */
-	vlong	length;	/* file length */
-	char	*name;	/* last element of path */
-	char	*uid;	/* owner name */
-	char	*gid;	/* group name */
-	char	*muid;	/* last modifier name */
-} Dir;
-
 extern	Dir*	dirstat(char*);
 extern	Dir*	dirfstat(int);
 extern	int	dirwstat(char*, Dir*);
 extern	long	dirread(int, Dir**);
 extern	void	nulldir(Dir*);
 extern	long	dirreadall(int, Dir**);
-
-typedef
-struct Waitmsg
-{
-	int pid;	/* of loved one */
-	ulong time[3];	/* of loved one & descendants */
-	char	*msg;
-} Waitmsg;
 
 extern	void	_exits(char*);
 
@@ -384,57 +175,14 @@ extern	int	segflush(void*, ulong);
 extern	void	werrstr(char*, ...);
 
 extern char *argv0;
-#define	ARGBEGIN	for((argv0||(argv0=*argv)),argv++,argc--;\
-			    argv[0] && argv[0][0]=='-' && argv[0][1];\
-			    argc--, argv++) {\
-				char *_args, *_argt;\
-				Rune _argc;\
-				_args = &argv[0][1];\
-				if(_args[0]=='-' && _args[1]==0){\
-					argc--; argv++; break;\
-				}\
-				_argc = 0;\
-				while(*_args && (_args += HOSTED_API(chartorune)(&_argc, _args)))\
-				switch(_argc)
-#define	ARGEND		SET(_argt);USED(_argt);USED(_argc); USED(_args);}USED(argv); USED(argc);
-#define	ARGF()		(_argt=_args, _args="",\
-				(*_argt? _argt: argv[1]? (argc--, *++argv): 0))
-#define	EARGF(x)	(_argt=_args, _args="",\
-				(*_argt? _argt: argv[1]? (argc--, *++argv): ((x), abort(), (char*)0)))
-
-#define	ARGC()		_argc
 
 /*
  *	Extensions for Inferno to basic libc.h
  */
-
-#define	setbinmode()
-
-/* FCR */
-#define	FPINEX	(1<<5)
-#define	FPUNFL	((1<<4)|(1<<1))
-#define	FPOVFL	(1<<3)
-#define	FPZDIV	(1<<2)
-#define	FPINVAL	(1<<0)
-#define	FPRNR	(0<<10)
-#define	FPRZ	(3<<10)
-#define	FPRPINF	(2<<10)
-#define	FPRNINF	(1<<10)
-#define	FPRMASK	(3<<10)
-#define	FPPEXT	(3<<8)
-#define	FPPSGL	(0<<8)
-#define	FPPDBL	(2<<8)
-#define	FPPMASK	(3<<8)
-/* FSR */
-#define	FPAINEX	FPINEX
-#define	FPAOVFL	FPOVFL
-#define	FPAUNFL	FPUNFL
-#define	FPAZDIV	FPZDIV
-#define	FPAINVAL	FPINVAL
 
 extern	void	setfcr(ulong);
 extern	void	setfsr(ulong);
 extern	ulong	getfcr(void);
 extern	ulong	getfsr(void);
 
-#endif /* _LIB9_H_ */
+#endif /* _LIB9_LINUX_H_ */

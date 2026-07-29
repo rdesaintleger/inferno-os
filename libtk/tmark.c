@@ -32,13 +32,13 @@ tktaddmarkinfo(TkText *tkt, char *name, TkTmarkinfo **ret)
 {
 	TkTmarkinfo *mi;
 
-	mi = malloc(sizeof(TkTmarkinfo));
+	mi = HOSTED_API(malloc)(sizeof(TkTmarkinfo));
 	if(mi == nil)
 		return TkNomem;
 
 	mi->name = HOSTED_API(strdup)(name);
 	if(mi->name == nil) {
-		free(mi);
+		HOSTED_API(free)(mi);
 		return TkNomem;
 	}
 	mi->gravity = Tkright;
@@ -56,8 +56,8 @@ tktfreemarks(TkTmarkinfo *m)
 
 	while(m != nil) {
 		n = m->next;
-		free(m->name);
-		free(m);
+		HOSTED_API(free)(m->name);
+		HOSTED_API(free)(m);
 		m = n;
 	}
 }
@@ -100,13 +100,13 @@ tktmarkparse(Tk *tk, char **parg, TkTmarkinfo **ret)
 	char *e, *buf;
 	TkText *tkt = TKobj(TkText, tk);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
 	*parg = tkword(tk->env->top, *parg, buf, buf+Tkmaxitem, nil);
 	if(*buf == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkOparg;
 	}
 
@@ -114,11 +114,11 @@ tktmarkparse(Tk *tk, char **parg, TkTmarkinfo **ret)
 	if(*ret == nil) {
 		e = tktaddmarkinfo(tkt, buf, ret);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	return nil;
 }
@@ -226,7 +226,7 @@ tktmarkgravity(Tk *tk, char *arg, char **val)
 	if(*arg == '\0')
 		return tkvalue(val, (m->gravity & Tkleft)? "left" : "right");
 	else {
-		buf = mallocz(Tkmaxitem, 0);
+		buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 		if(buf == nil)
 			return TkNomem;
 		tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
@@ -236,10 +236,10 @@ tktmarkgravity(Tk *tk, char *arg, char **val)
 		if(strcmp(buf, "right") == 0)
 			m->gravity = Tkright;
 		else {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadcm;
 		}
-		free(buf);
+		HOSTED_API(free)(buf);
 	}
 	return nil;
 }

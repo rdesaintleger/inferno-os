@@ -91,7 +91,7 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		if(libbind("#i", dev, MBEFORE) < 0){
     Error1:
 			libqlfree(q);
-			free(t);
+			HOSTED_API(free)(t);
 			kwerrstr("initdisplay: %s: %r", buf);
 			return 0;
 		}
@@ -122,16 +122,16 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		goto Error2;
 	}
 	strcpy(buf, "allocation failed");
-	disp = malloc(sizeof(Display));
+	disp = HOSTED_API(malloc)(sizeof(Display));
 	if(disp == 0){
     Error4:
 		libclose(reffd);
 		goto Error3;
 	}
-	image = malloc(sizeof(Image));
+	image = HOSTED_API(malloc)(sizeof(Image));
 	if(image == 0){
     Error5:
-		free(disp);
+		HOSTED_API(free)(disp);
 		goto Error4;
 	}
 	memset(image, 0, sizeof(Image));
@@ -180,10 +180,10 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	disp->opaque = allocimage(disp, Rect(0, 0, 1, 1), GREY1, 1, DWhite);
 	disp->transparent = allocimage(disp, Rect(0, 0, 1, 1), GREY1, 1, DBlack);
 	if(disp->white == nil || disp->black == nil || disp->opaque == nil || disp->transparent == nil){
-		free(image);
-		free(disp->devdir);
-		free(disp->white);
-		free(disp->black);
+		HOSTED_API(free)(image);
+		HOSTED_API(free)(disp->devdir);
+		HOSTED_API(free)(disp->white);
+		HOSTED_API(free)(disp->black);
 		libclose(ctlfd);
 		goto Error5;
 	}
@@ -191,7 +191,7 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		disp->local = 1;
 		disp->dataqid = dir->qid.path;
 	}
-	free(dir);
+	HOSTED_API(free)(dir);
 	libclose(ctlfd);
 
 	if(CHECKLOCKING)

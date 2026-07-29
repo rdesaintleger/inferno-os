@@ -265,9 +265,9 @@ tkfreescale(Tk *tk)
 	TkScale *tks = TKobj(TkScale, tk);
 
 	if(tks->command != nil)
-		free(tks->command);
+		HOSTED_API(free)(tks->command);
 	if(tks->label != nil)
-		free(tks->label);
+		HOSTED_API(free)(tks->label);
 }
 
 static void

@@ -259,7 +259,7 @@ tkcvspolyhit(TkCitem *item, Point p)
 			r = tkinsidepoly(poly, np, l->winding, p);
 		else
 			r = tklinehit(poly, np, w, p);
-		free(poly);
+		HOSTED_API(free)(poly);
 	} else {
 		if (fill)
 			r = tkinsidepoly(item->p.drawpt, item->p.npoint, l->winding, p);

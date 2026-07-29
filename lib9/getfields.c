@@ -17,7 +17,7 @@ getfields(char *str, char **args, int max, int mflag, char *set)
 		nr = HOSTED_API(chartorune)(&r, str);
 		if(r == 0)
 			break;
-		if(utfrune(set, r)) {
+		if(HOSTED_API(utfrune)(set, r)) {
 			if(narg >= max)
 				break;
 			*str = 0;

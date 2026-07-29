@@ -25,7 +25,7 @@ printmp(mpint *b, char *tag)
 	print("%s (%d) ", tag, b->top);
 	p = mptoa(b, 10, nil, 0);
 	write(1, p, strlen(p));
-	free(p);
+	HOSTED_API(free)(p);
 	print("\n");
 }
 

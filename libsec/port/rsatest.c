@@ -19,7 +19,7 @@ main(void)
 
 	rsa = rsagen(1024, 16, 0);
 	if(rsa == nil)
-		sysfatal("rsagen");
+		HOSTED_API(sysfatal)("rsagen");
 	Binit(&b, 0, OREAD);
 	clr = mpnew(0);
 	clr2 = mpnew(0);

@@ -204,7 +204,7 @@ tktaddtaginfo(Tk *tk, char *name, TkTtaginfo **ret)
 	TkText *tkt, *tktshare;
 
 	tkt = TKobj(TkText, tk);
-	ti = malloc(sizeof(TkTtaginfo));
+	ti = HOSTED_API(malloc)(sizeof(TkTtaginfo));
 	if(ti == nil)
 		return TkNomem;
 
@@ -216,13 +216,13 @@ tktaddtaginfo(Tk *tk, char *name, TkTtaginfo **ret)
 	ti->id = *ntagp;
 	ti->name = HOSTED_API(strdup)(name);
 	if(ti->name == nil) {
-		free(ti);
+		HOSTED_API(free)(ti);
 		return TkNomem;
 	}
 	ti->env = tknewenv(tk->env->top);
 	if(ti->env == nil) {
-		free(ti->name);
-		free(ti);
+		HOSTED_API(free)(ti->name);
+		HOSTED_API(free)(ti);
 		return TkNomem;
 	}
 
@@ -258,11 +258,11 @@ tktfreetags(TkTtaginfo *t)
 
 	while(t != nil) {
 		n = t->next;
-		free(t->name);
+		HOSTED_API(free)(t->name);
 		tktfreetabs(t->tabs);
 		tkputenv(t->env);
 		tkfreebind(t->binds);
-		free(t);
+		HOSTED_API(free)(t);
 		t = n;
 	}
 }
@@ -384,16 +384,16 @@ tkttagparse(Tk *tk, char **parg, TkTtaginfo **ret)
 	char *e, *buf;
 	TkText *tkt = TKobj(TkText, tk);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	*parg = tkword(tk->env->top, *parg, buf, buf+Tkmaxitem, nil);
 	if(*buf == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkOparg;
 	}
 	if(buf[0] >= '0' && buf[0] <= '9'){
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadtg;
 	}
 
@@ -401,11 +401,11 @@ tkttagparse(Tk *tk, char **parg, TkTtaginfo **ret)
 	if(*ret == nil) {
 		e = tktaddtaginfo(tk, buf, ret);
 		if(e != nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return e;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	return nil;
 }
@@ -527,7 +527,7 @@ tkttagchange(Tk *tk, int tid, TkTindex *i1, TkTindex *i2, int add)
 	while(i1->item != i2->item) {
 		if(i1->item->kind != TkTmark && i1->item->kind != TkTcontline) {
 			if(tid >= 32 && i1->item->tagextra < nextra) {
-				nit = realloc(i1->item, sizeof(TkTitem) + nextra * sizeof(long));
+				nit = HOSTED_API(realloc)(i1->item, sizeof(TkTitem) + nextra * sizeof(long));
 				if(nit == nil)
 					return TkNomem;
 				for(j = nit->tagextra+1; j <= nextra; j++)

@@ -16,7 +16,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 	t = cfname;
 	if(t[0] != '/'){
 		snprint(tmp2, sizeof tmp2, "%s", fname);
-		u = utfrrune(tmp2, '/');
+		u = HOSTED_API(utfrrune)(tmp2, '/');
 		if(u)
 			u[0] = 0;
 		else

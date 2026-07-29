@@ -137,7 +137,7 @@ tkpackqrm(Tk *t)
 	for(f = *l; f; f = f->next) {
 		if(f->t == t) {
 			*l = f->next;
-			free(f);
+			HOSTED_API(free)(f);
 			break;
 		}
 		l = &f->next;
@@ -154,7 +154,7 @@ tkpackqit(Tk *t)
 		return;
 
 	tkpackqrm(t);
-	f = malloc(sizeof(Pack));
+	f = HOSTED_API(malloc)(sizeof(Pack));
 	if(f == nil) {
 		print("tkpackqit: malloc failed\n");
 		return;
@@ -222,7 +222,7 @@ tkforget(TkTop *t, char *arg)
 	Tk *tk;
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	for(;;) {
@@ -233,13 +233,13 @@ tkforget(TkTop *t, char *arg)
 		if(tk == nil) {
 			tkrunpack(t);
 			tkerr(t, buf);
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkBadwp;
 		}
 		tkpackqit(tk->master);
 		tkdelpack(tk);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	tkrunpack(t);
 	return nil;
 }
@@ -251,14 +251,14 @@ tkpropagate(TkTop *t, char *arg)
 	TkStab *s;
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	tk = tklook(t, buf, 0);
 	if(tk == nil) {
 		tkerr(t, buf);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadwp;
 	}
 
@@ -271,11 +271,11 @@ tkpropagate(TkTop *t, char *arg)
 				tkrunpack(t);
 			} else
 				tk->flag |= Tknoprop;
-			free(buf);
+			HOSTED_API(free)(buf);
 			return nil;
 		}
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return TkBadvl;
 }
 
@@ -285,17 +285,17 @@ tkslaves(TkTop *t, char *arg, char **val)
 	Tk *tk;
 	char *fmt, *e, *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	tk = tklook(t, buf, 0);
 	if(tk == nil){
 		tkerr(t, buf);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadwp;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	fmt = "%s";
 	for(tk = tk->slave; tk; tk = tk->next) {
@@ -347,27 +347,27 @@ tkpack(TkTop *t, char *arg, char **val)
 	TkName *names, *n;
 	char *e, *w, *buf;
 
-	buf = mallocz(Tkminitem, 0);
+	buf = HOSTED_API(mallocz)(Tkminitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
 	w = tkword(t, arg, buf, buf+Tkminitem, nil);
 	if(strcmp(buf, "forget") == 0) {
 		e = tkforget(t, w);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 	if(strcmp(buf, "propagate") == 0) {
 		e = tkpropagate(t, w);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
 	if(strcmp(buf, "slaves") == 0) {
 		e = tkslaves(t, w, val);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return e;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	tko[0].ptr = p;
 	tko[0].optab = opts;

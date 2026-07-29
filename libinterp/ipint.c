@@ -96,12 +96,12 @@ IPint_iptob64z(void *fp)
 
 	b = MP(f->i);
 	n = (b->top+1)*Dbytes;
-	p = malloc(n+1);
+	p = HOSTED_API(malloc)(n+1);
 	if(p == nil)
 		error(exHeap);
 	n = mptobe(b, p+1, n, nil);
 	if(n < 0){
-		free(p);
+		HOSTED_API(free)(p);
 		return;
 	}
 	p[0] = 0;
@@ -113,7 +113,7 @@ IPint_iptob64z(void *fp)
 		o = 1;
 	enc64(buf, sizeof(buf), p+o, n);
 	retstr(buf, f->ret);
-	free(p);
+	HOSTED_API(free)(p);
 }
 
 void

@@ -112,7 +112,7 @@ tkword(TkTop *t, char *str, char *buf, char *ebuf, int *gotarg)
 		 * substitution may occur anywhere within a word, not
 		 * only (as here) at the beginning.
 		 */
-		cmd = malloc(strlen(str));	/* not strlen+1 because the first character is skipped */
+		cmd = HOSTED_API(malloc)(strlen(str));	/* not strlen+1 because the first character is skipped */
 		if ( cmd == nil ) {
 			buf[0] = '\0';	/* DBK - Why not an error message? */
 			return str;
@@ -135,7 +135,7 @@ tkword(TkTop *t, char *str, char *buf, char *ebuf, int *gotarg)
 		*p = '\0';
 		val = nil;
 		e = tkexec(t, cmd, &val);
-		free(cmd);
+		HOSTED_API(free)(cmd);
 		 /* XXX - Tad: is this appropriate behavior?
 		  *	      Am I sure that the error doesn't need to be
 		  *	      propagated back to the caller?
@@ -143,7 +143,7 @@ tkword(TkTop *t, char *str, char *buf, char *ebuf, int *gotarg)
 		if(e == nil && val != nil) {
 			strncpy(buf, val, ebuf-buf);
 			buf = ebuf;
-			free(val);
+			HOSTED_API(free)(val);
 		}
 		break;
 	case '\'':
@@ -184,7 +184,7 @@ tkmkname(char *name)
 {
 	TkName *n;
 
-	n = malloc(sizeof(struct TkName)+strlen(name));
+	n = HOSTED_API(malloc)(sizeof(struct TkName)+strlen(name));
 	if(n == nil)
 		return nil;
 	strcpy(n->name, name);
@@ -205,7 +205,7 @@ tkparse(TkTop *t, char *str, TkOptab *ot, TkName **nl)
 	l = strlen(str);
 	if (l < Tkmaxitem)
 		l = Tkmaxitem;
-	buf = malloc(l + 1);
+	buf = HOSTED_API(malloc)(l + 1);
 	if(buf == 0)
 		return TkNomem;
 	ebuf = buf + l + 1;
@@ -256,7 +256,7 @@ tkparse(TkTop *t, char *str, TkOptab *ot, TkName **nl)
 	if(e != nil && nl != nil)
 		tkfreename(*nl);
 done:
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }
 
@@ -293,7 +293,7 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 	int wh, con, i, n, flag, *v;
 	char *r, *buf, *fmt, *out;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -310,14 +310,14 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 	}
 	if(o == nil) {
 		tkerr(t, r);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadop;
 	}
 
 	switch(o->type) {
 	default:
 		tkerr(t, r);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadop;
 	case OPTignore:
 		return nil;
@@ -327,11 +327,11 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 		n = g.y;
 		if(o->aux == 0)
 			n = g.x;
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%d", n);
 	case OPTdist:
 	case OPTnndist:
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%d", OPTION(ft->ptr, int, o->offset));
 	case OPTsize:
 		w = ft->ptr;
@@ -339,13 +339,13 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 			wh = w->req.width;
 		else
 			wh = w->req.height;
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%d", wh);
 	case OPTtext:
 		c = OPTION(ft->ptr, char*, o->offset);
 		if(c == nil)
 			c = "";
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%s", c);
 	case OPTwinp:
 		w = OPTION(ft->ptr, Tk*, o->offset);
@@ -353,7 +353,7 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 			c = "";
 		else
 			c = w->name->name;
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%s", c);
 	case OPTstab:
 		s = o->aux;
@@ -366,7 +366,7 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 			}
 			s++;
 		}
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%s", c);
 	case OPTflag:
 		con = OPTION(ft->ptr, int, o->offset);
@@ -380,13 +380,13 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 				break;
 			}
 		}
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%s", c);
 	case OPTflags:
 		con = OPTION(ft->ptr, int, o->offset);
-		out = mallocz(Tkmaxitem, 0);
+		out = HOSTED_API(mallocz)(Tkmaxitem, 0);
 		if(out == nil) {
-			free(buf);
+			HOSTED_API(free)(buf);
 			return TkNomem;
 		}
 		c = out;
@@ -394,21 +394,21 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 			if (s->con == (s->con&-s->con) && (con & s->con) != 0)
 				c = seprint(c, out+Tkmaxitem, " %s", s->val);	/* should this be quoted? */
 		}
-		free(buf);
+		HOSTED_API(free)(buf);
 		*c = 0;
 		r = tkvalue(val, "%s", out);
-		free(out);
+		HOSTED_API(free)(out);
 		return r;
 	case OPTfont:
 		e = OPTION(ft->ptr, TkEnv*, o->offset);
-		free(buf);
+		HOSTED_API(free)(buf);
 		if (e->font != nil)
 			return tkvalue(val, "%s", e->font->name);
 		return nil;
 	case OPTcolr:
 		e = OPTION(ft->ptr, TkEnv*, o->offset);
 		i = AUXI(o->aux);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "#%.8lux", e->colors[i]);
 	case OPTfrac:
 	case OPTnnfrac:
@@ -421,12 +421,12 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 			tkfprint(buf, *v++);
 			r = tkvalue(val, fmt, buf);
 			if(r != nil) {
-				free(buf);
+				HOSTED_API(free)(buf);
 				return r;
 			}
 			fmt = " %s";
 		}
-		free(buf);
+		HOSTED_API(free)(buf);
 		return nil;
 	case OPTbmap:
 		//free(buf);
@@ -668,7 +668,7 @@ ptext(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 
 	p = &OPTION(place, char*, o->offset);
 	if(*p != nil)
-		free(*p);
+		HOSTED_API(free)(*p);
 	if(buf[0] == '\0')
 		*p = nil;
 	else {
@@ -743,13 +743,13 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	else {
 		char *file;
 
-		file = mallocz(Tkmaxitem, 0);
+		file = HOSTED_API(mallocz)(Tkmaxitem, 0);
 		if(file == nil)
 			return TkNomem;
 
 		snprint(file, Tkmaxitem, "/icons/tk/%s", buf);
 		i = display_open(d, file);
-		free(file);
+		HOSTED_API(free)(file);
 	}
 	if(i == nil)
 		return TkBadbm;
@@ -1058,7 +1058,7 @@ ptabs(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	TkTtabstop *tabfirst, *tab, *tabprev;
 	char *ibuf;
 
-	ibuf = mallocz(Tkmaxitem, 0);
+	ibuf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(ibuf == nil)
 		return TkNomem;
 	eibuf = ibuf + Tkmaxitem;
@@ -1072,7 +1072,7 @@ ptabs(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 
 	p = tkword(t, *str, buf, ebuf, nil);
 	if(*buf == '\0') {
-		free(ibuf);
+		HOSTED_API(free)(ibuf);
 		return TkOparg;
 	}
 	*str = p;
@@ -1081,7 +1081,7 @@ ptabs(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	while(*p != '\0') {
 		e = pdist(t, &opd, &tspec, &p, ibuf, eibuf);
 		if(e != nil) {
-			free(ibuf);
+			HOSTED_API(free)(ibuf);
 			return e;
 		}
 
@@ -1089,9 +1089,9 @@ ptabs(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 		if(e != nil)
 			tspec.just = Tkleft;
 
-		tab = malloc(sizeof(TkTtabstop));
+		tab = HOSTED_API(malloc)(sizeof(TkTtabstop));
 		if(tab == nil) {
-			free(ibuf);
+			HOSTED_API(free)(ibuf);
 			return TkNomem;
 		}
 
@@ -1104,11 +1104,11 @@ ptabs(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 			tabprev->next = tab;
 		tabprev = tab;
 	}
-	free(ibuf);
+	HOSTED_API(free)(ibuf);
 
 	tab = OPTION(place, TkTtabstop*, o->offset);
 	if(tab != nil)
-		free(tab);
+		HOSTED_API(free)(tab);
 	OPTION(place, TkTtabstop*, o->offset) = tabfirst;
 	return nil;
 }
@@ -1118,25 +1118,25 @@ tkxyparse(Tk* tk, char **parg, Point *p)
 {
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
 	*parg = tkword(tk->env->top, *parg, buf, buf+Tkmaxitem, nil);
 	if(*buf == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkOparg;
 	}
 	p->x = atoi(buf);
 
 	*parg = tkword(tk->env->top, *parg, buf, buf+Tkmaxitem, nil);
 	if(*buf == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkOparg;
 	}
 	p->y = atoi(buf);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 	return nil;
 }
 
@@ -1148,7 +1148,7 @@ plist(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 
 	*str = tkword(t, *str, buf, ebuf, nil);
 	n = strlen(buf) + 1;
-	wbuf = mallocz(n, 0);
+	wbuf = HOSTED_API(mallocz)(n, 0);
 	if (wbuf == nil)
 		return TkNomem;		/* XXX should we free old values too? */
 	ewbuf = &wbuf[n];
@@ -1156,13 +1156,13 @@ plist(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 	p = &OPTION(place, char**, o->offset);
 	if (*p != nil){
 		for (v = *p; *v; v++)
-			free(*v);
-		free(*p);
+			HOSTED_API(free)(*v);
+		HOSTED_API(free)(*p);
 	}
 	n = 0;
 	m = 4;
 	w = buf;
-	v = malloc(m * sizeof(char*));
+	v = HOSTED_API(malloc)(m * sizeof(char*));
 	if (v == nil)
 		goto Error;
 	for (;;) {
@@ -1171,7 +1171,7 @@ plist(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 			break;
 		if (n == m - 1) {
 			m += m/2;
-			nv = realloc(v, m * sizeof(char*));
+			nv = HOSTED_API(realloc)(v, m * sizeof(char*));
 			if (nv == nil)
 				goto Error;
 			v = nv;
@@ -1182,14 +1182,14 @@ plist(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 		n++;
 	}
 	v[n++] = nil;
-	*p = realloc(v, n * sizeof(char*));
-	free(wbuf);
+	*p = HOSTED_API(realloc)(v, n * sizeof(char*));
+	HOSTED_API(free)(wbuf);
 	return nil;
 Error:
-	free(buf);
+	HOSTED_API(free)(buf);
 	for (i = 0; i < n; i++)
-		free(v[i]);
-	free(v);
+		HOSTED_API(free)(v[i]);
+	HOSTED_API(free)(v);
 	*p = nil;
 	return TkNomem;
 }

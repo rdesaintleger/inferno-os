@@ -107,7 +107,7 @@ Balloc(int k)
 		freelist[k] = rv->next;
 	} else {
 		x = 1 << k;
-		rv = (Bigint * )malloc(sizeof(Bigint) + (x - 1) * sizeof(unsigned  long));
+		rv = (Bigint * )HOSTED_API(malloc)(sizeof(Bigint) + (x - 1) * sizeof(unsigned  long));
 		if(rv == nil)
 			return nil;
 		rv->k = k;

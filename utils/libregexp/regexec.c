@@ -47,7 +47,7 @@ regexec1(Reprog *progp,	/* program to run */
 		if(checkstart) {
 			switch(j->starttype) {
 			case RUNE:
-				p = utfrune(s, j->startchar);
+				p = HOSTED_API(utfrune)(s, j->startchar);
 				if(p == 0 || s == j->eol)
 					return match;
 				s = p;
@@ -55,7 +55,7 @@ regexec1(Reprog *progp,	/* program to run */
 			case BOL:
 				if(s == bol)
 					break;
-				p = utfrune(s, '\n');
+				p = HOSTED_API(utfrune)(s, '\n');
 				if(p == 0 || s == j->eol)
 					return match;
 				s = p;

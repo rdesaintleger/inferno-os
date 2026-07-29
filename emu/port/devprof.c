@@ -118,13 +118,13 @@ getrec(int id)
 static void
 addpmod(char *m)
 {
-	Pmod *p = malloc(sizeof(Pmod));
+	Pmod *p = HOSTED_API(malloc)(sizeof(Pmod));
 
 	if(p == nil)
 		return;
-	p->name = malloc(strlen(m)+1);
+	p->name = HOSTED_API(malloc)(strlen(m)+1);
 	if(p->name == nil){
-		free(p);
+		HOSTED_API(free)(p);
 		return;
 	}
 	strcpy(p->name, m);
@@ -138,9 +138,9 @@ freepmods(void)
 	Pmod *p, *np;
 
 	for(p = pmods; p != nil; p = np){
-		free(p->name);
+		HOSTED_API(free)(p->name);
 		np = p->link;
-		free(p);
+		HOSTED_API(free)(p);
 	}
 	pmods = nil;
 }
@@ -167,10 +167,10 @@ freeprof(void)
 	mprofiler = Mnone;
 	freepmods();
 	for(r = profile.list; r != nil; r = nr){
-		free(r->name);
-		free(r->path);
+		HOSTED_API(free)(r->name);
+		HOSTED_API(free)(r->path);
 		nr = r->link;
-		free(r);
+		HOSTED_API(free)(r);
 	}
 	profile.list = nil;
 	profile.time = 0;
@@ -486,7 +486,7 @@ newmodule(Module *m, int vm, int scale, int origin)
 		dsize = (msize(m->prog)/sizeof(Inst)) * sizeof(r->bucket[0]);
 	dsize *= scale;
 	dsize += origin;
-	r = malloc(sizeof(Record)+dsize);
+	r = HOSTED_API(malloc)(sizeof(Record)+dsize);
 	if(r == nil) {
 		if(!vm)
 			release();

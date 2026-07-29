@@ -148,11 +148,11 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	f.tag = NOTAG;
 	f.msize = msize;
 	f.version = v;
-	msg = malloc(8192+IOHDRSZ);
+	msg = HOSTED_API(malloc)(8192+IOHDRSZ);
 	if(msg == nil)
 		exhausted("version memory");
 	if(waserror()){
-		free(msg);
+		HOSTED_API(free)(msg);
 		nexterror();
 	}
 	k = convS2M(&f, msg, 8192+IOHDRSZ);
@@ -203,7 +203,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	if(m != 0)
 		mntalloc.mntfree = m->list;
 	else {
-		m = malloc(sizeof(Mnt));
+		m = HOSTED_API(malloc)(sizeof(Mnt));
 		if(m == 0) {
 			unlock(&mntalloc.l);
 			exhausted("mount devices");
@@ -219,7 +219,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	unlock(&mntalloc.l);
 
 	poperror();	/* msg */
-	free(msg);
+	HOSTED_API(free)(msg);
 
 	lock(&m->l);
 	m->queue = 0;
@@ -394,7 +394,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 	if(waserror()){
 		if(alloc && wq->clone!=nil)
 			cclose(wq->clone);
-		free(wq);
+		HOSTED_API(free)(wq);
 		return nil;
 	}
 
@@ -431,7 +431,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 			cclose(nc);
 		wq->clone = nil;
 		if(r->reply.nwqid == 0){
-			free(wq);
+			HOSTED_API(free)(wq);
 			wq = nil;
 			goto Return;
 		}
@@ -570,7 +570,7 @@ muxclose(Mnt *m)
 		mntfree(q);
 	}
 	m->id = 0;
-	free(m->version);
+	HOSTED_API(free)(m->version);
 	m->version = nil;
 	mntpntfree(m);
 }
@@ -1047,7 +1047,7 @@ mntralloc(Chan *c, ulong msize)
 	lock(&mntalloc.l);
 	new = mntalloc.rpcfree;
 	if(new == nil){
-		new = malloc(sizeof(Mntrpc));
+		new = HOSTED_API(malloc)(sizeof(Mntrpc));
 		if(new == nil) {
 			unlock(&mntalloc.l);
 			exhausted("mount rpc header");
@@ -1056,16 +1056,16 @@ mntralloc(Chan *c, ulong msize)
 		 * The header is split from the data buffer as
 		 * mountmux may swap the buffer with another header.
 		 */
-		new->rpc = mallocz(msize, 0);
+		new->rpc = HOSTED_API(mallocz)(msize, 0);
 		if(new->rpc == nil){
-			free(new);
+			HOSTED_API(free)(new);
 			unlock(&mntalloc.l);
 			exhausted("mount rpc buffer");
 		}
 		new->rpclen = msize;
 		new->request.tag = alloctag();
 		if(new->request.tag == NOTAG){
-			free(new);
+			HOSTED_API(free)(new);
 			unlock(&mntalloc.l);
 			exhausted("rpc tags");
 		}
@@ -1074,10 +1074,10 @@ mntralloc(Chan *c, ulong msize)
 		mntalloc.rpcfree = new->list;
 		mntalloc.nrpcfree--;
 		if(new->rpclen < msize){
-			free(new->rpc);
-			new->rpc = mallocz(msize, 0);
+			HOSTED_API(free)(new->rpc);
+			new->rpc = HOSTED_API(mallocz)(msize, 0);
 			if(new->rpc == nil){
-				free(new);
+				HOSTED_API(free)(new);
 				mntalloc.nrpcused--;
 				unlock(&mntalloc.l);
 				exhausted("mount rpc buffer");
@@ -1101,9 +1101,9 @@ mntfree(Mntrpc *r)
 		freeblist(r->b);
 	lock(&mntalloc.l);
 	if(mntalloc.nrpcfree >= 10){
-		free(r->rpc);
+		HOSTED_API(free)(r->rpc);
 		freetag(r->request.tag);
-		free(r);
+		HOSTED_API(free)(r);
 	}
 	else{
 		r->list = mntalloc.rpcfree;

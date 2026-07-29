@@ -81,8 +81,8 @@ delword(Word *w)
 	while(v = w){
 		w = w->next;
 		if(v->s)
-			free(v->s);
-		free(v);
+			HOSTED_API(free)(v->s);
+		HOSTED_API(free)(v);
 	}
 }
 
@@ -127,7 +127,7 @@ nextword(char **s)
 			if(b->current != b->start){
 				bufcpy(b, w->s, strlen(w->s));
 				insert(b, 0);
-				free(w->s);
+				HOSTED_API(free)(w->s);
 				w->s = HOSTED_API(strdup)(b->start);
 				b->current = b->start;
 			}
@@ -135,11 +135,11 @@ nextword(char **s)
 				bufcpy(b, tail->s, strlen(tail->s));
 				bufcpy(b, w->s, strlen(w->s));
 				insert(b, 0);
-				free(tail->s);
+				HOSTED_API(free)(tail->s);
 				tail->s = HOSTED_API(strdup)(b->start);
 				tail->next = w->next;
-				free(w->s);
-				free(w);
+				HOSTED_API(free)(w->s);
+				HOSTED_API(free)(w);
 				b->current = b->start;
 			} else
 				tail = head = w;
@@ -159,7 +159,7 @@ out:
 			bufcpy(b, tail->s, strlen(tail->s));
 			bufcpy(b, b->start, cp-b->start);
 			insert(b, 0);
-			free(tail->s);
+			HOSTED_API(free)(tail->s);
 			tail->s = HOSTED_API(strdup)(cp);
 		} else {
 			insert(b, 0);

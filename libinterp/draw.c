@@ -158,7 +158,7 @@ cacheinstall(Cache **cache, Display *d, char *name, void *ptr, char *type)
 /*		print("%s %s already in cache\n", type, name); /**/
 		return nil;
 	}
-	c = malloc(sizeof(Cache));
+	c = HOSTED_API(malloc)(sizeof(Cache));
 	if(c == nil)
 		return nil;
 	hash = drawhash(name);
@@ -200,8 +200,8 @@ cacheuninstall(Cache **cache, Display *d, char *name, char *type)
 	else
 		prev->next = c->next;
 	libqunlock(cacheqlock);
-	free(c->name);
-	free(c);
+	HOSTED_API(free)(c->name);
+	HOSTED_API(free)(c);
 }
 
 Image*
@@ -330,7 +330,7 @@ Display_allocate(void *fp)
 	if(display == 0)
 		return;
 
-	dr = malloc(sizeof(DRef));
+	dr = HOSTED_API(malloc)(sizeof(DRef));
 	if(dr == nil)
 		return;
 	h = heap(TDisplay);
@@ -457,7 +457,7 @@ display_dec(void *v)
 		unlockdisplay(d);
 	freeallsubfonts(d);
 	closedisplay(d);
-	free(dr);
+	HOSTED_API(free)(dr);
 }
 
 void
@@ -1581,19 +1581,19 @@ freeallsubfonts(Display *d)
 					sfcache[i] = c->next;
 				else
 					prev->next = c->next;
-				free(c->name);
+				HOSTED_API(free)(c->name);
 				sf = c->u.sf;
 				if(--sf->ref==0){
-					free(sf->info);
+					HOSTED_API(free)(sf->info);
 					locked = lockdisplay(c->display);
 					freeimage(sf->bits);
 					if(locked)
 						unlockdisplay(c->display);
-					free(sf);
+					HOSTED_API(free)(sf);
 				}
 				o = c;
 				c = c->next;
-				free(o);
+				HOSTED_API(free)(o);
 			}else{
 				prev = c;
 				c = c->next;
@@ -1931,7 +1931,7 @@ screentopbot(Draw_Screen *screen, Array *array, void (*topbot)(Image **, int))
 
 	s = checkscreen(screen);
 	di = (Draw_Image**)array->data;
-	ip = malloc(array->len * sizeof(Image*));
+	ip = HOSTED_API(malloc)(array->len * sizeof(Image*));
 	if(ip == nil)
 		return;
 	n = 0;
@@ -1939,18 +1939,18 @@ screentopbot(Draw_Screen *screen, Array *array, void (*topbot)(Image **, int))
 		if(di[i] != H){
 			ip[n] = lookupimage(di[i]);
 			if(ip[n]==nil || ip[n]->screen != s){
-				free(ip);
+				HOSTED_API(free)(ip);
 				return;
 			}
 			n++;
 		}
 	if(n == 0){
-		free(ip);
+		HOSTED_API(free)(ip);
 		return;
 	}
 	locked = lockdisplay(s->display);
 	(*topbot)(ip, n);
-	free(ip);
+	HOSTED_API(free)(ip);
 	flushimage(s->display, 1);
 	if(locked)
 		unlockdisplay(s->display);
@@ -2129,7 +2129,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 	t = cfname;
 	if(t[0] != '/'){
 		strcpy(tmp2, fname);
-		u = utfrrune(tmp2, '/');
+		u = HOSTED_API(utfrrune)(tmp2, '/');
 		if(u)
 			u[0] = 0;
 		else
@@ -2241,7 +2241,7 @@ flushimage(Display *d, int visible)
 			if(d->refhead == nil)
 				d->reftail = nil;
 			r->reffn(nil, r->r, r->refptr);
-			free(r);
+			HOSTED_API(free)(r);
 		}
 	}
 	return ret;

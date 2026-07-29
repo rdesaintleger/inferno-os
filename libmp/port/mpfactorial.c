@@ -46,7 +46,7 @@ mpfactorial(ulong n)
 						while(--max >= 0)
 							mpfree(stk[max]);
 						mpfree(r);
-						sysfatal("mpfactorial: stack overflow");
+						HOSTED_API(sysfatal)("mpfactorial: stack overflow");
 					}
 					stk[max] = mpnew(Dbits);
 				}

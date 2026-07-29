@@ -45,7 +45,7 @@ vexpand(char *w, Envy *env, Bufblock *buf)
 	p = w+1;	/* skip dollar sign */
 	if(*p == '{') {
 		p++;
-		q = utfrune(p, '}');
+		q = HOSTED_API(utfrune)(p, '}');
 		if (!q)
 			q = strchr(p, 0);
 	} else
@@ -58,7 +58,7 @@ vexpand(char *w, Envy *env, Bufblock *buf)
 		q++;
 	if (s) {
 		bufcpy(buf, s, strlen(s));
-		free(s);
+		HOSTED_API(free)(s);
 	} else 		/* copy name intact*/
 		bufcpy(buf, w, q-w);
 	return(q);
@@ -84,5 +84,5 @@ front(char *s)
 		*t++ = ' ';
 	}
 	*t = 0;
-	free(q);
+	HOSTED_API(free)(q);
 }

@@ -136,19 +136,19 @@ ensuregridsize(TkGrid *grid, Point dim)
 	if(dim.y < olddim.y)
 		dim.y = olddim.y;
 	if(dim.y > olddim.y){
-		cells = realloc(grid->cells, sizeof(TkGridcell*)*dim.y);
+		cells = HOSTED_API(realloc)(grid->cells, sizeof(TkGridcell*)*dim.y);
 		if(cells == nil)
 			return TkNomem;
 		grid->cells = cells;
 		for(i = olddim.y; i < dim.y; i++){
-			cells[i] = malloc(sizeof(TkGridcell)*dim.x);
+			cells[i] = HOSTED_API(malloc)(sizeof(TkGridcell)*dim.x);
 			if(cells[i] == nil){
 				while(--i >= olddim.y)
 					free(cells[i]);
 				return TkNomem;
 			}
 		}
-		rows = realloc(grid->rows, sizeof(TkGridbeam)*dim.y);
+		rows = HOSTED_API(realloc)(grid->rows, sizeof(TkGridbeam)*dim.y);
 		if(rows == nil)
 			return TkNomem;
 		grid->rows = rows;
@@ -163,13 +163,13 @@ ensuregridsize(TkGrid *grid, Point dim)
 		 */
 		cells = grid->cells;
 		for(i = 0; i < olddim.y; i++){
-			cellrow = realloc(cells[i], sizeof(TkGridcell) * dim.x);
+			cellrow = HOSTED_API(realloc)(cells[i], sizeof(TkGridcell) * dim.x);
 			if(cellrow == nil)
 				return TkNomem;	/* leak some earlier rows, but not permanently */
 			memset(cellrow + olddim.x, 0, (dim.x-olddim.x)*sizeof(TkGridcell));
 			cells[i] = cellrow;
 		}
-		cols = realloc(grid->cols, sizeof(TkGridbeam)*dim.x);
+		cols = HOSTED_API(realloc)(grid->cols, sizeof(TkGridbeam)*dim.x);
 		if(cols == nil)
 			return TkNomem;
 		initbeam(cols + olddim.x, dim.x - olddim.x);
@@ -187,7 +187,7 @@ delbeams(TkGridbeam *beam, int nb, int x0, int x1)
 	for(i = x0; i < x1; i++)
 		free(beam[i].name);
 	memmove(&beam[x0], &beam[x1], sizeof(TkGridbeam) * (nb-x1));
-	b = realloc(beam, sizeof(TkGridbeam) * (nb-(x1-x0)));
+	b = HOSTED_API(realloc)(beam, sizeof(TkGridbeam) * (nb-(x1-x0)));
 	return b ? b : beam;
 }
 
@@ -197,7 +197,7 @@ delrows(TkGrid *grid, int y0, int y1)
 	TkGridcell **cells;
 	memmove(grid->cells+y0, grid->cells+y1, sizeof(TkGridcell*) * (grid->dim.y-y1));
 	grid->dim.y -= (y1 - y0);
-	cells = realloc(grid->cells, sizeof(TkGridcell*) * grid->dim.y);
+	cells = HOSTED_API(realloc)(grid->cells, sizeof(TkGridcell*) * grid->dim.y);
 	if(cells != nil || grid->dim.y == 0)
 		grid->cells = cells;		/* can realloc to a smaller size ever fail? */
 }
@@ -214,7 +214,7 @@ delcols(TkGrid *grid, int x0, int x1)
 	for(y = 0; y < dim.y; y++){
 		row = cells[y];
 		memmove(row+x0, row+x1, sizeof(TkGridcell) * (dim.x - x1));
-		row = realloc(row, sizeof(TkGridcell) * ndx);
+		row = HOSTED_API(realloc)(row, sizeof(TkGridcell) * ndx);
 		if(row != nil || ndx == 0)
 			cells[y] = row;
 	}
@@ -530,7 +530,7 @@ tkgridconfigure(TkTop *t, TkGridparam *p, TkName *names)
 		return TkNotgrid;
 
 	if(grid == nil){
-		grid = malloc(sizeof(TkGrid));
+		grid = HOSTED_API(malloc)(sizeof(TkGrid));
 		if(grid == nil)
 			return TkNomem;
 		p->in->grid = grid;
@@ -1085,7 +1085,7 @@ tkbeamconfigure(TkTop *t, char *arg, int isrow)
 	if(grid == nil){
 		if(master->slave != nil)
 			return TkNotgrid;
-		grid = master->grid = malloc(sizeof(TkGrid));
+		grid = master->grid = HOSTED_API(malloc)(sizeof(TkGrid));
 		if(grid == nil){
 			tkfreename(names);
 			return TkNomem;
@@ -1122,7 +1122,7 @@ tkbeamconfigure(TkTop *t, char *arg, int isrow)
 	if(p.pad >= 0)
 		beam->pad = p.pad;
 	if(p.name != nil){
-		free(beam->name);
+		HOSTED_API(free)(beam->name);
 		beam->name = p.name;
 	}
 	if(p.equalise != BoolX)
@@ -1237,15 +1237,15 @@ tkfreegrid(TkGrid *grid)
 	int i;
 	dim = grid->dim;
 	for(i = 0; i < dim.x; i++)
-		free(grid->cols[i].name);
+		HOSTED_API(free)(grid->cols[i].name);
 	for(i = 0; i < dim.y; i++)
-		free(grid->rows[i].name);
+		HOSTED_API(free)(grid->rows[i].name);
 	for(i = 0; i < dim.y; i++)
-		free(grid->cells[i]);
-	free(grid->cells);
-	free(grid->rows);
-	free(grid->cols);
-	free(grid);
+		HOSTED_API(free)(grid->cells[i]);
+	HOSTED_API(free)(grid->cells);
+	HOSTED_API(free)(grid->rows);
+	HOSTED_API(free)(grid->cols);
+	HOSTED_API(free)(grid);
 }
 
 char*
@@ -1256,7 +1256,7 @@ tkgrid(TkTop *t, char *arg, char **val)
 	TkName *names;
 	char *e, *w, *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 
@@ -1305,7 +1305,7 @@ tkgrid(TkTop *t, char *arg, char **val)
 			e = TkBadcm;
 		}
 	} else{
-		p = malloc(sizeof(TkGridparam));
+		p = HOSTED_API(malloc)(sizeof(TkGridparam));
 		if(p == nil)
 			return TkNomem;
 		tko[0].ptr = p;
@@ -1320,17 +1320,17 @@ tkgrid(TkTop *t, char *arg, char **val)
 		names = nil;
 		e = tkparse(t, arg, tko, &names);
 		if(e != nil){
-			free(p);
+			HOSTED_API(free)(p);
 			return e;
 		}
 	
 		e = tkgridconfigure(t, p, names);
-		free(p->row);
-		free(p->col);
-		free(p);
+		HOSTED_API(free)(p->row);
+		HOSTED_API(free)(p->col);
+		HOSTED_API(free)(p);
 		tkfreename(names);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return e;
 }
 

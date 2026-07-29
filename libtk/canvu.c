@@ -25,7 +25,7 @@ tkparsepts(TkTop *t, TkCpoints *i, char **arg, int close)
 		npoint++;
 	}
 
-	i->parampt = mallocz(npoint*sizeof(Point), 0);
+	i->parampt = HOSTED_API(mallocz)(npoint*sizeof(Point), 0);
 	if(i->parampt == nil)
 		return TkNomem;
 
@@ -47,7 +47,7 @@ tkparsepts(TkTop *t, TkCpoints *i, char **arg, int close)
 	}
 	*arg = s;
 	close = (close != 0);
-	i->drawpt = mallocz((npoint+close)*sizeof(Point), 0);
+	i->drawpt = HOSTED_API(mallocz)((npoint+close)*sizeof(Point), 0);
 	if(i->drawpt == nil){
 		e = TkNomem;
 		goto Error;
@@ -87,7 +87,7 @@ tkcnewitem(Tk *tk, int t, int n)
 {
 	TkCitem *i;
 
-	i = malloc(n);
+	i = HOSTED_API(malloc)(n);
 	if(i == nil)
 		return nil;
 	memset(i, 0, n);
@@ -218,13 +218,13 @@ tkcaddtag(Tk *tk, TkCitem *i, int new)
 		link = n->link;
 		f = tkctaglook(tk, n, nil);
 		if(n != f)
-			free(n);
+			HOSTED_API(free)(n);
 
 		for(t = i->stag; t; t = t->itemlist)
 			if(t->name == f)
 				break;
 		if(t == nil) {
-			t = malloc(sizeof(TkCtag));
+			t = HOSTED_API(malloc)(sizeof(TkCtag));
 			if(t == nil) {
 				tkfreename(link);
 				return TkNomem;
@@ -252,8 +252,8 @@ tkcaddtag(Tk *tk, TkCitem *i, int new)
 void
 tkfreepoint(TkCpoints *p)
 {
-	free(p->drawpt);
-	free(p->parampt);
+	HOSTED_API(free)(p->drawpt);
+	HOSTED_API(free)(p->parampt);
 }
 
 /*

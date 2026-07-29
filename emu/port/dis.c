@@ -126,7 +126,7 @@ newprog(Prog *p, Modlink *m)
 		if(p->flags & Pkilled)
 			error("");
 	}
-	n = malloc(sizeof(Prog)+sizeof(Osenv));
+	n = HOSTED_API(malloc)(sizeof(Prog)+sizeof(Osenv));
 	if(n == 0){
 		if(p == nil)
 			panic("no memory");
@@ -237,10 +237,10 @@ delprog(Prog *p, char *msg)
 			isched.runtl = nil;
 	}
 	p->state = 0xdeadbeef;
-	free(o->user);
-	free(p->killstr);
-	free(p->exstr);
-	free(p);
+	HOSTED_API(free)(o->user);
+	HOSTED_API(free)(p->killstr);
+	HOSTED_API(free)(p->exstr);
+	HOSTED_API(free)(p);
 }
 
 void
@@ -332,7 +332,7 @@ exprog(Prog *p, char *exc)
 		addrun(p);
 	if(p->kill == nil){
 		if(p->killstr == nil){
-			p->killstr = malloc(ERRMAX);
+			p->killstr = HOSTED_API(malloc)(ERRMAX);
 			if(p->killstr == nil){
 				p->kill = Enomem;
 				return 1;
@@ -452,7 +452,7 @@ newgrp(Prog *p)
 
 	if(p->group != nil && p->group->id == p->pid)
 		return;
-	g = malloc(sizeof(*g));
+	g = HOSTED_API(malloc)(sizeof(*g));
 	if(g == nil)
 		error(Enomem);
 	p->flags &= ~(Ppropagate|Pnotifyleader);
@@ -527,7 +527,7 @@ delgrp(Prog *p)
 					pg->child = cg;
 				}
 			}
-			free(g);
+			HOSTED_API(free)(g);
 		}while((g = pg) != nil && g->head == nil);
 	}
 	return g;
@@ -571,7 +571,7 @@ killgrp(Prog *p, char *msg)
 		else
 			npid++;
 	/* use pids not Prog* because state can change during killprog (eg, in delprog) */
-	pids = malloc(npid*sizeof(int));
+	pids = HOSTED_API(malloc)(npid*sizeof(int));
 	if(pids == nil)
 		error(Enomem);
 	npid = 0;
@@ -580,7 +580,7 @@ killgrp(Prog *p, char *msg)
 	g->flags |= Pkilled;
 	if(waserror()) {
 		g->flags &= ~Pkilled;
-		free(pids);
+		HOSTED_API(free)(pids);
 		nexterror();
 	}
 	for(i = 0; i < npid; i++) {
@@ -590,7 +590,7 @@ killgrp(Prog *p, char *msg)
 	}
 	poperror();
 	g->flags &= ~Pkilled;
-	free(pids);
+	HOSTED_API(free)(pids);
 	return 1;
 }
 
@@ -605,7 +605,7 @@ killcomm(Progq **q)
 	for (f = *q; f != nil; f = *q) {
 		*q = f->next;
 		p = f->prog;
-		free(f);
+		HOSTED_API(free)(f);
 		if(p == nil)
 			return;
 		p->ptr = nil;
@@ -630,7 +630,7 @@ addprog(Proc *p)
 {
 	Prog *n;
 
-	n = malloc(sizeof(Prog));
+	n = HOSTED_API(malloc)(sizeof(Prog));
 	if(n == nil)
 		panic("no memory");
 	p->prog = n;

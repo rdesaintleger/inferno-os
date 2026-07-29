@@ -10,7 +10,7 @@ freesubfont(Subfont *f)
 	if(f->ref > 0)
 		return;
 	uninstallsubfont(f);
-	free(f->info);	/* note: f->info must have been malloc'ed! */
+	HOSTED_API(free)(f->info);	/* note: f->info must have been malloc'ed! */
 	freeimage(f->bits);
-	free(f);
+	HOSTED_API(free)(f);
 }

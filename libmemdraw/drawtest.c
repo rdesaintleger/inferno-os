@@ -121,10 +121,10 @@ main(int argc, char *argv[])
 		exits("alloc");
 	}
 	nbytes = (4*Xrange+4)*Yrange;
-	srcbits = malloc(nbytes);
-	dstbits = malloc(nbytes);
-	maskbits = malloc(nbytes);
-	savedstbits = malloc(nbytes);
+	srcbits = HOSTED_API(malloc)(nbytes);
+	dstbits = HOSTED_API(malloc)(nbytes);
+	maskbits = HOSTED_API(malloc)(nbytes);
+	savedstbits = HOSTED_API(malloc)(nbytes);
 	if(dstbits==0 || srcbits==0 || maskbits==0 || savedstbits==0)
 		goto Alloc;
 	dbpp = dst->depth;

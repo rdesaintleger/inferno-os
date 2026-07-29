@@ -53,9 +53,9 @@ tkfreeframe(Tk *tk)
 
 	if(tk->type == TKmenu) {
 		tkw = TKobj(TkWin, tk);
-		free(tkw->postcmd);
-		free(tkw->cascade);
-		free(tkw->cbname);
+		HOSTED_API(free)(tkw->postcmd);
+		HOSTED_API(free)(tkw->cascade);
+		HOSTED_API(free)(tkw->cbname);
 	}
 
 	tkunmap(tk);		/* XXX do this only if (tk->flag&Tkswept)==0 ?? */
@@ -240,7 +240,7 @@ tkframefocusorder(Tk *tk)
 	if (n == 0)
 		return;
 
-	inf = malloc(sizeof(*inf) * n);
+	inf = HOSTED_API(malloc)(sizeof(*inf) * n);
 	if (inf == nil)
 		return;
 	i = 0;
@@ -252,7 +252,7 @@ tkframefocusorder(Tk *tk)
 	tksortfocusorder(inf, n);
 	for (i = 0; i < n; i++)
 		tkappendfocusorder(inf[i].w);
-	free(inf);
+	HOSTED_API(free)(inf);
 }
 
 static

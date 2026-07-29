@@ -173,7 +173,7 @@ xassert(int true, char *reason)
 void *
 xmalloc(int bytes)
 {
-	char *m = malloc(bytes);
+	char *m = HOSTED_API(malloc)(bytes);
 	if(m)
 		memset(m, 0, bytes);
 //	print("xmalloc: %lux (%d)\n", m, bytes);
@@ -231,7 +231,7 @@ odbcsources(Client *c)
 			all = HOSTED_API(strdup)(buff);
 		else {
 			p = all;
-			all = malloc(strlen(all)+strlen(buff)+1);
+			all = HOSTED_API(malloc)(strlen(all)+strlen(buff)+1);
 			strcpy(all, p);
 			strcat(all, buff);
 			free(p);
@@ -1144,4 +1144,16 @@ main(int argc, char *argv[])
 		styxprocess(&s);
 	}
 	styxend(&s);
+}
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
 }

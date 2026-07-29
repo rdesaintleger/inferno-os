@@ -154,7 +154,7 @@ makesharedfb(void)
 {
 	XShmSegmentInfo *shminfo;
 
-	shminfo = malloc(sizeof(XShmSegmentInfo));
+	shminfo = HOSTED_API(malloc)(sizeof(XShmSegmentInfo));
 	if(shminfo == nil) {
 		fprint(2, "emu: cannot allocate XShmSegmentInfo\n");
 		cleanexit(0);
@@ -174,7 +174,7 @@ makesharedfb(void)
 
 	/* did we get an X11 error? if so then try without shm */
 	if(shm_got_x_error) {
-		free(shminfo);
+		HOSTED_API(free)(shminfo);
 		shminfo = NULL;
 		clean_errhandlers();
 		return 0;
@@ -208,13 +208,13 @@ makesharedfb(void)
 	if(shm_got_x_error) {
 		XDestroyImage(img);
 		XSync(xdisplay, 0);
-		free(shminfo);
+		HOSTED_API(free)(shminfo);
 		shminfo = NULL;
 		clean_errhandlers();
 		return 0;
 	}
 
-	gscreendata = malloc(Xsize * Ysize * (displaydepth >> 3));
+	gscreendata = HOSTED_API(malloc)(Xsize * Ysize * (displaydepth >> 3));
 	if(gscreendata == nil) {
 		fprint(2, "emu: cannot allocate screen buffer (%dx%dx%d)\n", Xsize, Ysize, displaydepth);
 		cleanexit(0);
@@ -264,8 +264,8 @@ attachscreen(Rectangle *r, ulong *chan, int *d, int *width, int *softscreen)
 			depth = 32;
 
 		/* allocate virtual screen */	
-		gscreendata = malloc(Xsize * Ysize * (displaydepth >> 3));
-		xscreendata = malloc(Xsize * Ysize * (depth >> 3));
+		gscreendata = HOSTED_API(malloc)(Xsize * Ysize * (displaydepth >> 3));
+		xscreendata = HOSTED_API(malloc)(Xsize * Ysize * (depth >> 3));
 		if(gscreendata == nil || xscreendata == nil) {
 			fprint(2, "emu: can not allocate virtual screen buffer (%dx%dx%d[%d])\n", Xsize, Ysize, displaydepth, depth);
 			return 0;

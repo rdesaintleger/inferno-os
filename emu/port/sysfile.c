@@ -16,14 +16,14 @@ growfd(Fgrp *f, int fd)
 		n = MAXNFD;
 	if(fd >= n)
 		return -1;
-	nfd = malloc(n*sizeof(Chan*));
+	nfd = HOSTED_API(malloc)(n*sizeof(Chan*));
 	if(nfd == nil)
 		return -1;
 	ofd = f->fd;
 	memmove(nfd, ofd, f->nfd*sizeof(Chan *));
 	f->fd = nfd;
 	f->nfd = n;
-	free(ofd);
+	HOSTED_API(free)(ofd);
 	return 0;
 }
 
@@ -272,7 +272,7 @@ kfd2path(int fd)
 	c = fdtochan(up->env->fgrp, fd, -1, 0, 1);
 	s = nil;
 	if(c->name != nil){
-		s = malloc(c->name->len+1);
+		s = HOSTED_API(malloc)(c->name->len+1);
 		if(s == nil){
 			cclose(c);
 			error(Enomem);
@@ -744,7 +744,7 @@ kseek(int fd, vlong off, int whence)
 		if(dir == nil)
 			error("internal error: stat error in seek");
 		off += dir->length;
-		free(dir);
+		HOSTED_API(free)(dir);
 		if(off < 0)
 			error(Enegoff);
 		lock(&c->l);	/* lock for read/write update */
@@ -911,13 +911,13 @@ chandirstat(Chan *c)
 		d = smalloc(sizeof(Dir) + nd);
 		buf = (uchar*)&d[1];
 		if(waserror()){
-			free(d);
+			HOSTED_API(free)(d);
 			return nil;
 		}
 		n = devtab[c->type]->stat(c, buf, nd);
 		poperror();
 		if(n < BIT16SZ){
-			free(d);
+			HOSTED_API(free)(d);
 			return nil;
 		}
 		nd = GBIT16((uchar*)buf) + BIT16SZ;	/* size needed to store whole stat buffer including count */
@@ -926,7 +926,7 @@ chandirstat(Chan *c)
 			return d;
 		}
 		/* else sizeof(Dir)+nd is plenty */
-		free(d);
+		HOSTED_API(free)(d);
 	}
 	return nil;
 
@@ -978,7 +978,7 @@ kdirwstat(char *name, Dir *dir)
 	buf = smalloc(r);
 	convD2M(dir, buf, r);
 	r = kwstat(name, buf, r);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return r < 0? r: 0;
 }
 
@@ -992,7 +992,7 @@ kdirfwstat(int fd, Dir *dir)
 	buf = smalloc(r);
 	convD2M(dir, buf, r);
 	r = kfwstat(fd, buf, r);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return r < 0? r: 0;
 }
 
@@ -1022,7 +1022,7 @@ dirpackage(uchar *buf, long ts, Dir **d)
 	if(i != ts)
 		error("bad directory format");
 
-	*d = malloc(n * sizeof(Dir) + ss);
+	*d = HOSTED_API(malloc)(n * sizeof(Dir) + ss);
 	if(*d == nil)
 		error(Enomem);
 
@@ -1034,7 +1034,7 @@ dirpackage(uchar *buf, long ts, Dir **d)
 	for(i = 0; i < ts; i += m){
 		m = BIT16SZ + GBIT16((uchar*)&buf[i]);
 		if(nn >= n || convM2D(&buf[i], m, *d + nn, s) != m){
-			free(*d);
+			HOSTED_API(free)(*d);
 			*d = nil;
 			error("bad directory entry");
 		}
@@ -1054,11 +1054,11 @@ kdirread(int fd, Dir **d)
 	*d = nil;
 	if(waserror())
 		return -1;
-	buf = malloc(DIRREADLIM);
+	buf = HOSTED_API(malloc)(DIRREADLIM);
 	if(buf == nil)
 		error(Enomem);
 	if(waserror()){
-		free(buf);
+		HOSTED_API(free)(buf);
 		nexterror();
 	}
 	ts = kread(fd, buf, DIRREADLIM);
@@ -1066,7 +1066,7 @@ kdirread(int fd, Dir **d)
 		ts = dirpackage(buf, ts, d);
 
 	poperror();
-	free(buf);
+	HOSTED_API(free)(buf);
 	poperror();
 	return ts;
 }

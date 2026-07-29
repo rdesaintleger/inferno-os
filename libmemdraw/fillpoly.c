@@ -81,12 +81,12 @@ _memfillpolysc(Memimage *dst, Point *vert, int nvert, int w, Memimage *src, Poin
 	if(nvert == 0)
 		return;
 
-	seg = malloc((nvert+2)*sizeof(Seg*));
+	seg = HOSTED_API(malloc)((nvert+2)*sizeof(Seg*));
 	if(seg == nil)
 		return;
-	segtab = malloc((nvert+1)*sizeof(Seg));
+	segtab = HOSTED_API(malloc)((nvert+1)*sizeof(Seg));
 	if(segtab == nil) {
-		free(seg);
+		HOSTED_API(free)(seg);
 		return;
 	}
 
@@ -114,8 +114,8 @@ _memfillpolysc(Memimage *dst, Point *vert, int nvert, int w, Memimage *src, Poin
 	if(detail)
 		yscan(dst, seg, segtab, nvert, w, src, sp, fixshift, op);
 
-	free(seg);
-	free(segtab);
+	HOSTED_API(free)(seg);
+	HOSTED_API(free)(segtab);
 }
 
 static long
@@ -206,7 +206,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 	if(n == 0)
 		return;
 	*p = 0;
-	qsort(seg, p-seg , sizeof(Seg*), ycompare);
+	HOSTED_API(qsort)(seg, p-seg , sizeof(Seg*), ycompare);
 
 	onehalf = 0;
 	if(fixshift)
@@ -336,7 +336,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 	if(n == 0)
 		return;
 	*p = 0;
-	qsort(seg, n , sizeof(Seg*), xcompare);
+	HOSTED_API(qsort)(seg, n , sizeof(Seg*), xcompare);
 
 	onehalf = 0;
 	if(fixshift)
@@ -460,7 +460,7 @@ zsort(Seg **seg, Seg **ep)
 		q = ep-1;
 		for(p = seg; p < q; p++) {
 			if(p[0]->z > p[1]->z) {
-				qsort(seg, ep-seg, sizeof(Seg*), zcompare);
+				HOSTED_API(qsort)(seg, ep-seg, sizeof(Seg*), zcompare);
 				break;
 			}
 		}

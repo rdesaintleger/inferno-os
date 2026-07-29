@@ -152,17 +152,17 @@ split(char *name, char **member)
 	char *p, *q;
 
 	p = HOSTED_API(strdup)(name);
-	q = utfrune(p, '(');
+	q = HOSTED_API(utfrune)(p, '(');
 	if(q){
 		*q++ = 0;
 		if(member)
 			*member = q;
-		q = utfrune(q, ')');
+		q = HOSTED_API(utfrune)(q, ')');
 		if (q)
 			*q = 0;
 		if(type(p))
 			return p;
-		free(p);
+		HOSTED_API(free)(p);
 		fprint(2, "mk: '%s' is not an archive\n", name);
 	}
 	return 0;

@@ -322,7 +322,7 @@ drawrefresh(Memimage *l, Rectangle r, void *v)
 			combinerect(&ref->r, r);
 			return;
 		}
-	ref = malloc(sizeof(Refresh));
+	ref = HOSTED_API(malloc)(sizeof(Refresh));
 	if(ref){
 		ref->dimage = d;
 		ref->r = r;
@@ -499,7 +499,7 @@ drawinstall(Client *client, int id, Memimage *i, DScreen *dscreen)
 {
 	DImage *d;
 
-	d = malloc(sizeof(DImage));
+	d = HOSTED_API(malloc)(sizeof(DImage));
 	if(d == 0)
 		return 0;
 	d->id = id;
@@ -522,22 +522,22 @@ drawinstallscreen(Client *client, DScreen *d, int id, DImage *dimage, DImage *df
 	Memscreen *s;
 	CScreen *c;
 
-	c = malloc(sizeof(CScreen));
+	c = HOSTED_API(malloc)(sizeof(CScreen));
 	if(dimage && dimage->image && dimage->image->chan == 0)
 		panic("bad image %p in drawinstallscreen", dimage->image);
 
 	if(c == 0)
 		return 0;
 	if(d == 0){
-		d = malloc(sizeof(DScreen));
+		d = HOSTED_API(malloc)(sizeof(DScreen));
 		if(d == 0){
-			free(c);
+			HOSTED_API(free)(c);
 			return 0;
 		}
-		s = malloc(sizeof(Memscreen));
+		s = HOSTED_API(malloc)(sizeof(Memscreen));
 		if(s == 0){
-			free(c);
-			free(d);
+			HOSTED_API(free)(c);
+			HOSTED_API(free)(d);
 			return 0;
 		}
 		s->frontmost = 0;
@@ -606,8 +606,8 @@ drawfreedscreen(DScreen *this)
 		drawfreedimage(this->dimage);
 	if(this->dfill)
 		drawfreedimage(this->dfill);
-	free(this->screen);
-	free(this);
+	HOSTED_API(free)(this->screen);
+	HOSTED_API(free)(this);
 }
 
 void
@@ -641,7 +641,7 @@ drawfreedimage(DImage *dimage)
 		if(l->data == screenimage->data)
 			dstflush(l->layer->screen->image, l->layer->screenr);
 		if(l->layer->refreshfn == drawrefresh)	/* else true owner will clean up */
-			free(l->layer->refreshptr);
+			HOSTED_API(free)(l->layer->refreshptr);
 		l->layer->refreshptr = nil;
 		if(drawgoodname(dimage))
 			memldelete(l);
@@ -651,8 +651,8 @@ drawfreedimage(DImage *dimage)
 	}else
 		freememimage(dimage->image);
     Return:
-	free(dimage->fchar);
-	free(dimage);
+	HOSTED_API(free)(dimage->fchar);
+	HOSTED_API(free)(dimage);
 }
 
 void
@@ -664,14 +664,14 @@ drawuninstallscreen(Client *client, CScreen *this)
 	if(cs == this){
 		client->cscreen = this->next;
 		drawfreedscreen(this->dscreen);
-		free(this);
+		HOSTED_API(free)(this);
 		return;
 	}
 	while(next = cs->next){	/* assign = */
 		if(next == this){
 			cs->next = this->next;
 			drawfreedscreen(this->dscreen);
-			free(this);
+			HOSTED_API(free)(this);
 			return;
 		}
 		cs = next;
@@ -714,7 +714,7 @@ drawaddname(Client *client, DImage *di, int n, char *str)
 			error(Enameused);
 	t = smalloc((sdraw.nname+1)*sizeof(DName));
 	memmove(t, sdraw.name, sdraw.nname*sizeof(DName));
-	free(sdraw.name);
+	HOSTED_API(free)(sdraw.name);
 	sdraw.name = t;
 	new = &sdraw.name[sdraw.nname++];
 	new->name = smalloc(n+1);
@@ -737,16 +737,16 @@ drawnewclient(void)
 			break;
 	}
 	if(i == sdraw.nclient){
-		cp = malloc((sdraw.nclient+1)*sizeof(Client*));
+		cp = HOSTED_API(malloc)((sdraw.nclient+1)*sizeof(Client*));
 		if(cp == 0)
 			return 0;
 		memmove(cp, sdraw.client, sdraw.nclient*sizeof(Client*));
-		free(sdraw.client);
+		HOSTED_API(free)(sdraw.client);
 		sdraw.client = cp;
 		sdraw.nclient++;
 		cp[i] = 0;
 	}
-	cl = malloc(sizeof(Client));
+	cl = HOSTED_API(malloc)(sizeof(Client));
 	if(cl == 0)
 		return 0;
 	memset(cl, 0, sizeof(Client));
@@ -989,7 +989,7 @@ drawclose(Chan *c)
 	if((c->flag&COPEN) && (decref(&cl->r)==0)){
 		while(r = cl->refresh){	/* assign = */
 			cl->refresh = r->next;
-			free(r);
+			HOSTED_API(free)(r);
 		}
 		/* free names */
 		for(i=0; i<sdraw.nname; )
@@ -1010,7 +1010,7 @@ drawclose(Chan *c)
 		}
 		sdraw.client[cl->slot] = 0;
 		drawflush();	/* to erase visible, now dead windows */
-		free(cl);
+		HOSTED_API(free)(cl);
 	}
 	qunlock(&sdraw.q);
 	poperror();
@@ -1063,7 +1063,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 
 	case Qcolormap:
 #ifdef COLORMAP
-		p = malloc(4*12*256+1);
+		p = HOSTED_API(malloc)(4*12*256+1);
 		if(p == 0)
 			error(Enomem);
 		m = 0;
@@ -1072,7 +1072,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 			m += sprint((char*)p+m, "%11d %11lud %11lud %11lud\n", index, red>>24, green>>24, blue>>24);
 		}
 		n = readstr(offset, a, n, (char*)p);
-		free(p);
+		HOSTED_API(free)(p);
 #else
 		n = 0;
 #endif
@@ -1085,7 +1085,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 			error(Eshortread);
 		n = cl->nreaddata;
 		memmove(a, cl->readdata, cl->nreaddata);
-		free(cl->readdata);
+		HOSTED_API(free)(cl->readdata);
 		cl->readdata = nil;
 		break;
 
@@ -1113,7 +1113,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 			BPLONG(p+3*4, r->r.max.x);
 			BPLONG(p+4*4, r->r.max.y);
 			cl->refresh = r->next;
-			free(r);
+			HOSTED_API(free)(r);
 			p += 5*4;
 			n -= 5*4;
 		}
@@ -1372,7 +1372,7 @@ drawmesg(Client *client, void *av, int n)
 				if(reffn){
 					refx = nil;
 					if(reffn == drawrefresh){
-						refx = malloc(sizeof(Refx));
+						refx = HOSTED_API(malloc)(sizeof(Refx));
 						if(refx == 0){
 							drawuninstall(client, dstid);
 							error(Edrawmem);
@@ -1535,8 +1535,8 @@ drawmesg(Client *client, void *av, int n)
 			ni = BGLONG(a+5);
 			if(ni<=0 || ni>4096)
 				error("bad font size (4096 chars max)");
-			free(font->fchar);	/* should we complain if non-zero? */
-			font->fchar = malloc(ni*sizeof(FChar));
+			HOSTED_API(free)(font->fchar);	/* should we complain if non-zero? */
+			font->fchar = HOSTED_API(malloc)(ni*sizeof(FChar));
 			if(font->fchar == 0)
 				error(Enomem);
 			memset(font->fchar, 0, ni*sizeof(FChar));
@@ -1727,7 +1727,7 @@ drawmesg(Client *client, void *av, int n)
 			drawpoint(&sp, a+23);
 			drawpoint(&p, a+31);
 			ni++;
-			pp = malloc(ni*sizeof(Point));
+			pp = HOSTED_API(malloc)(ni*sizeof(Point));
 			if(pp == nil)
 				error(Enomem);
 			doflush = 0;
@@ -1775,7 +1775,7 @@ drawmesg(Client *client, void *av, int n)
 				mempoly(dst, pp, ni, e0, e1, j, src, sp, op);
 			else
 				memfillpoly(dst, pp, ni, e0, src, sp, op);
-			free(pp);
+			HOSTED_API(free)(pp);
 			m = u-a;
 			continue;
 
@@ -1791,13 +1791,13 @@ drawmesg(Client *client, void *av, int n)
 				error(Ereadoutside);
 			c = bytesperline(r, i->depth);
 			c *= Dy(r);
-			free(client->readdata);
-			client->readdata = mallocz(c, 0);
+			HOSTED_API(free)(client->readdata);
+			client->readdata = HOSTED_API(mallocz)(c, 0);
 			if(client->readdata == nil)
 				error("readimage malloc failed");
 			client->nreaddata = memunload(i, r, client->readdata, c);
 			if(client->nreaddata < 0){
-				free(client->readdata);
+				HOSTED_API(free)(client->readdata);
 				client->readdata = nil;
 				error("bad readimage call");
 			}
@@ -1900,11 +1900,11 @@ drawmesg(Client *client, void *av, int n)
 			m += nw*4;
 			if(n < m)
 				error(Eshortdraw);
-			lp = malloc(nw*sizeof(Memimage*));
+			lp = HOSTED_API(malloc)(nw*sizeof(Memimage*));
 			if(lp == 0)
 				error(Enomem);
 			if(waserror()){
-				free(lp);
+				HOSTED_API(free)(lp);
 				nexterror();
 			}
 			for(j=0; j<nw; j++)
@@ -1924,7 +1924,7 @@ drawmesg(Client *client, void *av, int n)
 			ll = drawlookup(client, BGLONG(a+1+1+2), 1);
 			drawrefreshscreen(ll, client);
 			poperror();
-			free(lp);
+			HOSTED_API(free)(lp);
 			continue;
 
 		/* visible: 'v' */

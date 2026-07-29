@@ -156,7 +156,7 @@ found:
 
 		pc = modstatus(&R, name, sizeof(name));
 		n = 10+1+strlen(name)+1+strlen(estr)+1;
-		p->exstr = realloc(p->exstr, n);
+		p->exstr = HOSTED_API(realloc)(p->exstr, n);
 		if(p->exstr != nil)
 			snprint(p->exstr, n, "%lud %s %s", pc, name, estr);
 	}

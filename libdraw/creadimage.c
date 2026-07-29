@@ -65,7 +65,7 @@ creadimage(Display *d, int fd, int dolock)
 	if(i == nil)
 		return nil;
 	ncblock = _compblocksize(r, i->depth);
-	buf = malloc(ncblock);
+	buf = HOSTED_API(malloc)(ncblock);
 	if(buf == nil)
 		goto Errout;
 	miny = r.min.y;
@@ -78,7 +78,7 @@ creadimage(Display *d, int fd, int dolock)
 			freeimage(i);
 			if(dolock)
 				unlockdisplay(d);
-			free(buf);
+			HOSTED_API(free)(buf);
 			return nil;
 		}
 		maxy = atoi(hdr+0*12);
@@ -111,6 +111,6 @@ creadimage(Display *d, int fd, int dolock)
 			unlockdisplay(d);
 		miny = maxy;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	return i;
 }

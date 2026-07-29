@@ -504,7 +504,7 @@ tkbuttonconf(Tk *tk, char *arg, char **val)
 		if (v != nil) {
 			if (v->type != TkVstring) {
 				e = TkNotvt;
-				free(tkl->variable);
+				HOSTED_API(free)(tkl->variable);
 				tkl->variable = nil;
 			}
 			else

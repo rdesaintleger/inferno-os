@@ -81,7 +81,7 @@ readimage(Display *d, int fd, int dolock)
 		unlockdisplay(d);
 	if(i == nil)
 		return nil;
-	tmp = malloc(chunk);
+	tmp = HOSTED_API(malloc)(chunk);
 	if(tmp == nil)
 		goto Err;
 	while(maxy > miny){
@@ -103,7 +103,7 @@ readimage(Display *d, int fd, int dolock)
  			freeimage(i);
 			if(dolock)
 				unlockdisplay(d);
-			free(tmp);
+			HOSTED_API(free)(tmp);
 			return nil;
 		}
 		if(!new)	/* an old image: must flip all the bits */
@@ -118,6 +118,6 @@ readimage(Display *d, int fd, int dolock)
 			unlockdisplay(d);
 		miny += dy;
 	}
-	free(tmp);
+	HOSTED_API(free)(tmp);
 	return i;
 }

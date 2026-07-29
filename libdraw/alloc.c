@@ -34,7 +34,7 @@ _allocimage(Image *ai, Display *d, Rectangle r, ulong chan, int repl, ulong val,
 			kwerrstr("allocimage: %s", err);
 		else
 			kwerrstr("allocimage: %r");
-		free(i);
+		HOSTED_API(free)(i);
 		return 0;
 	}
 
@@ -71,7 +71,7 @@ _allocimage(Image *ai, Display *d, Rectangle r, ulong chan, int repl, ulong val,
 	if(ai)
 		i = ai;
 	else{
-		i = malloc(sizeof(Image));
+		i = HOSTED_API(malloc)(sizeof(Image));
 		if(i == nil){
 			a = bufimage(d, 1+4);
 			if(a){
@@ -115,7 +115,7 @@ namedimage(Display *d, char *name)
 		else
 			kwerrstr("namedimage: %r");
 		if(i)
-			free(i);
+			HOSTED_API(free)(i);
 		return 0;
 	}
 	/* flush pending data so we don't get error allocating the image */
@@ -136,7 +136,7 @@ namedimage(Display *d, char *name)
 		goto Error;
 	buf[12*12] = '\0';
 
-	i = malloc(sizeof(Image));
+	i = HOSTED_API(malloc)(sizeof(Image));
 	if(i == nil){
 	Error1:
 		a = bufimage(d, 1+4);
@@ -232,6 +232,6 @@ freeimage(Image *i)
 	int ret;
 
 	ret = _freeimage1(i);
-	free(i);
+	HOSTED_API(free)(i);
 	return ret;
 }

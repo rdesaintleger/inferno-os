@@ -28,7 +28,7 @@ dopoly(int cmd, Image *dst, Point *pp, int np, int end0, int end1, int radius, I
 
 	if(np == 0)
 		return;
-	t = malloc(np*2*3);
+	t = HOSTED_API(malloc)(np*2*3);
 	if(t == nil)
 		return;
 	u = t;
@@ -44,7 +44,7 @@ dopoly(int cmd, Image *dst, Point *pp, int np, int end0, int end1, int radius, I
 
 	a = bufimage(dst->display, 1+4+2+4+4+4+4+2*4+(u-t));
 	if(a == 0){
-		free(t);
+		HOSTED_API(free)(t);
 		_drawprint(2, "image poly: %r\n");
 		return;
 	}
@@ -58,7 +58,7 @@ dopoly(int cmd, Image *dst, Point *pp, int np, int end0, int end1, int radius, I
 	BPLONG(a+23, sp->x);
 	BPLONG(a+27, sp->y);
 	memmove(a+31, t, u-t);
-	free(t);
+	HOSTED_API(free)(t);
 }
 
 void

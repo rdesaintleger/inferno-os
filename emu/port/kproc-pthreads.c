@@ -64,15 +64,15 @@ pexit(char *msg, int t)
 		closepgrp(e->pgrp);
 		closeegrp(e->egrp);
 		closesigs(e->sigs);
-		free(e->user);
+		HOSTED_API(free)(e->user);
 	}
-	free(p->prog);
+	HOSTED_API(free)(p->prog);
 	os = p->os;
 	if(os != nil){
 		sem_destroy(&os->sem);
-		free(os);
+		HOSTED_API(free)(os);
 	}
-	free(p);
+	HOSTED_API(free)(p);
 	pthread_exit(0);
 }
 
@@ -117,7 +117,7 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 	if(p == nil)
 		panic("kproc: no memory");
 
-	os = malloc(sizeof(*os));
+	os = HOSTED_API(malloc)(sizeof(*os));
 	if(os == nil)
 		panic("kproc: no memory");
 	os->self = 0;	/* set by tramp */

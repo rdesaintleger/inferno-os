@@ -138,7 +138,7 @@ mkdirs(char *name, char *namep)
 	int fd;
 
 	strcpy(buf, name);
-	for(p = &buf[namep - name]; p = utfrune(p, '/'); p++){
+	for(p = &buf[namep - name]; p = HOSTED_API(utfrune)(p, '/'); p++){
 		if(p[1] == '\0')
 			return;
 		*p = 0;
@@ -160,17 +160,17 @@ mkdir(char *name, ulong mode, ulong mtime, char *uid, char *gid)
 	if(fd < 0){
 		rerrstr(olderr, sizeof(olderr));
 		if((d = dirstat(name)) == nil || !(d->mode & DMDIR)){
-			free(d);
+			HOSTED_API(free)(d);
 			warn("can't make directory %q, mode %luo: %s", name, mode, olderr);
 			return;
 		}
-		free(d);
+		HOSTED_API(free)(d);
 	}
 	close(fd);
 
 	d = &xd;
 	nulldir(d);
-	p = utfrrune(name, L'/');
+	p = HOSTED_API(utfrrune)(name, L'/');
 	if(p)
 		p++;
 	else
@@ -230,7 +230,7 @@ extract(char *name, ulong mode, ulong mtime, char *uid, char *gid, ulong bytes)
 	}
 
 	nulldir(&d);
-	p = utfrrune(name, '/');
+	p = HOSTED_API(utfrrune)(name, '/');
 	if(p)
 		p++;
 	else
@@ -256,7 +256,7 @@ extract(char *name, ulong mode, ulong mtime, char *uid, char *gid, ulong bytes)
 				warn("%q: uid mismatch %q %q", name, uid, nd->uid);
 			if(uflag && strcmp(gid, nd->gid))
 				warn("%q: gid mismatch %q %q", name, gid, nd->gid);
-			free(nd);
+			HOSTED_API(free)(nd);
 		}
 	}
 	Bterm(b);
@@ -310,4 +310,16 @@ usage(void)
 {
 	fprint(2, "usage: mkext [-h] [-u] [-v] [-d dest-fs] [file ...]\n");
 	exits("usage");
+}
+
+void *HOSTED_API(malloc)(size_t size) {
+    return malloc(size);
+}
+
+void HOSTED_API(free)(void *ptr) {
+    free(ptr);
+}
+
+void *HOSTED_API(calloc)(size_t n, size_t szelem) {
+    return calloc(n, szelem);
 }

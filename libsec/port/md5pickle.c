@@ -8,7 +8,7 @@ md5pickle(MD5state *s)
 	int m, n;
 
 	m = 17+4*9+4*((s->blen+3)/3 + 1);
-	p = malloc(m);
+	p = HOSTED_API(malloc)(m);
 	if(p == nil)
 		return p;
 	n = sprint(p, "%16.16llux %8.8ux %8.8ux %8.8ux %8.8ux ",
@@ -24,7 +24,7 @@ md5unpickle(char *p)
 {
 	MD5state *s;
 
-	s = malloc(sizeof(*s));
+	s = HOSTED_API(malloc)(sizeof(*s));
 	if(s == nil)
 		return nil;
 	s->len = HOSTED_API(strtoull)(p, &p, 16);

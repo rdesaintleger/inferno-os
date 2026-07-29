@@ -18,6 +18,6 @@ mpinvert(mpint *b, mpint *m, mpint *res)
 	mpfree(dc1);
 	mpfree(dc2);
 	if(r != 0)
-		sysfatal("mpinvert: no inverse");
+		HOSTED_API(sysfatal)("mpinvert: no inverse");
 	mpmod(res, m, res);
 }

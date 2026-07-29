@@ -50,7 +50,7 @@ exportenv(Envy *e)
 			values = wtos(e->values, IWS);
 		else
 			values = "";
-		p[i] = malloc(strlen(e->name) + strlen(values) + 2);
+		p[i] = HOSTED_API(malloc)(strlen(e->name) + strlen(values) + 2);
 		sprint(p[i], "%s=%s", e->name,  values);
 	}
 	p[i] = 0;
@@ -263,7 +263,7 @@ chgtime(char *name)
 
 	if((sbuf = dirstat(name)) != nil) {
 		u.actime = sbuf->atime;
-		free(sbuf);
+		HOSTED_API(free)(sbuf);
 		u.modtime = time(0);
 		return utime(name, &u);
 	}
@@ -300,7 +300,7 @@ mkmtime(char *name)
 	if(buf == nil)
 		return 0;
 	t = buf->mtime;
-	free(buf);
+	HOSTED_API(free)(buf);
 	return t;
 }
 
@@ -316,7 +316,7 @@ membername(char *s, int fd, char *sz)
 	if(s[0] == '/' && s[1] == '\0'){	/* long file name string table */
 		t = atol(sz);
 		if(t&01) t++;
-		stab = malloc(t);
+		stab = HOSTED_API(malloc)(t);
 		if(read(fd, stab, t) != t)
 			{}
 		return nil;

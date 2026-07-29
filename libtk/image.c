@@ -91,7 +91,7 @@ tkimgbmcreate(TkTop *t, char *arg, int type, char **ret)
 	d = t->display;
 	locked = 0;
 
-	tki = malloc(sizeof(TkImg));
+	tki = HOSTED_API(malloc)(sizeof(TkImg));
 	if(tki == nil)
 		return TkNomem;
 
@@ -180,7 +180,7 @@ err:
 			unlockdisplay(d);
 	}
 	tkfreename(tki->name);
-	free(tki);
+	HOSTED_API(free)(tki);
 	return e != nil ? e : TkNomem;
 }
 
@@ -213,11 +213,11 @@ tkimgbmfree(TkImg *tki)
 	if(locked)
 		unlockdisplay(d);
 
-	free(tki->cursor);
+	HOSTED_API(free)(tki->cursor);
 	tkfreename(tki->name);
 	tkputenv(tki->env);
 
-	free(tki);
+	HOSTED_API(free)(tki);
 }
 
 char*
@@ -227,12 +227,12 @@ tkimage(TkTop *t, char *arg, char **ret)
 	TkImg *tkim;
 	char *fmt, *e, *buf, *cmd;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
-	cmd = mallocz(Tkminitem, 0);
+	cmd = HOSTED_API(mallocz)(Tkminitem, 0);
 	if(cmd == nil) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkNomem;
 	}
 
@@ -299,8 +299,8 @@ tkimage(TkTop *t, char *arg, char **ret)
 
 	e = TkBadcm;
 ret:
-	free(cmd);
-	free(buf);
+	HOSTED_API(free)(cmd);
+	HOSTED_API(free)(buf);
 	return e;
 }
 

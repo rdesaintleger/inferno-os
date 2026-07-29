@@ -139,10 +139,10 @@
    */
 
 
-#define ft_scalloc   calloc
-#define ft_sfree     free
-#define ft_smalloc   malloc
-#define ft_srealloc  realloc
+#define ft_scalloc   HOSTED_API(calloc)
+#define ft_sfree     HOSTED_API(free)
+#define ft_smalloc   HOSTED_API(malloc)
+#define ft_srealloc  HOSTED_API(realloc)
 
 
   /**************************************************************************

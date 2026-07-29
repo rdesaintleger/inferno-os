@@ -98,7 +98,7 @@ bigtobase64(mpint* b, char *buf, int len)
 	int n, rv, o;
 
 	n = (b->top+1)*Dbytes;
-	p = malloc(n+1);
+	p = HOSTED_API(malloc)(n+1);
 	if(p == nil)
 		goto Err;
 	n = mptobe(b, p+1, n, nil);
@@ -113,11 +113,11 @@ bigtobase64(mpint* b, char *buf, int len)
 	}else
 		o = 1;
 	rv = enc64(buf, len, p+o, n);
-	free(p);
+	HOSTED_API(free)(p);
 	return rv;
 
 Err:
-	free(p);
+	HOSTED_API(free)(p);
 	if(len > 0){
 		*buf = '*';
 		return 1;
@@ -136,10 +136,10 @@ big64conv(Fmt *f)
 	b = va_arg(f->args, mpint*);
 	n = (b->top+1)*Dbytes + 1;
 	n = ((n+3)/3)*4 + 1;
-	buf = malloc(n);
+	buf = HOSTED_API(malloc)(n);
 	bigtobase64(b, buf, n);
 	n = fmtstrcpy(f, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	return  n;
 }
 
@@ -397,7 +397,7 @@ bigs2attr(Fmt *f, char *bigs, char **names)
 	char *b16, *vals[20];
 	uchar data[(MaxBigBytes*6 + 7)/8];
 
-	b16 = malloc(2*MaxBigBytes+1);
+	b16 = HOSTED_API(malloc)(2*MaxBigBytes+1);
 	if(b16 == nil)
 		return nil;
 	n = getfields(bigs, vals, nelem(vals), 0, "\n");
@@ -410,7 +410,7 @@ bigs2attr(Fmt *f, char *bigs, char **names)
 		enc16(b16, 2*MaxBigBytes+1, data, nd);
 		fmtprint(f, " %s=%s", names[i], b16);
 	}
-	free(b16);
+	HOSTED_API(free)(b16);
 	return fmtstrflush(f);
 }
 
@@ -426,7 +426,7 @@ Keyring_sktoattr(void *fp)
 	f = fp;
 	sk = checkSK(f->sk);
 	sa = checkSigAlg(sk->x.sa);
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil){
 		retstr(nil, f->ret);
 		return;
@@ -438,9 +438,9 @@ Keyring_sktoattr(void *fp)
 	if(*owner)
 		fmtprint(&o, " owner=%q", owner);
 	val = bigs2attr(&o, buf, sa->vec->skattr);
-	free(buf);
+	HOSTED_API(free)(buf);
 	retstr(val, f->ret);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 static int
@@ -462,13 +462,13 @@ Keyring_sktostr(void *fp)
 	char *buf;
 
 	f = fp;
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 
 	if(buf)
 		sktostr(checkSK(f->sk), buf, Maxbuf);
 	retstr(buf, f->ret);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 static SK*
@@ -619,13 +619,13 @@ Keyring_pktostr(void *fp)
 	char *buf;
 
 	f = fp;
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 
 	if(buf)
 		pktostr(checkPK(f->pk), buf, Maxbuf);
 	retstr(buf, f->ret);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 void
@@ -640,7 +640,7 @@ Keyring_pktoattr(void *fp)
 	f = fp;
 	pk = checkPK(f->pk);
 	sa = checkSigAlg(pk->x.sa);
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil){
 		retstr(nil, f->ret);
 		return;
@@ -652,9 +652,9 @@ Keyring_pktoattr(void *fp)
 	if(*owner)
 		fmtprint(&o, " owner=%q", owner);
 	val = bigs2attr(&o, buf, sa->vec->pkattr);
-	free(buf);
+	HOSTED_API(free)(buf);
 	retstr(val, f->ret);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 static PK*
@@ -793,13 +793,13 @@ Keyring_certtostr(void *fp)
 	char *buf;
 
 	f = fp;
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 
 	if(buf)
 		certtostr(checkCertificate(f->c), buf, Maxbuf);
 	retstr(buf, f->ret);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 void
@@ -814,7 +814,7 @@ Keyring_certtoattr(void *fp)
 	f = fp;
 	c = checkCertificate(f->c);
 	sa = checkSigAlg(c->x.sa);
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil){
 		retstr(nil, f->ret);
 		return;
@@ -827,9 +827,9 @@ Keyring_certtoattr(void *fp)
 	fmtprint(&o, "sigalg=%q-%q signer=%q expires=%ud", string2c(sa->x.name), ha,
 		string2c(c->x.signer), c->x.exp);
 	val = bigs2attr(&o, buf, sa->vec->sigattr);
-	free(buf);
+	HOSTED_API(free)(buf);
 	retstr(val, f->ret);
-	free(val);
+	HOSTED_API(free)(val);
 }
 
 static Certificate*
@@ -903,7 +903,7 @@ sign(SK *sk, char *ha, ulong exp, uchar *a, int len)
 
 	hastr = H;
 	sa = checkSigAlg(sk->x.sa);
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return nil;
 
@@ -922,10 +922,10 @@ sign(SK *sk, char *ha, ulong exp, uchar *a, int len)
 		md4((uchar*)buf, n, digest, ds);
 		n = Keyring_MD5dlen;
 	} else {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return nil;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	/* turn message into a big integer */
 	b = betomp(digest, n, nil);
@@ -969,7 +969,7 @@ Keyring_sign(void *fp)
 	/* add signer name and expiration time to hash */
 	if(f->state == H)
 		return;
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return;
 	ds = (XDigestState*)f->state;
@@ -984,10 +984,10 @@ Keyring_sign(void *fp)
 		md4((uchar*)buf, n, digest, &ds->state);
 		n = Keyring_MD5dlen;
 	} else {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	/* turn message into a big integer */
 	b = betomp(digest, n, nil);
@@ -1049,7 +1049,7 @@ verify(PK *pk, Certificate *c, char *a, int len)
 		return 0;
 
 	/* add signer name and expiration time to hash */
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return 0;
 	n = snprint(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
@@ -1066,10 +1066,10 @@ verify(PK *pk, Certificate *c, char *a, int len)
 		md4((uchar*)buf, n, digest, ds);
 		n = Keyring_MD5dlen;
 	} else {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return 0;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	/* turn message into a big integer */
 	b = betomp(digest, n, nil);
@@ -1110,7 +1110,7 @@ Keyring_verify(void *fp)
 	/* add signer name and expiration time to hash */
 	if(f->state == H)
 		return;
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return;
 	n = snprint(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
@@ -1126,10 +1126,10 @@ Keyring_verify(void *fp)
 		md4((uchar*)buf, n, digest, &ds->state);
 		n = Keyring_MD5dlen;
 	} else {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return;
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	/* turn message into a big integer */
 	b = betomp(digest, n, nil);
@@ -1579,7 +1579,7 @@ Keyring_getmsg(void *fp)
 		return;
 	}
 
-	buf = malloc(Maxmsg);
+	buf = HOSTED_API(malloc)(Maxmsg);
 	if(buf == nil){
 		kwerrstr(exNomem);
 		return;
@@ -1588,12 +1588,12 @@ Keyring_getmsg(void *fp)
 	n = getmsg(f->fd->fd, buf, Maxmsg);
 	if(n < 0){
 		kwerrstr("%s", buf);
-		free(buf);
+		HOSTED_API(free)(buf);
 		return;
 	}
 
 	*f->ret = mem2array(buf, n);
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 void
@@ -1629,7 +1629,7 @@ Keyring_auth(void *fp)
 	}
 	fd = f->fd->fd;
 
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil){
 		retstr(exNomem, &f->ret->t0);
 		return;
@@ -1831,7 +1831,7 @@ if(0)print("Y");
 		goto out;
 	}
 	f->ret->t1 = mem2array(cvb, n);
-	free(cvb);
+	HOSTED_API(free)(cvb);
 
 out:
 	/* return status */
@@ -1891,7 +1891,7 @@ out:
 		certmutable(alphacert);
 		destroy(alphacert);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(r0 != nil){
 		mpfree(r0);
 		mpfree(r1);
@@ -1931,7 +1931,7 @@ Keyring_writeauthinfo(void *fp)
 	mysk = checkSK(f->info->mysk);
 	c = checkCertificate(f->info->cert);
 
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return;
 
@@ -1978,7 +1978,7 @@ Keyring_writeauthinfo(void *fp)
 
 	*f->ret = 0;
 out:
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(fd >= 0){
 		release();
 		kclose(fd);
@@ -2010,7 +2010,7 @@ Keyring_readauthinfo(void *fp)
 	if(f->filename == H)
 		return;
 
-	buf = malloc(Maxbuf);
+	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return;
 
@@ -2073,7 +2073,7 @@ out:
 		*f->ret = H;
 		destroy(r);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(fd >= 0){
 		release();
 		kclose(fd);
@@ -2193,7 +2193,7 @@ Keyring_getstring(void *fp)
 	if(f->fd == H)
 		return;
 
-	buf = malloc(Maxmsg);
+	buf = HOSTED_API(malloc)(Maxmsg);
 	if(buf == nil)
 		return;
 
@@ -2203,7 +2203,7 @@ Keyring_getstring(void *fp)
 	else
 		retnstr(((char*)buf)+1, n, &f->ret->t0);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 void
@@ -2223,7 +2223,7 @@ Keyring_getbytearray(void *fp)
 	if(f->fd == H)
 		return;
 
-	buf = malloc(Maxmsg);
+	buf = HOSTED_API(malloc)(Maxmsg);
 	if(buf == nil)
 		return;
 
@@ -2233,7 +2233,7 @@ Keyring_getbytearray(void *fp)
 	else
 		f->ret->t0 = mem2array(buf+1, n);
 
-	free(buf);
+	HOSTED_API(free)(buf);
 }
 
 static int
@@ -2241,7 +2241,7 @@ putbuf(int fd, void *p, int n)
 {
 	char *buf;
 
-	buf = malloc(Maxmsg);
+	buf = HOSTED_API(malloc)(Maxmsg);
 	if(buf == nil)
 		return -1;
 
@@ -2257,7 +2257,7 @@ putbuf(int fd, void *p, int n)
 	n = kwrite(fd, buf, n+1);
 	acquire();
 
-	free(buf);
+	HOSTED_API(free)(buf);
 	return n;
 }
 

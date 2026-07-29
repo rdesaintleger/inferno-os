@@ -393,8 +393,8 @@ string2c(String *s)
 	nc = -s->len;
 	l = (nc * UTFmax) + UTFmax;
 	if(s->tmp == nil || msize(s->tmp) < l) {
-		free(s->tmp);
-		s->tmp = malloc(l);
+		HOSTED_API(free)(s->tmp);
+		s->tmp = HOSTED_API(malloc)(l);
 		if(s->tmp == nil)
 			error(exNomem);
 	}

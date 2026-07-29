@@ -122,12 +122,12 @@ from64(char *a, mpint *b)
 		;
 	n = a-buf;
 	mpbits(b, n*6);
-	p = malloc(n);
+	p = HOSTED_API(malloc)(n);
 	if(p == nil)
 		return a;
 	m = dec64(p, n, buf, n);
 	betomp(p, m, b);
-	free(p);
+	HOSTED_API(free)(p);
 	return a;
 }
 
@@ -142,12 +142,12 @@ from32(char *a, mpint *b)
 		;
 	n = a-buf;
 	mpbits(b, n*5);
-	p = malloc(n);
+	p = HOSTED_API(malloc)(n);
 	if(p == nil)
 		return a;
 	m = dec32(p, n, buf, n);
 	betomp(p, m, b);
-	free(p);
+	HOSTED_API(free)(p);
 	return a;
 }
 

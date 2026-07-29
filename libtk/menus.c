@@ -121,7 +121,7 @@ tkunmapmenus(TkTop *top, Tk *tk)
 		tkw = TKobj(TkWin, menu);
 		if (tkw->cascade != nil) {
 			menu = tklook(t, tkw->cascade, 0);
-			free(tkw->cascade);
+			HOSTED_API(free)(tkw->cascade);
 			tkw->cascade = nil;
 		} else
 			menu = nil;
@@ -309,7 +309,7 @@ tkmenubutconf(Tk *tk, char *arg, char **val)
 			for (v = tkl->values; v && *v; v++)
 				if (!strcmp(*v, tkl->text))
 					break;
-			free(tkl->text);
+			HOSTED_API(free)(tkl->text);
 			if (v == nil || *v == nil) {
 				tkl->text = HOSTED_API(strdup)(tkl->nvalues > 0 ? tkl->values[0] : NOCHOICE);
 				tkl->check = 0;
@@ -483,7 +483,7 @@ tkchoicebutset(Tk *tk, char *arg, char **val)
 		return TkBadvl;
 	if (v == tkl->check)
 		return nil;
-	free(tkl->text);
+	HOSTED_API(free)(tkl->text);
 	tkl->text = HOSTED_API(strdup)(tkl->values[v]);
 	/* XXX recover from malloc error */
 	tkl->check = v;
@@ -539,21 +539,21 @@ tkchoicebutsetvalue(Tk *tk, char *arg, char **val)
 	USED(val);
 	if (tkl->nvalues == 0)
 		return TkBadvl;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if (buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, &gotarg);
 	if (!gotarg) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadvl;
 	}
 	for (v = tkl->values; *v; v++)
 		if (strcmp(*v, buf) == 0)
 			break;
-	free(buf);
+	HOSTED_API(free)(buf);
 	if (*v == nil)
 		return TkBadvl;
-	free(tkl->text);
+	HOSTED_API(free)(tkl->text);
 	tkl->text = HOSTED_API(strdup)(*v);
 	/* XXX recover from malloc error */
 	tkl->check = v - tkl->values;
@@ -571,19 +571,19 @@ tkchoicebutget(Tk *tk, char *arg, char **val)
 	
 	if (tkl->nvalues == 0)
 		return nil;
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if (buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, &gotarg);
 	if (!gotarg) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return tkvalue(val, "%d", tkl->check);
 	}
 
 	for (v = tkl->values; *v; v++)
 		if (strcmp(*v, buf) == 0)
 			break;
-	free(buf);
+	HOSTED_API(free)(buf);
 	if (*v)
 		return tkvalue(val, "%d", v - tkl->values);
 	return nil;
@@ -610,7 +610,7 @@ tkchoicevarchanged(Tk *tk, char *var, char *value)
 		v = atoi(value);
 		if(v < 0 || v >= tkl->nvalues)
 			return;		/* what else can we do? */
-		free(tkl->text);
+		HOSTED_API(free)(tkl->text);
 		tkl->text = HOSTED_API(strdup)(tkl->values[v]);
 		/* XXX recover from malloc error */
 		tkl->check = v;
@@ -1043,12 +1043,12 @@ tkmenuindex2ptr(Tk *tk, char **arg)
 	int index;
 	char *buf;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return nil;
 	*arg = tkword(tk->env->top, *arg, buf, buf+Tkmaxitem, nil);
 	index = tkmindex(tk, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(index < 0)
 		return nil;
 
@@ -1135,12 +1135,12 @@ tkmenuinsert(Tk *tk, char *arg, char **val)
 	char *buf;
 
 	USED(val);
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	index = tkmindex(tk, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if (index < 0)
 		return TkBadix;
 	return menuadd(tk, arg, index);
@@ -1243,12 +1243,12 @@ tkmenuactivate(Tk *tk, char *arg, char **val)
 	char *buf;
 	
 	USED(val);
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	index = tkmindex(tk, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if (index == -1)
 		return TkBadix;
 	if (index == -2) {
@@ -1310,13 +1310,13 @@ tkmenudelete(Tk *tk, char *arg, char **val)
 	char *buf;
 
 	USED(val);
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	arg = tkitem(buf, arg);
 	index1 = tkmindex(tk, buf);
 	if(index1 < 0) {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadix;
 	}
 	index2 = index1;
@@ -1324,7 +1324,7 @@ tkmenudelete(Tk *tk, char *arg, char **val)
 		tkitem(buf, arg);
 		index2 = tkmindex(tk, buf);
 	}
-	free(buf);
+	HOSTED_API(free)(buf);
 	if(index2 < 0)
 		return TkBadix;
 	while(index2 >= index1 && tkmenudel(tk, index2))
@@ -1343,7 +1343,7 @@ tkmenupost(Tk *tk, char *arg, char **val)
 
 	USED(val);
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	t = tk->env->top;
@@ -1355,11 +1355,11 @@ tkmenupost(Tk *tk, char *arg, char **val)
 	x = atoi(buf);
 	tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	if(buf[0] == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadvl;
 	}
 	y = atoi(buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 
 	return tkmpost(tk, x, y, 0, 0, 1);
 }
@@ -1379,12 +1379,12 @@ tkmenuindex(Tk *tk, char *arg, char **val)
 	char *buf;
 	int index;
 
-	buf = mallocz(Tkmaxitem, 0);
+	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
 		return TkNomem;
 	tkword(tk->env->top, arg, buf, buf+Tkmaxitem, nil);
 	index = tkmindex(tk, buf);
-	free(buf);
+	HOSTED_API(free)(buf);
 	if (index == -1)
 		return TkBadix;
 	if (index == -2)

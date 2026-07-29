@@ -23,7 +23,7 @@ statconv(struct stat *s, char *name)
 	g = getgrgid(s->st_gid);
 	if(g)
 		str += strlen(g->gr_name)+1;
-	dir = malloc(sizeof(Dir)+str);
+	dir = HOSTED_API(malloc)(sizeof(Dir)+str);
 	if(dir == nil){
 		werrstr(Enovmem);
 		return nil;
