@@ -213,7 +213,7 @@ tkmkbutton(TkTop *t, int btype)
 	}
 
 	if (e != nil) {
-		print("tkmkbutton internal error: %s\n", e);
+		HOSTED_API(print)("tkmkbutton internal error: %s\n", e);
 		tkfreeobj(tk);
 		return nil;
 	}

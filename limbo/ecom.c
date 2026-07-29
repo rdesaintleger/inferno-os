@@ -138,10 +138,10 @@ simplify(Node *n)
 	if(n == nil)
 		return nil;
 	if(debug['F'])
-		print("simplify %n\n", n);
+		HOSTED_API(print)("simplify %n\n", n);
 	n = efold(rewrite(n));
 	if(debug['F'])
-		print("simplified %n\n", n);
+		HOSTED_API(print)("simplified %n\n", n);
 	return n;
 }
 
@@ -292,7 +292,7 @@ rewrite(Node *n)
 		if(t->kind == Tref)
 			t = t->tof;
 		if(t->kind == Tfn){
-if(debug['U']) print("call %n\n", left);
+if(debug['U']) HOSTED_API(print)("call %n\n", left);
 			if(left->ty->kind == Tref){	/* call by function reference */
 				n->left = mkunary(Oind, left);
 				n->left->ty = t;
@@ -822,9 +822,9 @@ ecom(Src *src, Node *nto, Node *n)
 	int op;
 
 	if(debug['e']){
-		print("ecom: %n\n", n);
+		HOSTED_API(print)("ecom: %n\n", n);
 		if(nto != nil)
-			print("ecom to: %n\n", nto);
+			HOSTED_API(print)("ecom to: %n\n", nto);
 	}
 
 	if(n->addable < Rcant){
@@ -1461,7 +1461,7 @@ eacom(Node *n, Node *reg, Node *t)
 	}
 
 	if(debug['e'] || debug['E'])
-		print("eacom: %n\n", n);
+		HOSTED_API(print)("eacom: %n\n", n);
 
 	left = n->left;
 	if(n->op != Oind){
@@ -1796,7 +1796,7 @@ arraycom(Node *a, Node *elems)
 	/* Case *c; */
 
 	if(debug['A'])
-		print("arraycom: %n %n\n", a, elems);
+		HOSTED_API(print)("arraycom: %n %n\n", a, elems);
 
 	/* c = elems->ty->cse; */
 	/* don't use c->wild in case we've been inlined */
@@ -1894,7 +1894,7 @@ arraydefault(Node *a, Node *elem)
 	Node n, e, *t;
 
 	if(debug['A'])
-		print("arraydefault: %n %n\n", a, elem);
+		HOSTED_API(print)("arraydefault: %n %n\n", a, elem);
 
 	t = mkn(Olen, a, nil);
 	t->src = elem->src;
@@ -1939,7 +1939,7 @@ tupcom(Node *nto, Node *n)
 	Decl *d;
 
 	if(debug['Y'])
-		print("tupcom %n\nto %n\n", n, nto);
+		HOSTED_API(print)("tupcom %n\nto %n\n", n, nto);
 
 	/*
 	 * build a fake node for the tuple
@@ -1982,7 +1982,7 @@ tuplcom(Node *n, Node *nto)
 	Decl *d;
 
 	if(debug['Y'])
-		print("tuplcom %n\nto %n\n", n, nto);
+		HOSTED_API(print)("tuplcom %n\nto %n\n", n, nto);
 
 	/*
 	 * build a fake node for the tuple
@@ -2077,7 +2077,7 @@ bcom(Node *n, int iftrue, Inst *b)
 	}
 
 	if(debug['b'])
-		print("bcom %n %d\n", n, iftrue);
+		HOSTED_API(print)("bcom %n %d\n", n, iftrue);
 
 	left = n->left;
 	right = n->right;
@@ -2149,7 +2149,7 @@ Inst*
 andand(Node *n, int iftrue, Inst *b)
 {
 	if(debug['b'])
-		print("andand %n\n", n);
+		HOSTED_API(print)("andand %n\n", n);
 	b = bcom(n->left, iftrue, b);
 	b = bcom(n->right, iftrue, b);
 	return b;
@@ -2161,7 +2161,7 @@ oror(Node *n, int iftrue, Inst *b)
 	Inst *bb;
 
 	if(debug['b'])
-		print("oror %n\n", n);
+		HOSTED_API(print)("oror %n\n", n);
 	bb = bcom(n->left, !iftrue, nil);
 	b = bcom(n->right, iftrue, b);
 	patch(bb, nextinst());
@@ -2276,7 +2276,7 @@ pickdupcom(Src *src, Node *nto, Node *n)
 	/*
 	 * generate global which has case labels
 	 */
-	seprint(buf, buf+sizeof(buf), ".c%d", nlabel++);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".c%d", nlabel++);
 	d = mkids(src, enter(buf, 0), mktype(&src->start, &src->stop, Tcase, nil, nil), nil);
 	d->init = mkdeclname(src, d);
 
@@ -2401,7 +2401,7 @@ globalconst(Node *n)
 	Sym *s;
 	char buf[32];
 
-	seprint(buf, buf+sizeof(buf), ".i.%.8lux", (long)n->val);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".i.%.8lux", (long)n->val);
 	s = enter(buf, 0);
 	d = s->decl;
 	if(d == nil){
@@ -2420,7 +2420,7 @@ globalBconst(Node *n)
 	Sym *s;
 	char buf[32];
 
-	seprint(buf, buf+sizeof(buf), ".B.%.8lux.%8lux", (long)(n->val>>32), (long)n->val);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".B.%.8lux.%8lux", (long)(n->val>>32), (long)n->val);
 
 	s = enter(buf, 0);
 	d = s->decl;
@@ -2440,7 +2440,7 @@ globalbconst(Node *n)
 	Sym *s;
 	char buf[32];
 
-	seprint(buf, buf+sizeof(buf), ".b.%.2lux", (long)n->val & 0xff);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".b.%.2lux", (long)n->val & 0xff);
 	s = enter(buf, 0);
 	d = s->decl;
 	if(d == nil){
@@ -2461,7 +2461,7 @@ globalfconst(Node *n)
 	ulong dv[2];
 
 	dtocanon(n->rval, dv);
-	seprint(buf, buf+sizeof(buf), ".f.%.8lux.%8lux", dv[0], dv[1]);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".f.%.8lux.%8lux", dv[0], dv[1]);
 	s = enter(buf, 0);
 	d = s->decl;
 	if(d == nil){
@@ -2514,7 +2514,7 @@ putinline(Node *n)
 	Type *t;
 	Decl *d;
 
-if(debug['z']) print("inline1: %n\n", n);
+if(debug['z']) HOSTED_API(print)("inline1: %n\n", n);
 	if(n->left->op == Oname)
 		d = n->left->decl;
 	else
@@ -2534,7 +2534,7 @@ if(debug['z']) print("inline1: %n\n", n);
 	}
 	if(d != nil || n != nil)
 		fatal("bad arg match in putinline()");
-if(debug['z']) print("inline2: %n\n", e);
+if(debug['z']) HOSTED_API(print)("inline2: %n\n", e);
 	return e;
 }
 

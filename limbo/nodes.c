@@ -119,7 +119,7 @@ varcom(Decl *v)
 	n = fold(n);
 	v->init = n;
 	if(debug['v'])
-		print("variable '%D' val %V\n", v, n);
+		HOSTED_API(print)("variable '%D' val %V\n", v, n);
 	if(n == nil)
 		return 1;
 
@@ -349,10 +349,10 @@ fold(Node *n)
 	if(n == nil)
 		return nil;
 	if(debug['F'])
-		print("fold %n\n", n);
+		HOSTED_API(print)("fold %n\n", n);
 	n = efold(n);
 	if(debug['F'])
-		print("folded %n\n", n);
+		HOSTED_API(print)("folded %n\n", n);
 	return n;
 }
 
@@ -670,7 +670,7 @@ foldcast(Node *n, Node *left)
 			break;
 		case Tstring:
 			buf = allocmem(NumSize);
-			e = seprint(buf, buf+NumSize, "%g", left->rval);
+			e = HOSTED_API(seprint)(buf, buf+NumSize, "%g", left->rval);
 			return mksconst(&n->src, enterstring(buf, e-buf));
 		default:
 			return n;
@@ -693,7 +693,7 @@ foldcast(Node *n, Node *left)
 			break;
 		case Tstring:
 			buf = allocmem(NumSize);
-			e = seprint(buf, buf+NumSize, "%g", fix2real(left->val, left->ty));
+			e = HOSTED_API(seprint)(buf, buf+NumSize, "%g", fix2real(left->val, left->ty));
 			return mksconst(&n->src, enterstring(buf, e-buf));
 		default:
 			return n;
@@ -751,7 +751,7 @@ foldcasti(Node *n, Node *left)
 		break;
 	case Tstring:
 		buf = allocmem(NumSize);
-		e = seprint(buf, buf+NumSize, "%lld", left->val);
+		e = HOSTED_API(seprint)(buf, buf+NumSize, "%lld", left->val);
 		return mksconst(&n->src, enterstring(buf, e-buf));
 	default:
 		return n;
@@ -1260,7 +1260,7 @@ opconv(Fmt *f)
 
 	op = va_arg(f->args, int);
 	if(op < 0 || op > Oend) {
-		seprint(buf, buf+sizeof(buf), "op %d", op);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), "op %d", op);
 		return fmtstrcpy(f, buf);
 	}
 	return fmtstrcpy(f, opname[op]);
@@ -1274,9 +1274,9 @@ etconv(Fmt *f)
 
 	n = va_arg(f->args, Node*);
 	if(n->ty == tany || n->ty == tnone || n->ty == terror)
-		seprint(buf, buf+sizeof(buf), "%V", n);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%V", n);
 	else
-		seprint(buf, buf+sizeof(buf), "%V of type %T", n, n->ty);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%V of type %T", n, n->ty);
 	return fmtstrcpy(f, buf);
 }
 
@@ -1310,7 +1310,7 @@ eprint(char *buf, char *end, Node *n)
 	case Ocont:
 		buf = secpy(buf, end, opname[n->op]);
 		if(n->decl != nil){
-			buf = seprint(buf, end, " %s", n->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, " %s", n->decl->sym->name);
 		}
 		break;
 	case Oexit:
@@ -1330,7 +1330,7 @@ eprint(char *buf, char *end, Node *n)
 		if(n->decl == nil)
 			buf = secpy(buf, end, "<nil>");
 		else
-			buf = seprint(buf, end, "%s", n->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "%s", n->decl->sym->name);
 		break;
 	case Oconst:
 		if(n->ty->kind == Tstring){
@@ -1338,22 +1338,22 @@ eprint(char *buf, char *end, Node *n)
 			break;
 		}
 		if(n->decl != nil && n->decl->sym != nil){
-			buf = seprint(buf, end, "%s", n->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "%s", n->decl->sym->name);
 			break;
 		}
 		switch(n->ty->kind){
 		case Tint:
 		case Tbyte:
-			buf = seprint(buf, end, "%ld", (long)n->val);
+			buf = HOSTED_API(seprint)(buf, end, "%ld", (long)n->val);
 			break;
 		case Tbig:
-			buf = seprint(buf, end, "%lld", n->val);
+			buf = HOSTED_API(seprint)(buf, end, "%lld", n->val);
 			break;
 		case Treal:
-			buf = seprint(buf, end, "%g", n->rval);
+			buf = HOSTED_API(seprint)(buf, end, "%g", n->rval);
 			break;
 		case Tfix:
-			buf = seprint(buf, end, "%ld(%g)", (long)n->val, n->ty->val->rval);
+			buf = HOSTED_API(seprint)(buf, end, "%ld(%g)", (long)n->val, n->ty->val->rval);
 			break;
 		default:
 			buf = secpy(buf, end, opname[n->op]);
@@ -1361,13 +1361,13 @@ eprint(char *buf, char *end, Node *n)
 		}
 		break;
 	case Ocast:
-		buf = seprint(buf, end, "%T ", n->ty);
+		buf = HOSTED_API(seprint)(buf, end, "%T ", n->ty);
 		buf = eprint(buf, end, n->left);
 		break;
 	case Otuple:
 		if(n->ty != nil && n->ty->kind == Tadt)
-			buf = seprint(buf, end, "%s", n->ty->decl->sym->name);
-		buf = seprint(buf, end, "(");
+			buf = HOSTED_API(seprint)(buf, end, "%s", n->ty->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "(");
 		buf = eprintlist(buf, end, n->left, ", ");
 		buf = secpy(buf, end, ")");
 		break;
@@ -1376,9 +1376,9 @@ eprint(char *buf, char *end, Node *n)
 			buf = secpy(buf, end, "chan [");
 			buf = eprint(buf, end, n->left);
 			buf = secpy(buf, end, "] of ");
-			buf = seprint(buf, end, "%T", n->ty->tof);
+			buf = HOSTED_API(seprint)(buf, end, "%T", n->ty->tof);
 		}else
-			buf = seprint(buf, end, "chan of %T", n->ty->tof);
+			buf = HOSTED_API(seprint)(buf, end, "chan of %T", n->ty->tof);
 		break;
 	case Oarray:
 		buf = secpy(buf, end, "array [");
@@ -1390,7 +1390,7 @@ eprint(char *buf, char *end, Node *n)
 			buf = eprintlist(buf, end, n->right, ", ");
 			buf = secpy(buf, end, "}");
 		}else{
-			buf = seprint(buf, end, "%T", n->ty->tof);
+			buf = HOSTED_API(seprint)(buf, end, "%T", n->ty->tof);
 		}
 		break;
 	case Oelem:
@@ -1442,7 +1442,7 @@ eprint(char *buf, char *end, Node *n)
 		buf = secpy(buf, end, "]");
 		break;
 	case Oload:
-		buf = seprint(buf, end, "load %T ", n->ty);
+		buf = HOSTED_API(seprint)(buf, end, "load %T ", n->ty);
 		buf = eprint(buf, end, n->left);
 		break;
 	case Oref:
@@ -1507,7 +1507,7 @@ nprint(char *buf, char *end, Node *n, int indent)
 
 	if(n == nil)
 		return buf;
-	buf = seprint(buf, end, "\n");
+	buf = HOSTED_API(seprint)(buf, end, "\n");
 	for(i = 0; i < indent; i++)
 		if(buf < end-1)
 			*buf++ = ' ';
@@ -1516,21 +1516,21 @@ nprint(char *buf, char *end, Node *n, int indent)
 		if(n->decl == nil)
 			buf = secpy(buf, end, "name <nil>");
 		else
-			buf = seprint(buf, end, "name %s", n->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "name %s", n->decl->sym->name);
 		break;
 	case Oconst:
 		if(n->decl != nil && n->decl->sym != nil)
-			buf = seprint(buf, end, "const %s", n->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "const %s", n->decl->sym->name);
 		else
-			buf = seprint(buf, end, "%O", n->op);
+			buf = HOSTED_API(seprint)(buf, end, "%O", n->op);
 		if(n->ty == tint || n->ty == tbyte || n->ty == tbig)
-			buf = seprint(buf, end, " (%ld)", (long)n->val);
+			buf = HOSTED_API(seprint)(buf, end, " (%ld)", (long)n->val);
 		break;
 	default:
-		buf = seprint(buf, end, "%O", n->op);
+		buf = HOSTED_API(seprint)(buf, end, "%O", n->op);
 		break;
 	}
-	buf = seprint(buf, end, " %T %d %d", n->ty, n->addable, n->temps);
+	buf = HOSTED_API(seprint)(buf, end, " %T %d %d", n->ty, n->addable, n->temps);
 	indent += 2;
 	buf = nprint(buf, end, n->left, indent);
 	buf = nprint(buf, end, n->right, indent);

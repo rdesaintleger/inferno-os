@@ -12,7 +12,7 @@ memimagemove(void *from, void *to)
 
 	md = *(Memdata**)to;
 	if(md->base != from){
-		print("compacted data not right: #%p\n", md->base);
+		HOSTED_API(print)("compacted data not right: #%p\n", md->base);
 		abort();
 	}
 	md->base = to;

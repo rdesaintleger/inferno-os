@@ -404,7 +404,7 @@ fnchk(Node *n)
 	if(n->left->op == Odot)
 		popscope();
 	if(debug['d'])
-		print("declare function %D ty %T newty %T\n", d, d->ty, t);
+		HOSTED_API(print)("declare function %D ty %T newty %T\n", d, d->ty, t);
 	t = usetype(t);
 
 	if(!polyequal(d->ty->polys, t->polys))
@@ -675,11 +675,11 @@ popscope(void)
 	Type *t;
 
 if (debug['X'])
-	print("popscope\n");
+	HOSTED_API(print)("popscope\n");
 	for(id = scopes[scope]; id != nil; id = id->next){
 		if(id->sym != nil){
 if (debug['X'])
-	print("%s : %s %d\n", id->sym->name, kindname[id->ty->kind], id->init != nil ? id->init->op : 0);
+	HOSTED_API(print)("%s : %s %d\n", id->sym->name, kindname[id->ty->kind], id->init != nil ? id->init->op : 0);
 			id->sym->decl = id->old;
 			id->old = nil;
 		}
@@ -935,7 +935,7 @@ declconv(Fmt *f)
 		s = "<nil>";
 	else
 		s = d->sym->name;
-	seprint(buf, buf+sizeof(buf), "%s %s", storename[d->store], s);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s %s", storename[d->store], s);
 	return fmtstrcpy(f, buf);
 }
 
@@ -946,7 +946,7 @@ storeconv(Fmt *f)
 	char buf[4096];
 
 	d = va_arg(f->args, Decl*);
-	seprint(buf, buf+sizeof(buf), "%s%s", storeart[d->store], storename[d->store]);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s%s", storeart[d->store], storename[d->store]);
 	return fmtstrcpy(f, buf);
 }
 
@@ -963,9 +963,9 @@ dotconv(Fmt *f)
 		s = ".";
 		if(d->dot->ty != nil && d->dot->ty->kind == Tmodule)
 			s = "->";
-		p = seprint(buf, buf+sizeof(buf), "%D%s", d->dot, s);
+		p = HOSTED_API(seprint)(buf, buf+sizeof(buf), "%D%s", d->dot, s);
 	}
-	seprint(p, buf+sizeof(buf), "%s", d->sym->name);
+	HOSTED_API(seprint)(p, buf+sizeof(buf), "%s", d->sym->name);
 	return fmtstrcpy(f, buf);
 }
 
@@ -1035,7 +1035,7 @@ void
 printdecls(Decl *d)
 {
 	for(; d != nil; d = d->next)
-		print("%ld: %K %T ref %d\n", d->offset, d, d->ty, d->refs);
+		HOSTED_API(print)("%ld: %K %T ref %d\n", d->offset, d, d->ty, d->refs);
 }
 
 void
@@ -1085,7 +1085,7 @@ adjfnptrs(Decl *d, Decl *polys1, Decl *polys2)
 	Decl *id, *idt, *idf, *arg;
 
 	if(debug['U'])
-		print("adjnptrs %s\n", d->sym->name);
+		HOSTED_API(print)("adjnptrs %s\n", d->sym->name);
 	n = 0;
 	for(id = d->ty->ids; id != nil; id = id->next)
 		n++;
@@ -1117,7 +1117,7 @@ addptrs(Decl *polys, Decl** fps, Decl **last, int link, Src *src)
 	Decl *idt, *idf, *fp;
 
 	if(debug['U'])
-		print("addptrs\n");
+		HOSTED_API(print)("addptrs\n");
 	for(idt = polys; idt != nil; idt = idt->next){
 		for(idf = idt->ty->ids; idf != nil; idf = idf->next){
 			fp = mkdecl(src, Darg, tany);
@@ -1143,15 +1143,15 @@ addfnptrs(Decl *d, int link)
 	Decl *fps, *last, *polys;
 
 	if(debug['U'])
-		print("addfnptrs %s %d\n", d->sym->name, link);
+		HOSTED_API(print)("addfnptrs %s %d\n", d->sym->name, link);
 	polys = encpolys(d);
 	if(d->ty->flags&FULLARGS){
 		if(link)
 			adjfnptrs(d, d->ty->polys, polys);
 		if(0 && debug['U']){
 			for(d = d->ty->ids; d != nil; d = d->next)
-				print("%s=%ld(%d) ", d->sym->name, d->offset, tattr[d->ty->kind].isptr);
-			print("\n");
+				HOSTED_API(print)("%s=%ld(%d) ", d->sym->name, d->offset, tattr[d->ty->kind].isptr);
+			HOSTED_API(print)("\n");
 		}
 		return;
 	}
@@ -1168,8 +1168,8 @@ addfnptrs(Decl *d, int link)
 	d->offset = idoffsets(d->ty->ids, MaxTemp, IBY2WD);
 	if(0 && debug['U']){
 		for(d = d->ty->ids; d != nil; d = d->next)
-			print("%s=%ld(%d) ", d->sym->name, d->offset, tattr[d->ty->kind].isptr);
-		print("\n");
+			HOSTED_API(print)("%s=%ld(%d) ", d->sym->name, d->offset, tattr[d->ty->kind].isptr);
+		HOSTED_API(print)("\n");
 	}
 }
 
@@ -1180,7 +1180,7 @@ rmfnptrs(Decl *d)
 	Decl *id, *idt, *idf;
 
 	if(debug['U'])
-		print("rmfnptrs %s\n", d->sym->name);
+		HOSTED_API(print)("rmfnptrs %s\n", d->sym->name);
 	if(!(d->ty->flags&FULLARGS))
 		return;
 	d->ty->flags &= ~FULLARGS;
@@ -1349,7 +1349,7 @@ shareloc(Decl *d)
 				res = dd;
 		}
 		if(res != nil){
-			/* print("%L %K share %L %K\n", d->src.start, d, res->src.start, res); */
+			/* HOSTED_API(print)("%L %K share %L %K\n", d->src.start, d, res->src.start, res); */
 			d->link = res;
 			res->tref = 1;
 			return;

@@ -206,7 +206,7 @@ pointerread(Chan* c, void* a, long n, vlong off)
 		mt = mouseconsume();
 		poperror();
 		qunlock(&mouse.q);
-		l = snprint(buf, sizeof(buf), "m%11d %11d %11d %11lud ", mt.x, mt.y, mt.b, mt.msec);
+		l = HOSTED_API(snprint)(buf, sizeof(buf), "m%11d %11d %11d %11lud ", mt.x, mt.y, mt.b, mt.msec);
 		if(l < n)
 			n = l;
 		memmove(a, buf, n);

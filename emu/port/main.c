@@ -29,7 +29,7 @@ char *cputype;
 static void
 usage(void)
 {
-	fprint(2, "Usage: emu [options...] [file.dis [args...]]\n"
+	HOSTED_API(fprint)(2, "Usage: emu [options...] [file.dis [args...]]\n"
 		"\t-gXxY\n"
 		"\t-c[0-9]\n"
 		"\t-d file.dis\n"
@@ -49,7 +49,7 @@ usage(void)
 static void
 envusage(void)
 {
-	fprint(2, "emu: bad option in EMU environment variable (%s)\n", getenv("EMU"));
+	HOSTED_API(fprint)(2, "emu: bad option in EMU environment variable (%s)\n", getenv("EMU"));
 	usage();
 }
 
@@ -173,7 +173,7 @@ option(int argc, char *argv[], void (*badusage)(void))
 		cp = EARGF(badusage());
 		displaychan = strtochan(cp);
 		if(displaychan == 0){
-			fprint(2, "emu: invalid channel specifier (-C): %q\n", cp);
+			HOSTED_API(fprint)(2, "emu: invalid channel specifier (-C): %q\n", cp);
 			exits("usage");
 		}
 		break;
@@ -206,7 +206,7 @@ savestartup(int argc, char *argv[])
 void
 putenvq(char *name, char *val, int conf)
 {
-	val = smprint("%q", val);
+	val = HOSTED_API(smprint)("%q", val);
 	ksetenv(name, val, conf);
 	HOSTED_API(free)(val);
 }
@@ -260,7 +260,7 @@ main(int argc, char *argv[])
 		opt = "compile";
 
 	if(vflag)
-		print("Inferno %s main (pid=%d) %s\n", VERSION, getpid(), opt);
+		HOSTED_API(print)("Inferno %s main (pid=%d) %s\n", VERSION, getpid(), opt);
 
 	libinit(imod);
 }
@@ -294,7 +294,7 @@ emuinit(void *imod)
 	strcpy(up->text, "main");
 
 	if(kopen("#c/cons", OREAD) != 0)
-		fprint(2, "failed to make fd0 from #c/cons: %r\n");
+		HOSTED_API(fprint)(2, "failed to make fd0 from #c/cons: %r\n");
 	kopen("#c/cons", OWRITE);
 	kopen("#c/cons", OWRITE);
 
@@ -339,7 +339,7 @@ errorf(char *fmt, ...)
 	char buf[PRINTSIZE];
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	error(buf);
 }
@@ -359,7 +359,7 @@ exhausted(char *resource)
 	char buf[64];
 	int n;
 
-	n = snprint(buf, sizeof(buf), "no free %s\n", resource);
+	n = HOSTED_API(snprint)(buf, sizeof(buf), "no free %s\n", resource);
 	iprint(buf);
 	buf[n-1] = 0;
 	error(buf);
@@ -399,9 +399,9 @@ panic(char *fmt, ...)
 	char buf[512];
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "panic: %s\n", buf);
+	HOSTED_API(fprint)(2, "panic: %s\n", buf);
 	if(sflag)
 		abort();
 
@@ -417,7 +417,7 @@ iprint(char *fmt, ...)
 	char buf[1024];
 
 	va_start(va, fmt);
-	n = vseprint(buf, buf+sizeof buf, fmt, va) - buf;
+	n = HOSTED_API(vseprint)(buf, buf+sizeof buf, fmt, va) - buf;
 	va_end(va);
 
 	write(1, buf, n);

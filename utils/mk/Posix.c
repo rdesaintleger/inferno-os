@@ -51,7 +51,7 @@ exportenv(Envy *e)
 		else
 			values = "";
 		p[i] = HOSTED_API(malloc)(strlen(e->name) + strlen(values) + 2);
-		sprint(p[i], "%s=%s", e->name,  values);
+		HOSTED_API(sprint)(p[i], "%s=%s", e->name,  values);
 	}
 	p[i] = 0;
 	environ = p;
@@ -68,11 +68,11 @@ waitfor(char *msg)
 	if(pid > 0) {
 		if(status&0x7f) {
 			if(status&0x80)
-				snprint(msg, ERRMAX, "signal %d, core dumped", status&0x7f);
+				HOSTED_API(snprint)(msg, ERRMAX, "signal %d, core dumped", status&0x7f);
 			else
-				snprint(msg, ERRMAX, "signal %d", status&0x7f);
+				HOSTED_API(snprint)(msg, ERRMAX, "signal %d", status&0x7f);
 		} else if(status&0xff00)
-			snprint(msg, ERRMAX, "exit(%d)", (status>>8)&0xff);
+			HOSTED_API(snprint)(msg, ERRMAX, "exit(%d)", (status>>8)&0xff);
 	}
 	return pid;
 }
@@ -133,7 +133,7 @@ execsh(char *args, char *cmd, Bufblock *buf, Envy *e)
 		close(out[1]);
 		close(in[0]);
 		if(DEBUG(D_EXEC))
-			fprint(1, "starting: %s\n", cmd);
+			HOSTED_API(fprint)(1, "starting: %s\n", cmd);
 		p = cmd+strlen(cmd);
 		while(cmd < p){
 			n = write(in[1], cmd, p-cmd);
@@ -169,7 +169,7 @@ pipecmd(char *cmd, Envy *e, int *fd)
 	int pid, pfd[2];
 
 	if(DEBUG(D_EXEC))
-		fprint(1, "pipecmd='%s'\n", cmd);/**/
+		HOSTED_API(fprint)(1, "pipecmd='%s'\n", cmd);/**/
 
 	if(fd && pipe(pfd) < 0){
 		perror("pipe");

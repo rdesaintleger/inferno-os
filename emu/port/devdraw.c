@@ -205,7 +205,7 @@ drawgen(Chan *c, char *name, Dirtab *tab, int x, int s, Dir *dp)
 			if(cl == nil)
 				strcpy(up->genbuf, "??");
 			else
-				sprint(up->genbuf, "%d", cl->clientid);
+				HOSTED_API(sprint)(up->genbuf, "%d", cl->clientid);
 			mkqid(&q, Q2nd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0500, dp);
 			break;
@@ -243,7 +243,7 @@ drawgen(Chan *c, char *name, Dirtab *tab, int x, int s, Dir *dp)
 			cl = sdraw.client[s-1];
 			if(cl == 0)
 				return 0;
-			sprint(up->genbuf, "%d", cl->clientid);
+			HOSTED_API(sprint)(up->genbuf, "%d", cl->clientid);
 			mkqid(&q, (s<<QSHIFT)|Q3rd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
@@ -584,7 +584,7 @@ drawfreedscreen(DScreen *this)
 
 	this->ref--;
 	if(this->ref < 0)
-		print("negative ref in drawfreedscreen\n");
+		HOSTED_API(print)("negative ref in drawfreedscreen\n");
 	if(this->ref > 0)
 		return;
 	ds = dscreen;
@@ -619,7 +619,7 @@ drawfreedimage(DImage *dimage)
 
 	dimage->ref--;
 	if(dimage->ref < 0)
-		print("negative ref in drawfreedimage\n");
+		HOSTED_API(print)("negative ref in drawfreedimage\n");
 	if(dimage->ref > 0)
 		return;
 
@@ -1054,7 +1054,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 				error(Enodrawimage);
 			i = di->image;
 		}
-		n = sprint(a, "%11d %11d %11s %11d %11d %11d %11d %11d %11d %11d %11d %11d ",
+		n = HOSTED_API(sprint)(a, "%11d %11d %11s %11d %11d %11d %11d %11d %11d %11d %11d %11d ",
 			cl->clientid, cl->infoid, chantostr(buf, i->chan), (i->flags&Frepl)==Frepl,
 			i->r.min.x, i->r.min.y, i->r.max.x, i->r.max.y,
 			i->clipr.min.x, i->clipr.min.y, i->clipr.max.x, i->clipr.max.y);
@@ -1069,7 +1069,7 @@ drawread(Chan *c, void *a, long n, vlong off)
 		m = 0;
 		for(index = 0; index < 256; index++){
 			getcolor(index, &red, &green, &blue);
-			m += sprint((char*)p+m, "%11d %11lud %11lud %11lud\n", index, red>>24, green>>24, blue>>24);
+			m += HOSTED_API(sprint)((char*)p+m, "%11d %11lud %11lud %11lud\n", index, red>>24, green>>24, blue>>24);
 		}
 		n = readstr(offset, a, n, (char*)p);
 		HOSTED_API(free)(p);
@@ -1257,30 +1257,30 @@ printmesg(char *fmt, uchar *a, int plsprnt)
 	for(p=fmt; *p; p++){
 		switch(*p){
 		case 'l':
-			q += sprint(q, " %ld", (long)BGLONG(a));
+			q += HOSTED_API(sprint)(q, " %ld", (long)BGLONG(a));
 			a += 4;
 			break;
 		case 'L':
-			q += sprint(q, " %.8lux", (ulong)BGLONG(a));
+			q += HOSTED_API(sprint)(q, " %.8lux", (ulong)BGLONG(a));
 			a += 4;
 			break;
 		case 'R':
-			q += sprint(q, " [%d %d %d %d]", BGLONG(a), BGLONG(a+4), BGLONG(a+8), BGLONG(a+12));
+			q += HOSTED_API(sprint)(q, " [%d %d %d %d]", BGLONG(a), BGLONG(a+4), BGLONG(a+8), BGLONG(a+12));
 			a += 16;
 			break;
 		case 'P':
-			q += sprint(q, " [%d %d]", BGLONG(a), BGLONG(a+4));
+			q += HOSTED_API(sprint)(q, " [%d %d]", BGLONG(a), BGLONG(a+4));
 			a += 8;
 			break;
 		case 'b':
-			q += sprint(q, " %d", *a++);
+			q += HOSTED_API(sprint)(q, " %d", *a++);
 			break;
 		case 's':
-			q += sprint(q, " %d", BGSHORT(a));
+			q += HOSTED_API(sprint)(q, " %d", BGSHORT(a));
 			a += 2;
 			break;
 		case 'S':
-			q += sprint(q, " %.4ux", BGSHORT(a));
+			q += HOSTED_API(sprint)(q, " %.4ux", BGSHORT(a));
 			a += 2;
 			break;
 		}

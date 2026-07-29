@@ -151,8 +151,8 @@ extern	char 	*shell;
 extern	char 	*shellname;
 extern	char 	*shflags;
 
-#define	SYNERR(l)	(fprint(2, "mk: %s:%d: syntax error; ", infile, ((l)>=0)?(l):mkinline))
-#define	RERR(r)		(fprint(2, "mk: %s:%d: rule error; ", (r)->file, (r)->line))
+#define	SYNERR(l)	(HOSTED_API(fprint)(2, "mk: %s:%d: syntax error; ", infile, ((l)>=0)?(l):mkinline))
+#define	RERR(r)		(HOSTED_API(fprint)(2, "mk: %s:%d: rule error; ", (r)->file, (r)->line))
 #define	NAMEBLOCK	1000
 #define	BIGBLOCK	20000
 

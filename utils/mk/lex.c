@@ -101,7 +101,7 @@ bquote(Biobuf *bp, Bufblock *buf)
 		rinsert(buf, c);
 	}
 	SYNERR(line);
-	fprint(2, "missing closing %c after `\n", term);
+	HOSTED_API(fprint)(2, "missing closing %c after `\n", term);
 	return 0;
 }
 

@@ -577,7 +577,7 @@ tkScrolBut2P(Tk *tk, char *arg, char **val)
 
 	e = nil;
 	if(tks->cmd != nil) {
-		snprint(buf, sizeof(buf), "%s moveto %s", tks->cmd, fracbuf);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s moveto %s", tks->cmd, fracbuf);
 		e = tkexec(t, buf, nil);
 	}
 	return e;
@@ -596,7 +596,7 @@ sbrepeat(Tk *tk, void *v, int cancelled)
 	}
 		
 	if(tks->cmd != nil && fmt != nil) {
-		snprint(buf, sizeof(buf), fmt, tks->cmd);
+		HOSTED_API(snprint)(buf, sizeof(buf), fmt, tks->cmd);
 		e = tkexec(tk->env->top, buf, nil);
 		if (e != nil) {
 			tks->flag &= ~Autorepeat;
@@ -651,7 +651,7 @@ tkScrolBut1P(Tk *tk, char *arg, char **val)
 		tks->flag |= ButtonA2;
 	}
 	if(tks->cmd != nil && fmt != nil) {
-		snprint(buf, sizeof(buf), fmt, tks->cmd);
+		HOSTED_API(snprint)(buf, sizeof(buf), fmt, tks->cmd);
 		e = tkexec(t, buf, nil);
 		tks->flag |= Autorepeat;
 		tkrepeat(tk, sbrepeat, fmt, TkRptpause, TkRptinterval);
@@ -704,7 +704,7 @@ tkScrollDrag(Tk *tk, char *arg, char **val)
 		if(delta > TKI2F(1))
 			delta = TKI2F(1);
 		tkfprint(frac, delta);
-		snprint(buf, sizeof(buf), "%s moveto %s", tks->cmd, frac);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s moveto %s", tks->cmd, frac);
 		return tkexec(t, buf, nil);
 	}
 	return nil;

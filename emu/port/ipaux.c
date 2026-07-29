@@ -203,14 +203,14 @@ common:
 		n = 0;
 		for(i = 0; i < 16; i += 2){
 			if(i == eli){
-				n += sprint(buf+n, "::");
+				n += HOSTED_API(sprint)(buf+n, "::");
 				i += eln;
 				if(i >= 16)
 					break;
 			} else if(i != 0)
-				n += sprint(buf+n, ":");
+				n += HOSTED_API(sprint)(buf+n, ":");
 			s = (p[i]<<8) + p[i+1];
-			n += sprint(buf+n, "%ux", s);
+			n += HOSTED_API(sprint)(buf+n, "%ux", s);
 		}
 		return fmtstrcpy(f, buf);
 

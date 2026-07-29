@@ -55,7 +55,7 @@ delete(char *name)
 		if(remove(name) < 0)
 			perror(name);
 	} else
-		fprint(2, "hoon off; mk can'tdelete archive members\n");
+		HOSTED_API(fprint)(2, "hoon off; mk can'tdelete archive members\n");
 }
 
 void

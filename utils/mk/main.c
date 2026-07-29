@@ -197,7 +197,7 @@ main(int argc, char **argv)
 			for(w = target1; w; w = w->next)
 				mk(w->s);
 		else {
-			fprint(2, "mk: nothing to mk\n");
+			HOSTED_API(fprint)(2, "mk: nothing to mk\n");
 			Exit();
 		}
 	} else {
@@ -238,7 +238,7 @@ void
 badusage(void)
 {
 
-	fprint(2, "Usage: mk [-f file] [-n] [-a] [-e] [-t] [-k] [-i] [-d[egp]] [targets ...]\n");
+	HOSTED_API(fprint)(2, "Usage: mk [-f file] [-n] [-a] [-e] [-t] [-k] [-i] [-d[egp]] [targets ...]\n");
 	Exit();
 }
 
@@ -249,7 +249,7 @@ Malloc(int n)
 
 	s = HOSTED_API(malloc)(n);
 	if(!s) {
-		fprint(2, "mk: cannot alloc %d bytes\n", n);
+		HOSTED_API(fprint)(2, "mk: cannot alloc %d bytes\n", n);
 		Exit();
 	}
 	return(s);
@@ -263,7 +263,7 @@ Realloc(void *s, int n)
 	else
 		s = HOSTED_API(malloc)(n);
 	if(!s) {
-		fprint(2, "mk: cannot alloc %d bytes\n", n);
+		HOSTED_API(fprint)(2, "mk: cannot alloc %d bytes\n", n);
 		Exit();
 	}
 	return(s);
@@ -273,7 +273,7 @@ void
 assert(char *s, int n)
 {
 	if(!n){
-		fprint(2, "mk: Assertion ``%s'' failed.\n", s);
+		HOSTED_API(fprint)(2, "mk: Assertion ``%s'' failed.\n", s);
 		Exit();
 	}
 }
@@ -282,10 +282,10 @@ void
 regerror(char *s)
 {
 	if(patrule)
-		fprint(2, "mk: %s:%d: regular expression error; %s\n",
+		HOSTED_API(fprint)(2, "mk: %s:%d: regular expression error; %s\n",
 			patrule->file, patrule->line, s);
 	else
-		fprint(2, "mk: %s:%d: regular expression error; %s\n",
+		HOSTED_API(fprint)(2, "mk: %s:%d: regular expression error; %s\n",
 			infile, mkinline, s);
 	Exit();
 }

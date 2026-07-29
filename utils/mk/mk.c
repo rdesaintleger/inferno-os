@@ -68,12 +68,12 @@ work(Node *node, Node *p, Arc *parc)
 	int ready;
 	int did = 0;
 
-	/*print("work(%s) flags=0x%x time=%ld\n", node->name, node->flags, node->time);/**/
+	/*HOSTED_API(print)("work(%s) flags=0x%x time=%ld\n", node->name, node->flags, node->time);/**/
 	if(node->flags&BEINGMADE)
 		return(did);
 	if((node->flags&MADE) && (node->flags&PRETENDING) && p && outofdate(p, parc, 0)){
 		if(explain)
-			fprint(1, "unpretending %s(%ld) because %s is out of date(%ld)\n",
+			HOSTED_API(fprint)(1, "unpretending %s(%ld) because %s is out of date(%ld)\n",
 				node->name, node->time, p->name, p->time);
 		unpretend(node);
 	}
@@ -90,7 +90,7 @@ work(Node *node, Node *p, Arc *parc)
 	/* consider no prerequsite case */
 	if(node->prereqs == 0){
 		if(node->time == 0){
-			fprint(2, "mk: don't know how to make '%s'\n", node->name);
+			HOSTED_API(fprint)(2, "mk: don't know how to make '%s'\n", node->name);
 			if(kflag){
 				node->flags |= BEINGMADE;
 				runerrs++;
@@ -138,7 +138,7 @@ work(Node *node, Node *p, Arc *parc)
 		node->flags &= ~CANPRETEND;
 		MADESET(node, MADE);
 		if(explain && ((node->flags&PRETENDING) == 0))
-			fprint(1, "pretending %s has time %ld\n", node->name, node->time);
+			HOSTED_API(fprint)(1, "pretending %s has time %ld\n", node->name, node->time);
 		node->flags |= PRETENDING;
 		return(did);
 	}
@@ -180,7 +180,7 @@ update(int fake, Node *node)
 			if(a->n && outofdate(node, a, 1))
 				node->time = a->n->time;
 	}
-/*	print("----node %s time=%ld flags=0x%x\n", node->name, node->time, node->flags);/**/
+/*	HOSTED_API(print)("----node %s time=%ld flags=0x%x\n", node->name, node->time, node->flags);/**/
 }
 
 static int
@@ -190,7 +190,7 @@ pcmp(char *prog, char *p, char *q)
 	int pid;
 
 	Bflush(&bout);
-	sprint(buf, "%s '%s' '%s'\n", prog, p, q);
+	HOSTED_API(sprint)(buf, "%s '%s' '%s'\n", prog, p, q);
 	pid = pipecmd(buf, 0, 0);
 	while(waitup(-3, &pid) >= 0)
 		;
@@ -206,7 +206,7 @@ outofdate(Node *node, Arc *arc, int eval)
 
 	str = 0;
 	if(arc->prog){
-		sprint(buf, "%s%c%s", node->name, 0377, arc->n->name);
+		HOSTED_API(sprint)(buf, "%s%c%s", node->name, 0377, arc->n->name);
 		sym = symlook(buf, S_OUTOFDATE, 0);
 		if(sym == 0 || eval){
 			if(sym == 0)

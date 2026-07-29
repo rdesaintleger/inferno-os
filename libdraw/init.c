@@ -85,7 +85,7 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	if(q == nil)
 		return nil;
 
-	sprint(buf, "%s/draw/new", dev);
+	HOSTED_API(sprint)(buf, "%s/draw/new", dev);
 	ctlfd = libopen(buf, ORDWR);
 	if(ctlfd < 0){
 		if(libbind("#i", dev, MBEFORE) < 0){
@@ -110,11 +110,11 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		goto Error2;
 	}
 
-	sprint(buf, "%s/draw/%d/data", dev, atoi(info+0*12));
+	HOSTED_API(sprint)(buf, "%s/draw/%d/data", dev, atoi(info+0*12));
 	datafd = libopen(buf, ORDWR);
 	if(datafd < 0)
 		goto Error2;
-	sprint(buf, "%s/draw/%d/refresh", dev, atoi(info+0*12));
+	HOSTED_API(sprint)(buf, "%s/draw/%d/refresh", dev, atoi(info+0*12));
 	reffd = libopen(buf, OREAD);
 	if(reffd < 0){
     Error3:
@@ -215,7 +215,7 @@ closedisplay(Display *disp)
 		return;
 	libqlock(disp->qlock);
 	if(disp->oldlabel[0]){
-		snprint(buf, sizeof buf, "%s/label", disp->windir);
+		HOSTED_API(snprint)(buf, sizeof buf, "%s/label", disp->windir);
 		fd = libopen(buf, OWRITE);
 		if(fd >= 0){
 			libwrite(fd, disp->oldlabel, strlen(disp->oldlabel));
@@ -270,7 +270,7 @@ _drawprint(int fd, char *fmt, ...)
 
 //	qlock(&l);
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof buf, fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof buf, fmt, arg);
 	va_end(arg);
 	n = libwrite(fd, buf, strlen(buf));
 //	qunlock(&l);

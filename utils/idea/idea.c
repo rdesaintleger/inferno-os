@@ -138,7 +138,7 @@ idea_cipher(ushort key[2*KEYLEN], uchar text[8], int decrypting)
 static void
 decerr(char *s)
 {
-	fprint(2, "decrypt error: %s (wrong password ?)\n", s);
+	HOSTED_API(fprint)(2, "decrypt error: %s (wrong password ?)\n", s);
 	exits("decrypt");
 }
 
@@ -163,18 +163,18 @@ main(int argc, char **argv)
 	idea_key_setup(key, edkey);
 	idea_cipher(edkey, tmp, 0);
 	if (memcmp(tmp, cipher, 8)) {
-		print("encrypt wrong\n");
+		HOSTED_API(print)("encrypt wrong\n");
 		exits("");
 	}
 	idea_cipher(edkey, tmp, 1);
 	if (memcmp(tmp, plain, 8)) {
-		print("decrypt wrong\n");
+		HOSTED_API(print)("decrypt wrong\n");
 		exits("");
 	}
 */
 
 	if((argc != 3 && argc != 4) || (strcmp(argv[1], "-e") != 0 && strcmp(argv[1], "-d") != 0) || strlen(argv[2]) != 16){
-		fprint(2, "usage: idea -[e | d] <16 char key> [inputfile]\n");
+		HOSTED_API(fprint)(2, "usage: idea -[e | d] <16 char key> [inputfile]\n");
 		exits("usage");
 	}
 	dec = strcmp(argv[1], "-d") == 0;
@@ -183,13 +183,13 @@ main(int argc, char **argv)
 
 		stdin = open(argv[3], OREAD);
 		if(stdin < 0){
-			fprint(2, "cannot open %s\n", argv[3]);
+			HOSTED_API(fprint)(2, "cannot open %s\n", argv[3]);
 			exits("");
 		}
 		strcpy(s, argv[3]);
 		if(dec){
 			if(strcmp(s+strlen(s)-3, ".id") != 0){
-				fprint(2, "input file not a .id file\n");
+				HOSTED_API(fprint)(2, "input file not a .id file\n");
 				exits("");
 			}
 			s[strlen(s)-3] = '\0';
@@ -198,7 +198,7 @@ main(int argc, char **argv)
 			strcat(s, ".id");
 		stdout = create(s, OWRITE, 0666);
 		if(stdout < 0){
-			fprint(2, "cannot create %s\n", s);
+			HOSTED_API(fprint)(2, "cannot create %s\n", s);
 			exits("");
 		}
 	}

@@ -43,7 +43,7 @@ rdxtra(int port, struct termios *ts, char *str)
 
 //	for(lp = lines; lp->str; lp++)
 //	        if(line&lp->flag)
-//		        s += sprint(s, " %s", lp->str);
+//		        s += HOSTED_API(sprint)(s, " %s", lp->str);
 
 	return s;
 }

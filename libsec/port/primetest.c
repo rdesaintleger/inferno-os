@@ -17,14 +17,14 @@ main(void)
 	uitomp(9, nine);
 
 	if(probably_prime(z, 5) == 1)
-		fprint(2, "tricked primality test\n");
+		HOSTED_API(fprint)(2, "tricked primality test\n");
 	if(probably_prime(nine, 5) == 1)
-		fprint(2, "9 passed primality test!\n");
+		HOSTED_API(fprint)(2, "9 passed primality test!\n");
 	if(probably_prime(p, 25) == 1)
-		fprint(2, "ok\n");
+		HOSTED_API(fprint)(2, "ok\n");
 
 	DSAprimes(q, p, nil);
-	print("q=%B\np=%B\n", q, p);
+	HOSTED_API(print)("q=%B\np=%B\n", q, p);
 
 	exits(0);
 }

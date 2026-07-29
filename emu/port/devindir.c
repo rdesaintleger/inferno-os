@@ -17,7 +17,7 @@ indirattach(char *spec)
 		*p++ = 0;
 	d = devbyname(spec);
 	if(d == nil || d->dc == '*'){
-		snprint(up->env->errstr, ERRMAX, "unknown device: %s", spec);
+		HOSTED_API(snprint)(up->env->errstr, ERRMAX, "unknown device: %s", spec);
 		error(up->env->errstr);
 	}
 	if(up->env->pgrp->nodevs &&

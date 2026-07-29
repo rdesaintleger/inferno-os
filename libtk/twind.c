@@ -111,7 +111,7 @@ tktxtforgetsub(Tk *sub, Tk *tk)
 		return;
 	w = ix.item->iwin;
 	if(w->focus == tk) {
-if(0)print("tktxtforget sub %p %q focus %p %q\n", sub, tkname(sub), tk, tkname(tk));
+if(0)HOSTED_API(print)("tktxtforget sub %p %q focus %p %q\n", sub, tkname(sub), tk, tkname(tk));
 		w->focus = nil;
 	}
 }
@@ -128,7 +128,7 @@ tktwingeom(Tk *sub, int x, int y, int w, int h)
 
 	tk = sub->parent;
 	if(!tktfindsubitem(sub, &ix)) {
-		print("tktwingeom: %s not found\n", sub->name->name);
+		HOSTED_API(print)("tktwingeom: %s not found\n", sub->name->name);
 		return;
 	}
 

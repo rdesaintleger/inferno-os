@@ -37,7 +37,7 @@ applyrules(char *target, char *cnt)
 	char stem[NAMEBLOCK], buf[NAMEBLOCK];
 	Resub rmatch[NREGEXP];
 
-/*	print("applyrules(%lux='%s')\n", target, target);/**/
+/*	HOSTED_API(print)("applyrules(%lux='%s')\n", target, target);/**/
 	sym = symlook(target, S_NODE, 0);
 	if(sym)
 		return (Node *)(sym->value);
@@ -180,7 +180,7 @@ dumpn(char *s, Node *n)
 	char buf[1024];
 	Arc *a;
 
-	sprint(buf, "%s   ", (*s == ' ')? s:"");
+	HOSTED_API(sprint)(buf, "%s   ", (*s == ' ')? s:"");
 	Bprint(&bout, "%s%s@%ld: time=%ld flags=0x%x next=%ld\n",
 		s, n->name, n, n->time, n->flags, n->next);
 	for(a = n->prereqs; a; a = a->next)
@@ -190,9 +190,9 @@ dumpn(char *s, Node *n)
 static void
 trace(char *s, Arc *a)
 {
-	fprint(2, "\t%s", s);
+	HOSTED_API(fprint)(2, "\t%s", s);
 	while(a){
-		fprint(2, " <-(%s:%d)- %s", a->r->file, a->r->line,
+		HOSTED_API(fprint)(2, " <-(%s:%d)- %s", a->r->file, a->r->line,
 			a->n? a->n->name:"");
 		if(a->n){
 			for(a = a->n->prereqs; a; a = a->next)
@@ -200,7 +200,7 @@ trace(char *s, Arc *a)
 		} else
 			a = 0;
 	}
-	fprint(2, "\n");
+	HOSTED_API(fprint)(2, "\n");
 }
 
 static void
@@ -209,7 +209,7 @@ cyclechk(Node *n)
 	Arc *a;
 
 	if((n->flags&CYCLE) && n->prereqs){
-		fprint(2, "mk: cycle in graph detected at target %s\n", n->name);
+		HOSTED_API(fprint)(2, "mk: cycle in graph detected at target %s\n", n->name);
 		Exit();
 	}
 	n->flags |= CYCLE;
@@ -246,7 +246,7 @@ ambiguous(Node *n)
 			}
 			if(r->recipe != a->r->recipe){
 				if(bad == 0){
-					fprint(2, "mk: ambiguous recipes for %s:\n", n->name);
+					HOSTED_API(fprint)(2, "mk: ambiguous recipes for %s:\n", n->name);
 					bad = 1;
 					trace(n->name, la);
 				}

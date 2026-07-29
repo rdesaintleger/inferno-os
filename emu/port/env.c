@@ -61,7 +61,7 @@ ksetenv(char *var, char *val, int conf)
 	char buf[2*KNAMELEN];
 
 	USED(conf);
-	snprint(buf, sizeof(buf), "#e/%s", var);
+	HOSTED_API(snprint)(buf, sizeof(buf), "#e/%s", var);
 	if(waserror())
 		return;
 	c = namec(buf, Acreate, OWRITE, 0600);

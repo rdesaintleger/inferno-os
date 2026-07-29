@@ -134,15 +134,15 @@ sblsrcconv(char *buf, char *end, Src *src)
 	stopf = fl.file;
 	stopl = fl.line;
 	if(lastf != startf->sbl)
-		s = seprint(s, end, "%d:", startf->sbl);
+		s = HOSTED_API(seprint)(s, end, "%d:", startf->sbl);
 	if(lastline != startl)
-		s = seprint(s, end, "%d.", startl);
-	s = seprint(s, end, "%d,", src->start.pos);
+		s = HOSTED_API(seprint)(s, end, "%d.", startl);
+	s = HOSTED_API(seprint)(s, end, "%d,", src->start.pos);
 	if(startf->sbl != stopf->sbl)
-		s = seprint(s, end, "%d:", stopf->sbl);
+		s = HOSTED_API(seprint)(s, end, "%d:", stopf->sbl);
 	if(startl != stopl)
-		s = seprint(s, end, "%d.", stopl);
-	seprint(s, end, "%d ", src->stop.pos);
+		s = HOSTED_API(seprint)(s, end, "%d.", stopl);
+	HOSTED_API(seprint)(s, end, "%d ", src->stop.pos);
 	lastf = stopf->sbl;
 	lastline = stopl;
 	return buf;

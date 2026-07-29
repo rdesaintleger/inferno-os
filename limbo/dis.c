@@ -80,7 +80,7 @@ dismod(Decl *m)
 			Bputc(bout, '\0');
 			break;
 		case Dfn:
-if(debug['v']) print("Dfn: %s %d %p\n", m->sym->name, m->refs, m);
+if(debug['v']) HOSTED_API(print)("Dfn: %s %d %p\n", m->sym->name, m->refs, m);
 			discon(m->pc->pc);
 			discon(m->desc->id);
 			disword(sign(m));
@@ -95,7 +95,7 @@ if(debug['v']) print("Dfn: %s %d %p\n", m->sym->name, m->refs, m);
 		}
 	}
 	if(debug['s'])
-		print("%lld linkage bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
+		HOSTED_API(print)("%lld linkage bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
 }
 
 void
@@ -132,7 +132,7 @@ disdesc(Desc *d)
 		Bwrite(bout, d->map, d->nmap);
 	}
 	if(debug['s'])
-		print("%lld type descriptor bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
+		HOSTED_API(print)("%lld type descriptor bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
 }
 
 void
@@ -156,7 +156,7 @@ disvar(long size, Decl *d)
 	Bputc(bout, 0);
 
 	if(debug['s'])
-		print("%lld data bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
+		HOSTED_API(print)("%lld data bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
 }
 
 void
@@ -577,7 +577,7 @@ disinst(Inst *in)
 	ibuf = nil;
 
 	if(debug['s'])
-		print("%lld instruction bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
+		HOSTED_API(print)("%lld instruction bytes start %lld\n", Boffset(bout) - fileoff, fileoff);
 }
 
 void

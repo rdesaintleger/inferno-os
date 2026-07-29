@@ -161,6 +161,6 @@ randomread(void *xp, ulong n)
 	Wakeup(&rb.clock);
 	Wakeup(&rb.producer);
 
-if(0)print("B");
+if(0)HOSTED_API(print)("B");
 	return n;
 }

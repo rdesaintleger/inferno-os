@@ -81,14 +81,14 @@ rsa_sk2str(void *vrsa, char *buf, int len)
 	ep = buf + len - 1;
 	cp = buf;
 
-	cp += snprint(cp, ep - cp, "%U\n", rsa->pub.n);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->pub.ek);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->dk);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->p);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->q);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->kp);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->kq);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->c2);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->pub.n);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->pub.ek);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->dk);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->p);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->q);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->kp);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->kq);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->c2);
 	*cp = 0;
 
 	return cp - buf;
@@ -103,8 +103,8 @@ rsa_pk2str(void *vrsa, char *buf, int len)
 	rsa = vrsa;
 	ep = buf + len - 1;
 	cp = buf;
-	cp += snprint(cp, ep - cp, "%U\n", rsa->n);
-	cp += snprint(cp, ep - cp, "%U\n", rsa->ek);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->n);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa->ek);
 	*cp = 0;
 
 	return cp - buf;
@@ -120,7 +120,7 @@ rsa_sig2str(void *vrsa, char *buf, int len)
 	ep = buf + len - 1;
 	cp = buf;
 
-	cp += snprint(cp, ep - cp, "%U\n", rsa);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", rsa);
 	*cp = 0;
 
 	return cp - buf;

@@ -87,7 +87,7 @@ devattach(int tc, char *spec)
 	if(spec == nil)
 		spec = "";
 	buf = smalloc(4+strlen(spec)+1);
-	sprint(buf, "#%C%s", tc, spec);
+	HOSTED_API(sprint)(buf, "#%C%s", tc, spec);
 	c->name = newcname(buf);
 	HOSTED_API(free)(buf);
 	return c;
@@ -231,7 +231,7 @@ devstat(Chan *c, uchar *db, int n, Dirtab *tab, int ntab, Devgen *gen)
 					error(Ebadarg);
 				return n;
 			}
-			print("%s %s: devstat %C %llux\n",
+			HOSTED_API(print)("%s %s: devstat %C %llux\n",
 				up->text, up->env->user,
 				devtab[c->type]->dc, c->qid.path);
 
@@ -414,7 +414,7 @@ readnum(ulong off, char *buf, ulong n, ulong val, int size)
 
 	if(size > 64) size = 64;
 
-	snprint(tmp, sizeof(tmp), "%*.0lud ", size, val);
+	HOSTED_API(snprint)(tmp, sizeof(tmp), "%*.0lud ", size, val);
 	if(off >= size)
 		return 0;
 	if(off+n > size)

@@ -67,35 +67,35 @@ printgrid(TkGrid *grid)
 	Point dim;
 
 	dim = grid->dim;
-	print("grid %P\n", grid->dim);
-	print("  row heights: ");
+	HOSTED_API(print)("grid %P\n", grid->dim);
+	HOSTED_API(print)("  row heights: ");
 	for(y = 0; y < dim.y; y++)
-		print("%d[%d,%d,w%d,p%d]%s ",
+		HOSTED_API(print)("%d[%d,%d,w%d,p%d]%s ",
 			grid->rows[y].act,
 			grid->rows[y].minsize,
 			grid->rows[y].maxsize < 0x7fffffff ? grid->rows[y].maxsize : -1,
 			grid->rows[y].weight,
 			grid->rows[y].pad,
 			grid->rows[y].name ? grid->rows[y].name : "");
-	print("\n");
-	print("  col widths: ");
+	HOSTED_API(print)("\n");
+	HOSTED_API(print)("  col widths: ");
 	for(x = 0; x < dim.x; x++)
-		print("%d[%d,%d,w%d,p%d]%s ",
+		HOSTED_API(print)("%d[%d,%d,w%d,p%d]%s ",
 			grid->cols[x].act,
 			grid->cols[x].minsize,
 			grid->cols[x].maxsize < 0x7fffffff ? grid->cols[x].maxsize : -1,
 			grid->cols[x].weight,
 			grid->cols[x].pad,
 			grid->cols[x].name ? grid->cols[x].name : "");
-	print("\n");
+	HOSTED_API(print)("\n");
 	for(y = 0; y < dim.y; y++){
-		print("  row %d: ", y);
+		HOSTED_API(print)("  row %d: ", y);
 		for(x = 0; x < dim.x; x++){
-			print("%p;", grid->cells[y][x].tk);
-			print("%s%P\t", grid->cells[y][x].tk?grid->cells[y][x].tk->name->name:"(nil)",
+			HOSTED_API(print)("%p;", grid->cells[y][x].tk);
+			HOSTED_API(print)("%s%P\t", grid->cells[y][x].tk?grid->cells[y][x].tk->name->name:"(nil)",
 				grid->cells[y][x].span);
 		}
-		print("\n");
+		HOSTED_API(print)("\n");
 	}
 }
 

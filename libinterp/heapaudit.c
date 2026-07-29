@@ -14,7 +14,7 @@ struct Audit
 Audit*	ahash[128];
 extern	Pool*	heapmem;
 extern void conslog(char*, ...);
-#define	conslog	print
+#define	conslog	HOSTED_API(print)
 
 typedef struct Typed	Typed;
 typedef struct Ptyped	Ptyped;

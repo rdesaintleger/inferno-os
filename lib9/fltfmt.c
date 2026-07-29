@@ -144,13 +144,13 @@ xdtoa(Fmt *fmt, char *s2, double f)
 		d = e;
 		s1[NSIGNIF-2] = '0';
 		s1[NSIGNIF-1] = '0';
-		sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+		HOSTED_API(sprint)(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
 		g = strtod(s1, nil);
 		if(g == f)
 			goto found;
 		if(xadd(s1, NSIGNIF-3, 1)) {
 			e++;
-			sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+			HOSTED_API(sprint)(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
 		}
 		g = strtod(s1, nil);
 		if(g == f)
@@ -163,7 +163,7 @@ xdtoa(Fmt *fmt, char *s2, double f)
 	 * convert back so s1 gets exact answer
 	 */
 	for(;;) {
-		sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+		HOSTED_API(sprint)(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
 		g = strtod(s1, nil);
 		if(f > g) {
 			if(xadd(s1, NSIGNIF-1, 1))

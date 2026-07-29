@@ -292,10 +292,10 @@ tklistsv(Tk *tk)
 	v = tkfprint(val, top);
 	*v++ = ' ';
 	tkfprint(v, bot);
-	snprint(cmd, sizeof(cmd), "%s %s", l->yscroll, val);
+	HOSTED_API(snprint)(cmd, sizeof(cmd), "%s %s", l->yscroll, val);
 	e = tkexec(tk->env->top, cmd, nil);
 	if ((e != nil) && (tk->name != nil))
-		print("tk: yscrollcommand \"%s\": %s\n", tk->name->name, e);
+		HOSTED_API(print)("tk: yscrollcommand \"%s\": %s\n", tk->name->name, e);
 }
 
 void
@@ -320,10 +320,10 @@ tklistsh(Tk *tk)
 	v = tkfprint(val, top);
 	*v++ = ' ';
 	tkfprint(v, bot);
-	snprint(cmd, sizeof(cmd), "%s %s", l->xscroll, val);
+	HOSTED_API(snprint)(cmd, sizeof(cmd), "%s %s", l->xscroll, val);
 	e = tkexec(tk->env->top, cmd, nil);
 	if ((e != nil) && (tk->name != nil))
-		print("tk: xscrollcommand \"%s\": %s\n", tk->name->name, e);
+		HOSTED_API(print)("tk: xscrollcommand \"%s\": %s\n", tk->name->name, e);
 }
 
 void

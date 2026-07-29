@@ -141,7 +141,7 @@ tkimgbmcreate(TkTop *t, char *arg, int type, char **ret)
 		unlockdisplay(d);
 
 	if(names == nil) {
-		sprint(buf, "image%d", id++);
+		HOSTED_API(sprint)(buf, "image%d", id++);
 		tki->name = tkmkname(buf);
 		if(tki->name == nil)
 			goto err;

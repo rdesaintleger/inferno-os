@@ -235,7 +235,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 				s->z++;
 				s->zerr -= s->den;
 				if(s->zerr < 0 || s->zerr >= s->den)
-					print("bad ratzerr1: %ld den %ld dzrem %ld\n", s->zerr, s->den, s->dzrem);
+					HOSTED_API(print)("bad ratzerr1: %ld den %ld dzrem %ld\n", s->zerr, s->den, s->dzrem);
 			}
 			*q++ = s;
 		}
@@ -249,7 +249,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			s->z = s->p0.x;
 			s->z += smuldivmod(y - s->p0.y, s->num, s->den, &s->zerr);
 			if(s->zerr < 0 || s->zerr >= s->den)
-				print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+				HOSTED_API(print)("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			*q++ = s;
 		}
 		ep = q;
@@ -279,7 +279,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			p++;
 			for(;;) {
 				if(p == ep) {
-					print("xscan: fill to infinity");
+					HOSTED_API(print)("xscan: fill to infinity");
 					return;
 				}
 				cnt += p[0]->d;
@@ -365,7 +365,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 				s->z++;
 				s->zerr -= s->den;
 				if(s->zerr < 0 || s->zerr >= s->den)
-					print("bad ratzerr1: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+					HOSTED_API(print)("bad ratzerr1: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			}
 			*q++ = s;
 		}
@@ -379,7 +379,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			s->z = s->p0.y;
 			s->z += smuldivmod(x - s->p0.x, s->num, s->den, &s->zerr);
 			if(s->zerr < 0 || s->zerr >= s->den)
-				print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+				HOSTED_API(print)("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			*q++ = s;
 		}
 		ep = q;
@@ -409,7 +409,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			p++;
 			for(;;) {
 				if(p == ep) {
-					print("yscan: fill to infinity");
+					HOSTED_API(print)("yscan: fill to infinity");
 					return;
 				}
 				cnt += p[0]->d;

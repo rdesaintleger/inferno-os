@@ -56,7 +56,7 @@ pexit(char *msg, int t)
 	unlock(&procs.l);
 
 	if(0)
-		print("pexit: %s: %s\n", p->text, msg);
+		HOSTED_API(print)("pexit: %s: %s\n", p->text, msg);
 
 	e = p->env;
 	if(e != nil) {
@@ -94,7 +94,7 @@ tramp(void *arg)
 		pthread_getattr_np(pthread_self(), &attr);
 		size_t s;
 		pthread_attr_getstacksize(&attr, &s);
-		print("stack size = %d\n", s);
+		HOSTED_API(print)("stack size = %d\n", s);
 	}
 #endif
 	p->func(p->arg);

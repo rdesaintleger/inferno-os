@@ -45,7 +45,7 @@ sysfault(char *what, void *addr)
 {
 	char buf[64];
 
-	snprint(buf, sizeof(buf), "sys: %s%#p", what, addr);
+	HOSTED_API(snprint)(buf, sizeof(buf), "sys: %s%#p", what, addr);
 	disfault(nil, buf);
 }
 
@@ -82,7 +82,7 @@ trapFPE(int signo, siginfo_t *si, void *a)
 
 	USED(signo);
 	USED(a);
-	snprint(buf, sizeof(buf), "sys: fp: exception status=%.4lux pc=%#p", getfsr(), si->si_addr);
+	HOSTED_API(snprint)(buf, sizeof(buf), "sys: fp: exception status=%.4lux pc=%#p", getfsr(), si->si_addr);
 	disfault(nil, buf);
 }
 
@@ -212,7 +212,7 @@ libinit(char *imod)
 	if(pw != nil)
 		kstrdup(&eve, pw->pw_name);
 	else
-		print("cannot getpwuid\n");
+		HOSTED_API(print)("cannot getpwuid\n");
 
 	p->env->uid = getuid();
 	p->env->gid = getgid();
@@ -228,7 +228,7 @@ readkbd(void)
 
 	n = read(0, buf, sizeof(buf));
 	if(n < 0)
-		print("keyboard close (n=%d, %s)\n", n, strerror(errno));
+		HOSTED_API(print)("keyboard close (n=%d, %s)\n", n, strerror(errno));
 	if(n <= 0)
 		pexit("keyboard thread", 0);
 

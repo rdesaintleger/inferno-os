@@ -345,7 +345,7 @@ OP(cvtwc)
 	String *ds, **dp;
 
 	ds = newstring(16);
-	ds->len = sprint(ds->Sascii, "%d", W(s));
+	ds->len = HOSTED_API(sprint)(ds->Sascii, "%d", W(s));
 
 	dp = R.d;
 	destroy(*dp);
@@ -357,7 +357,7 @@ OP(cvtlc)
 	String *ds, **dp;
 
 	ds = newstring(16);
-	ds->len = sprint(ds->Sascii, "%lld", V(s));
+	ds->len = HOSTED_API(sprint)(ds->Sascii, "%lld", V(s));
 	
 	dp = R.d;
 	destroy(*dp);
@@ -369,7 +369,7 @@ OP(cvtfc)
 	String *ds, **dp;
 
 	ds = newstring(32);
-	ds->len = sprint(ds->Sascii, "%g", F(s));	
+	ds->len = HOSTED_API(sprint)(ds->Sascii, "%g", F(s));	
 	dp = R.d;
 	destroy(*dp);
 	*dp = ds;
@@ -392,7 +392,7 @@ string2c(String *s)
 
 	nc = -s->len;
 	l = (nc * UTFmax) + UTFmax;
-	if(s->tmp == nil || msize(s->tmp) < l) {
+	if(s->tmp == nil || HOSTED_API(msize)(s->tmp) < l) {
 		HOSTED_API(free)(s->tmp);
 		s->tmp = HOSTED_API(malloc)(l);
 		if(s->tmp == nil)

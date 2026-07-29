@@ -450,7 +450,7 @@ sktostr(SK *sk, char *buf, int len)
 	SigAlg *sa;
 
 	sa = checkSigAlg(sk->x.sa);
-	n = snprint(buf, len, "%s\n%s\n", string2c(sa->x.name),
+	n = HOSTED_API(snprint)(buf, len, "%s\n%s\n", string2c(sa->x.name),
 			string2c(sk->x.owner));
 	return n + (*sa->vec->sk2str)(sk->key, buf+n, len - n);
 }
@@ -608,7 +608,7 @@ pktostr(PK *pk, char *buf, int len)
 	SigAlg *sa;
 
 	sa = checkSigAlg(pk->x.sa);
-	n = snprint(buf, len, "%s\n%s\n", string2c(sa->x.name), string2c(pk->x.owner));
+	n = HOSTED_API(snprint)(buf, len, "%s\n%s\n", string2c(sa->x.name), string2c(pk->x.owner));
 	return n + (*sa->vec->pk2str)(pk->key, buf+n, len - n);
 }
 
@@ -781,7 +781,7 @@ certtostr(Certificate *c, char *buf, int len)
 	int n;
 
 	sa = checkSigAlg(c->x.sa);
-	n = snprint(buf, len, "%s\n%s\n%s\n%d\n", string2c(sa->x.name),
+	n = HOSTED_API(snprint)(buf, len, "%s\n%s\n%s\n%d\n", string2c(sa->x.name),
 		string2c(c->x.ha), string2c(c->x.signer), c->x.exp);
 	return n + (*sa->vec->sig2str)(c->signa, buf+n, len - n);
 }
@@ -908,7 +908,7 @@ sign(SK *sk, char *ha, ulong exp, uchar *a, int len)
 		return nil;
 
 	/* add signer name and expiration time to hash */
-	n = snprint(buf, Maxbuf, "%s %lud", string2c(sk->x.owner), exp);
+	n = HOSTED_API(snprint)(buf, Maxbuf, "%s %lud", string2c(sk->x.owner), exp);
 	if(strcmp(ha, "sha") == 0 || strcmp(ha, "sha1") == 0){
 		ds = sha1(a, len, 0, 0);
 		sha1((uchar*)buf, n, digest, ds);
@@ -973,7 +973,7 @@ Keyring_sign(void *fp)
 	if(buf == nil)
 		return;
 	ds = (XDigestState*)f->state;
-	n = snprint(buf, Maxbuf, "%s %d", string2c(sk->x.owner), f->exp);
+	n = HOSTED_API(snprint)(buf, Maxbuf, "%s %d", string2c(sk->x.owner), f->exp);
 	if(strcmp(string2c(f->ha), "sha") == 0 || strcmp(string2c(f->ha), "sha1") == 0){
 		sha1((uchar*)buf, n, digest, &ds->state);
 		n = Keyring_SHA1dlen;
@@ -1052,7 +1052,7 @@ verify(PK *pk, Certificate *c, char *a, int len)
 	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return 0;
-	n = snprint(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
+	n = HOSTED_API(snprint)(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
 	if(strcmp(string2c(c->x.ha), "sha") == 0 || strcmp(string2c(c->x.ha), "sha1") == 0){
 		ds = sha1((uchar*)a, len, 0, 0);
 		sha1((uchar*)buf, n, digest, ds);
@@ -1113,7 +1113,7 @@ Keyring_verify(void *fp)
 	buf = HOSTED_API(malloc)(Maxbuf);
 	if(buf == nil)
 		return;
-	n = snprint(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
+	n = HOSTED_API(snprint)(buf, Maxbuf, "%s %d", string2c(c->x.signer), c->x.exp);
 	ds = (XDigestState*)f->state;
 
 	if(strcmp(string2c(c->x.ha), "sha") == 0 || strcmp(string2c(c->x.ha), "sha1") == 0){
@@ -1427,7 +1427,7 @@ sendmsg(int fd, void *buf, int n)
 	char num[10];
 
 	release();
-	snprint(num, sizeof(num), "%4.4d\n", n);
+	HOSTED_API(snprint)(num, sizeof(num), "%4.4d\n", n);
 	if(kwrite(fd, num, 5) != 5){
 		acquire();
 		return -1;
@@ -1464,7 +1464,7 @@ senderr(int fd, char *err, int addrmt)
 	m = 0;
 	if(addrmt)
 		m = strlen("remote: ");
-	snprint(num, sizeof(num), "!%3.3d\n", n+m);
+	HOSTED_API(snprint)(num, sizeof(num), "!%3.3d\n", n+m);
 	if(kwrite(fd, num, 5) != 5){
 		acquire();
 		return -1;
@@ -1702,12 +1702,12 @@ Keyring_auth(void *fp)
 	alphar0r1 = mpnew(0);
 
 	/* generate alpha**r0 */
-if(0)print("X");
+if(0)HOSTED_API(print)("X");
 	release();
 	mprand(mpsignif(p), genrandom, r0);
 	mpexp(alpha, r0, p, alphar0);
 	acquire();
-if(0)print("Y");
+if(0)HOSTED_API(print)("Y");
 
 	/* send alpha**r0 mod p, mycert, and mypk */
 	n = bigtobase64(alphar0, buf, Maxbuf);

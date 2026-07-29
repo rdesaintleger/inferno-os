@@ -156,12 +156,12 @@ main()
 	idea_key_setup(key, edkey);
 	idea_cipher(edkey, tmp, 0);
 	if (memcmp(tmp, cipher, 8)) {
-		print("encrypt wrong\n");
+		HOSTED_API(print)("encrypt wrong\n");
 		exits("");
 	}
 	idea_cipher(edkey, tmp, 1);
 	if (memcmp(tmp, plain, 8)) {
-		print("decrypt wrong\n");
+		HOSTED_API(print)("decrypt wrong\n");
 		exits("");
 	}
 }

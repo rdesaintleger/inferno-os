@@ -392,7 +392,7 @@ tkgencget(TkOptab *ft, char *arg, char **val, TkTop *t)
 		c = out;
 		for (s = o->aux; s->val != nil; s++) {
 			if (s->con == (s->con&-s->con) && (con & s->con) != 0)
-				c = seprint(c, out+Tkmaxitem, " %s", s->val);	/* should this be quoted? */
+				c = HOSTED_API(seprint)(c, out+Tkmaxitem, " %s", s->val);	/* should this be quoted? */
 		}
 		HOSTED_API(free)(buf);
 		*c = 0;
@@ -747,7 +747,7 @@ pbmap(TkTop *t, TkOption *o, void *place, char **str, char *buf, char *ebuf)
 		if(file == nil)
 			return TkNomem;
 
-		snprint(file, Tkmaxitem, "/icons/tk/%s", buf);
+		HOSTED_API(snprint)(file, Tkmaxitem, "/icons/tk/%s", buf);
 		i = display_open(d, file);
 		HOSTED_API(free)(file);
 	}

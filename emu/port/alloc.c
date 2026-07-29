@@ -89,7 +89,7 @@ void	(*memmonitor)(int, ulong, ulong) = nil;
 
 #define CKLEAK	0
 int	ckleak;
-#define	ML(v, sz)	if(CKLEAK && ckleak && v){ if(sz) fprint(2, "%lux %lux\n", (ulong)v, (ulong)sz); else fprint(2, "%lux\n", (ulong)v); }
+#define	ML(v, sz)	if(CKLEAK && ckleak && v){ if(sz) HOSTED_API(fprint)(2, "%lux %lux\n", (ulong)v, (ulong)sz); else HOSTED_API(fprint)(2, "%lux\n", (ulong)v); }
 
 int
 memusehigh(void)
@@ -364,7 +364,7 @@ dopoolalloc(Pool *p, ulong asize)
 			}
 
 			unlock(&p->l);
-			print("arena %s too large: size %d cursize %lud arenasize %lud maxsize %lud\n",
+			HOSTED_API(print)("arena %s too large: size %d cursize %lud arenasize %lud maxsize %lud\n",
 			 p->name, size, p->cursize, p->arenasize, p->maxsize);
 			return nil;
 		}
@@ -397,7 +397,7 @@ dopoolalloc(Pool *p, ulong asize)
 #endif
 	if(p->chain != nil && (char*)t-(char*)B2LIMIT(p->chain)-ldr == 0){
 		/* can merge chains */
-		if(0)print("merging chains %p and %p in %s\n", p->chain, t, p->name);
+		if(0)HOSTED_API(print)("merging chains %p and %p in %s\n", p->chain, t, p->name);
 		q = B2LIMIT(p->chain);
 		q->magic = MAGIC_A;
 		q->size = alloc;
@@ -577,7 +577,7 @@ poolread(char *va, int count, ulong offset)
 	signed_off = offset;
 	for(i = 0; i < table.n; i++) {
 		p = &table.pool[i];
-		n += snprint(va+n, count-n, "%11lud %11lud %11lud %11lud %11lud %11d %11lud %s\n",
+		n += HOSTED_API(snprint)(va+n, count-n, "%11lud %11lud %11lud %11lud %11lud %11d %11lud %s\n",
 			p->cursize,
 			p->maxsize,
 			p->hw,
@@ -650,7 +650,7 @@ HOSTED_API(malloc)(size_t size)
 		memset(v, 0, size);
 		MM(0, (ulong)v, size);
 	} else 
-		print("malloc failed\n");
+		HOSTED_API(print)("malloc failed\n");
 	return v;
 }
 
@@ -669,7 +669,7 @@ HOSTED_API(mallocz)(ulong size, int clr)
 			memset(v, 0, size);
 		MM(0, (ulong)v, size);
 	} else 
-		print("mallocz failed\n");
+		HOSTED_API(print)("mallocz failed\n");
 	return v;
 }
 
@@ -705,12 +705,12 @@ HOSTED_API(realloc)(void *v, size_t size)
 	if(nv != nil) {
 		nv = (ulong*)nv+Npadlong;
 	} else 
-		print("realloc failed\n");
+		HOSTED_API(print)("realloc failed\n");
 	return nv;
 }
 
 ulong
-msize(void *v)
+HOSTED_API(msize)(void *v)
 {
 	if(v == nil)
 		return 0;
@@ -737,17 +737,17 @@ pooldump(Pool *p)
 	limit = B2LIMIT(b);
 
 	while(base != nil) {
-		print("\tbase #%.8lux ptr #%.8lux", base, ptr);
+		HOSTED_API(print)("\tbase #%.8lux ptr #%.8lux", base, ptr);
 		if(ptr->magic == MAGIC_A || ptr->magic == MAGIC_I)
-			print("\tA%.5d\n", ptr->size);
+			HOSTED_API(print)("\tA%.5d\n", ptr->size);
 		else if(ptr->magic == MAGIC_E)
-			print("\tE\tL#%.8lux\tS#%.8lux\n", ptr->clink, ptr->csize);
+			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", ptr->clink, ptr->csize);
 		else
-			print("\tF%.5d\tL#%.8lux\tR#%.8lux\tF#%.8lux\tP#%.8lux\tT#%.8lux\n",
+			HOSTED_API(print)("\tF%.5d\tL#%.8lux\tR#%.8lux\tF#%.8lux\tP#%.8lux\tT#%.8lux\n",
 				ptr->size, ptr->left, ptr->right, ptr->fwd, ptr->prev, ptr->parent);
 		ptr = B2NB(ptr);
 		if(ptr >= limit) {
-			print("link to #%.8lux\n", base->clink);
+			HOSTED_API(print)("link to #%.8lux\n", base->clink);
 			base = base->clink;
 			if(base == nil)
 				break;
@@ -796,7 +796,7 @@ poolcompact(Pool *pool)
 			nb = (uchar*)limit - (uchar*)end;
 			if(nb > 0){
 				if(nb < pool->quanta+1){
-					print("poolcompact: leftover too small\n");
+					HOSTED_API(print)("poolcompact: leftover too small\n");
 					abort();
 				}
 				end->size = nb;
@@ -828,21 +828,21 @@ dumpvl(char *msg, ulong *v, int n)
 {
 	int i, l;
 
-	l = print("%s at %p: ", msg, v);
+	l = HOSTED_API(print)("%s at %p: ", msg, v);
 	for (i = 0; i < n; i++) {
 		if (l >= 60) {
-			print("\n");
-			l = print("    %p: ", v);
+			HOSTED_API(print)("\n");
+			l = HOSTED_API(print)("    %p: ", v);
 		}
-		l += print(" %lux", *v++);
+		l += HOSTED_API(print)(" %lux", *v++);
 	}
-	print("\n");
+	HOSTED_API(print)("\n");
 }
 
 static void
 corrupted(char *str, char *msg, Pool *p, Bhdr *b, void *v)
 {
-	print("%s(%p): pool %s CORRUPT: %s at %p'%lud(magic=%lux)\n",
+	HOSTED_API(print)("%s(%p): pool %s CORRUPT: %s at %p'%lud(magic=%lux)\n",
 		str, v, p->name, msg, b, b->size, b->magic);
 	dumpvl("bad Bhdr", (ulong *)((ulong)b & ~3)-4, 10);
 }
@@ -872,7 +872,7 @@ _auditmemloc(char *str, void *v)
 		unlock(&p->l);
 nextpool:	;
 	}
-	print("%s: %p not in pools\n", str, v);
+	HOSTED_API(print)("%s: %p not in pools\n", str, v);
 	return;
 
 found:
@@ -919,11 +919,11 @@ found:
 	}
 badchunk:
 	if (fb != nil) {
-		print("%s: %p in %s:", str, v, p->name);
+		HOSTED_API(print)("%s: %p in %s:", str, v, p->name);
 		if (fb == v)
-			print(" is %s '%lux\n", fmsg, fsz);
+			HOSTED_API(print)(" is %s '%lux\n", fmsg, fsz);
 		else
-			print(" in %s at %p'%lux\n", fmsg, fb, fsz);
+			HOSTED_API(print)(" in %s at %p'%lux\n", fmsg, fb, fsz);
 		dumpvl("area", (ulong *)((ulong)v & ~3)-4, 20);
 	}
 }

@@ -75,11 +75,11 @@ cmderror(Cmdbuf *cb, char *s)
 
 	p = up->genbuf;
 	e = p+ERRMAX-10;
-	p = seprint(p, e, "%s \"", s);
+	p = HOSTED_API(seprint)(p, e, "%s \"", s);
 	for(i=0; i<cb->nf; i++){
 		if(i > 0)
-			p = seprint(p, e, " ");
-		p = seprint(p, e, "%q", cb->f[i]);
+			p = HOSTED_API(seprint)(p, e, " ");
+		p = HOSTED_API(seprint)(p, e, "%q", cb->f[i]);
 	}
 	strcpy(p, "\"");
 	error(up->genbuf);

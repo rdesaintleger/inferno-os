@@ -55,7 +55,7 @@ tktnewline(int flags, TkTitem *items, TkTline *prev, TkTline *next, TkTline **re
 	for(i = items; i->next != nil;)
 		i = i->next;
 	if(tktdbg && !(i->kind == TkTnewline || i->kind == TkTcontline))
-		print("text:tktnewline botch\n");
+		HOSTED_API(print)("text:tktnewline botch\n");
 	i->iline = l;
 
 	*ret = l;
@@ -177,7 +177,7 @@ tktremitem(TkText *tkt, TkTindex *ix)
 
 	if(i->next == nil) {
 		if(tktdbg && !(i->kind == TkTnewline || i->kind == TkTcontline)) {
-			print("tktremitem: botch 1\n");
+			HOSTED_API(print)("tktremitem: botch 1\n");
 			return;
 		}
 		lnext = l->next;
@@ -199,7 +199,7 @@ tktremitem(TkText *tkt, TkTindex *ix)
 	else {
 		prev = *ix;
 		if(!tktadjustind(tkt, TkTbyitemback, &prev) && tktdbg) {
-			print("tktremitem: botch 2\n");
+			HOSTED_API(print)("tktremitem: botch 2\n");
 			return;
 		}
 		prev.item->next = i->next;
@@ -325,7 +325,7 @@ tktlastitem(TkTitem *i)
 	while(i->next != nil)
 		i = i->next;
 	if(tktdbg && !(i->kind == TkTnewline || i->kind == TkTcontline))
-		print("text:tktlastitem botch\n");
+		HOSTED_API(print)("text:tktlastitem botch\n");
 
 	return i;
 }
@@ -348,7 +348,7 @@ tktlinenum(TkText *tkt, TkTindex *p)
 		n = 1;
 		for(l = tkt->start.next; l != p->line; l = l->next) {
 			if(tktdbg && l->next == nil) {
-				print("text: tktlinenum botch\n");
+				HOSTED_API(print)("text: tktlinenum botch\n");
 				break;
 			}
 			if(l->flags & TkTlast)
@@ -359,7 +359,7 @@ tktlinenum(TkText *tkt, TkTindex *p)
 		n = tkt->nlines;
 		for(l = tkt->end.prev; l != p->line; l = l->prev) {
 			if(tktdbg && l->prev == nil) {
-				print("text: tktlinenum botch\n");
+				HOSTED_API(print)("text: tktlinenum botch\n");
 				break;
 			}
 			if(l->flags & TkTfirst)
@@ -382,13 +382,13 @@ tktlinepos(TkText *tkt, TkTindex *p)
 	tktadjustind(tkt, TkTbylinestart, &ix);
 	while(ix.item != i) {
 		if(tktdbg && ix.item->next == nil && (ix.line->flags&TkTlast)) {
-			print("text: tktlinepos botch\n");
+			HOSTED_API(print)("text: tktlinepos botch\n");
 			break;
 		}
 		n += tktposcount(ix.item);
 		if(!tktadjustind(tkt, TkTbyitem, &ix)) {
 			if(tktdbg)
-				print("tktlinepos botch\n");
+				HOSTED_API(print)("tktlinepos botch\n");
 			break;
 		}
 	}
@@ -500,7 +500,7 @@ tktsplititem(TkTindex *p)
 			l1 = tktutfpos(i->istring, p->pos);
 		l2 = strlen(i->istring) - l1;
 		if (l2 == 0)
-			print("tktsplititem botch\n");
+			HOSTED_API(print)("tktsplititem botch\n");
 		s1 = HOSTED_API(malloc)(l1+1);
 		if(s1 == nil)
 			return TkNomem;
@@ -810,38 +810,38 @@ tktprintitem(TkTitem *i)
 {
 	int j;
 
-	print("%p:", i);
+	HOSTED_API(print)("%p:", i);
 	switch(i->kind){
 	case TkTascii:
-		print("\"%s\"", i->istring);
+		HOSTED_API(print)("\"%s\"", i->istring);
 		break;
 	case TkTrune:
-		print("<rune:%s>", i->istring);
+		HOSTED_API(print)("<rune:%s>", i->istring);
 		break;
 	case TkTnewline:
-		print("<nl:%p>", i->iline);
+		HOSTED_API(print)("<nl:%p>", i->iline);
 		break;
 	case TkTcontline:
-		print("<cont:%p>", i->iline);
+		HOSTED_API(print)("<cont:%p>", i->iline);
 		break;
 	case TkTtab:
-		print("<tab>");
+		HOSTED_API(print)("<tab>");
 		break;
 	case TkTmark:
-		print("<mk:%s>", i->imark->name);
+		HOSTED_API(print)("<mk:%s>", i->imark->name);
 		break;
 	case TkTwin:
 	        if (i->iwin->sub->name != nil)
-		  print("<win:%s>", i->iwin->sub? i->iwin->sub->name->name : "<null>");
+		  HOSTED_API(print)("<win:%s>", i->iwin->sub? i->iwin->sub->name->name : "<null>");
 	}
-	print("[%d]", i->width);
+	HOSTED_API(print)("[%d]", i->width);
 	if(i->tags !=0 || i->tagextra !=0) {
-		print("{%lux", i->tags[0]);
+		HOSTED_API(print)("{%lux", i->tags[0]);
 		for(j=0; j < i->tagextra; j++)
-			print(" %lux", i->tags[j+1]);
-		print("}");
+			HOSTED_API(print)(" %lux", i->tags[j+1]);
+		HOSTED_API(print)("}");
 	}
-	print(" ");
+	HOSTED_API(print)(" ");
 }
 
 void
@@ -849,11 +849,11 @@ tktprintline(TkTline *l)
 {
 	TkTitem *i;
 
-	print("line %p: orig=(%d,%d), w=%d, h=%d, a=%d, f=%x\n\t",
+	HOSTED_API(print)("line %p: orig=(%d,%d), w=%d, h=%d, a=%d, f=%x\n\t",
 		l, l->orig.x, l->orig.y, l->width, l->height, l->ascent, l->flags);
 	for(i = l->items; i != nil; i = i->next)
 		tktprintitem(i);
-	print("\n");
+	HOSTED_API(print)("\n");
 }
 
 void
@@ -864,12 +864,12 @@ tktprinttext(TkText *tkt)
 	TkTmarkinfo *mi;
 
 	for(ti=tkt->tags; ti != nil; ti=ti->next)
-		print("%s{%d} ", ti->name, ti->id);
-	print("\n");
+		HOSTED_API(print)("%s{%d} ", ti->name, ti->id);
+	HOSTED_API(print)("\n");
 	for(mi = tkt->marks; mi != nil; mi=mi->next)
-		print("%s{%p} ", mi->name? mi->name : "nil", mi->cur);
-	print("\n");
-	print("selfirst=%p sellast=%p\n", tkt->selfirst, tkt->sellast);
+		HOSTED_API(print)("%s{%p} ", mi->name? mi->name : "nil", mi->cur);
+	HOSTED_API(print)("\n");
+	HOSTED_API(print)("selfirst=%p sellast=%p\n", tkt->selfirst, tkt->sellast);
 
 	for(l = &tkt->start; l != nil; l = l->next)
 		tktprintline(l);
@@ -1000,7 +1000,7 @@ tktcheck(TkText *tkt, char *fun)
 		prob = "selfirst not found";
 
 	if(prob != nil) {
-		print("tktcheck problem: %s: %s\n", fun, prob);
+		HOSTED_API(print)("tktcheck problem: %s: %s\n", fun, prob);
 		tktprinttext(tkt);
 abort();
 	}
@@ -1065,6 +1065,6 @@ tktdumptime(void)
 	int i;
 
 	for(i = 1; i < ntt; i++)
-		print("%s: %d\n", tt[i].name, tt[i].ms);
+		HOSTED_API(print)("%s: %d\n", tt[i].name, tt[i].ms);
 }
 */

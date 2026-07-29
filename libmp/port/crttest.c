@@ -27,7 +27,7 @@ testcrt(mpint **p)
 	// convert back
 	y = mpnew(1024+160);
 	crtout(crt, res, y);
-	print("x %B\ny %B\n", x, y);
+	HOSTED_API(print)("x %B\ny %B\n", x, y);
 	mpfree(m);
 	mpfree(x);
 	mpfree(y);
@@ -49,6 +49,6 @@ main(void)
 		mpfree(p[0]);
 		mpfree(p[1]);
 	}
-	print("%d secs with more\n", time(0)-start);
+	HOSTED_API(print)("%d secs with more\n", time(0)-start);
 	exits(0);
 }

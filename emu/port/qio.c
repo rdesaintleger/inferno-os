@@ -744,7 +744,7 @@ qproduce(Queue *q, void *vp, int len)
 	b = iallocb(len);
 	if(b == 0){
 		unlock(&q->l);
-		print("qproduce: iallocb failed\n");
+		HOSTED_API(print)("qproduce: iallocb failed\n");
 		return -1;
 	}
 	memmove(b->wp, p, len);
@@ -1337,7 +1337,7 @@ qiwrite(Queue *q, void *vp, int len)
 
 		b = iallocb(n);
 		if (b == 0) {
-			print("qiwrite: iallocb failed\n");
+			HOSTED_API(print)("qiwrite: iallocb failed\n");
 			break;
 		}
 		memmove(b->wp, p+sofar, n);

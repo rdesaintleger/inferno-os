@@ -174,7 +174,7 @@ mconfig(char* a, long n)	// "name idev0 idev1"
 	size = 0;
 	start = 0;
 	if (_confstr[0] == 0)
-		seprint(_confstr, _confstr+sizeof(_confstr), Cfgstr);
+		HOSTED_API(seprint)(_confstr, _confstr+sizeof(_confstr), Cfgstr);
 	oldc = _confstr + strlen(_confstr);
 	qlock(&lck);
 	if (waserror()){
@@ -189,7 +189,7 @@ mconfig(char* a, long n)	// "name idev0 idev1"
 	}
 	c = oldc;
 	for (i = 0; i < cb->nf; i++)
-		c = seprint(c, _confstr+sizeof(_confstr), "%s ", cb->f[i]);
+		c = HOSTED_API(seprint)(c, _confstr+sizeof(_confstr), "%s ", cb->f[i]);
 	*(c-1) = '\n';
 	ct = lookupcmd(cb, configs, nelem(configs));
 	cb->f++;	// skip command
@@ -400,7 +400,7 @@ catio(Fsdev *mp, int isread, void *a, long n, vlong off)
 	int	i;
 	Chan*	mc;
 	long	l, wl, res;
-	//print("catio %d %p %ld %lld\n", isread, a, n, off);
+	//HOSTED_API(print)("catio %d %p %ld %lld\n", isread, a, n, off);
 	res = n;
 	for (i = 0; n >= 0 && i < mp->ndevs ; i++){
 		mc = mp->idev[i];
@@ -412,7 +412,7 @@ catio(Fsdev *mp, int isread, void *a, long n, vlong off)
 			l = mp->isize[i] - off;
 		else
 			l = n;
-		//print("\tdev %d %p %ld %lld\n", i, a, l, off);
+		//HOSTED_API(print)("\tdev %d %p %ld %lld\n", i, a, l, off);
 
 		if (isread)
 			wl = devtab[mc->type]->read(mc, a, l, off);
@@ -424,7 +424,7 @@ catio(Fsdev *mp, int isread, void *a, long n, vlong off)
 		off = 0;
 		n -= l;
 	}
-	//print("\tres %ld\n", res - n);
+	//HOSTED_API(print)("\tres %ld\n", res - n);
 	return res - n;
 }
 
@@ -496,7 +496,7 @@ mread(Chan *c, void *a, long n, vlong off)
 			if (waserror()){
 				// if a read fails we let the user know and try
 				// another device.
-				print("#k: mread: (%llx %d): %s\n",
+				HOSTED_API(print)("#k: mread: (%llx %d): %s\n",
 					c->qid.path, i, up->env->errstr);
 				continue;
 			}

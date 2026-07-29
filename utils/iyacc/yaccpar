@@ -15,8 +15,8 @@ char*	yystates[1];		/* for debugging */
 int	yynerrs = 0;		/* number of errors */
 int	yyerrflag = 0;		/* error recovery flag */
 
-extern	int	fprint(int, char*, ...);
-extern	int	sprint(char*, char*, ...);
+extern	int	HOSTED_API(fprint)(int, char*, ...);
+extern	int	HOSTED_API(sprint)(char*, char*, ...);
 
 char*
 yytokname(int yyc)
@@ -26,7 +26,7 @@ yytokname(int yyc)
 	if(yyc > 0 && yyc <= sizeof(yytoknames)/sizeof(yytoknames[0]))
 	if(yytoknames[yyc-1])
 		return yytoknames[yyc-1];
-	sprint(x, "<%d>", yyc);
+	HOSTED_API(sprint)(x, "<%d>", yyc);
 	return x;
 }
 
@@ -38,7 +38,7 @@ yystatname(int yys)
 	if(yys >= 0 && yys < sizeof(yystates)/sizeof(yystates[0]))
 	if(yystates[yys])
 		return yystates[yys];
-	sprint(x, "<%d>\n", yys);
+	HOSTED_API(sprint)(x, "<%d>\n", yys);
 	return x;
 }
 
@@ -78,7 +78,7 @@ out:
 	if(c == 0)
 		c = yytok2[1];	/* unknown char */
 	if(yydebug >= 3)
-		fprint(2, "lex %.4lux %s\n", yychar, yytokname(c));
+		HOSTED_API(fprint)(2, "lex %.4lux %s\n", yychar, yytokname(c));
 	return c;
 }
 
@@ -126,7 +126,7 @@ ret:
 yystack:
 	/* put a state and value onto the stack */
 	if(yydebug >= 4)
-		fprint(2, "char %s in %s", yytokname(yychar), yystatname(yystate));
+		HOSTED_API(fprint)(2, "char %s in %s", yytokname(yychar), yystatname(yystate));
 
 	yyp++;
 	if(yyp >= &yys[YYMAXDEPTH]) {
@@ -182,8 +182,8 @@ yydefault:
 			yyerror("syntax error");
 			yynerrs++;
 			if(yydebug >= 1) {
-				fprint(2, "%s", yystatname(yystate));
-				fprint(2, "saw %s\n", yytokname(yychar));
+				HOSTED_API(fprint)(2, "%s", yystatname(yystate));
+				HOSTED_API(fprint)(2, "saw %s\n", yytokname(yychar));
 			}
 
 		case 1:
@@ -201,7 +201,7 @@ yydefault:
 
 				/* the current yyp has no shift onn "error", pop stack */
 				if(yydebug >= 2)
-					fprint(2, "error recovery pops state %d, uncovers %d\n",
+					HOSTED_API(fprint)(2, "error recovery pops state %d, uncovers %d\n",
 						yyp->yys, (yyp-1)->yys );
 				yyp--;
 			}
@@ -210,7 +210,7 @@ yydefault:
 
 		case 3:  /* no shift yet; clobber input char */
 			if(yydebug >= 2)
-				fprint(2, "error recovery discards %s\n", yytokname(yychar));
+				HOSTED_API(fprint)(2, "error recovery discards %s\n", yytokname(yychar));
 			if(yychar == YYEOFCODE)
 				goto ret1;
 			yychar = -1;
@@ -220,7 +220,7 @@ yydefault:
 
 	/* reduction by production yyn */
 	if(yydebug >= 2)
-		fprint(2, "reduce %d in:\n\t%s", yyn, yystatname(yystate));
+		HOSTED_API(fprint)(2, "reduce %d in:\n\t%s", yyn, yystatname(yystate));
 
 	yypt = yyp;
 	yyp -= yyr2[yyn];

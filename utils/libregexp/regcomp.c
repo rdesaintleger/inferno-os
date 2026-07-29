@@ -284,12 +284,12 @@ dumpstack(void){
 	Node *stk;
 	int *ip;
 
-	print("operators\n");
+	HOSTED_API(print)("operators\n");
 	for(ip=atorstack; ip<atorp; ip++)
-		print("0%o\n", *ip);
-	print("operands\n");
+		HOSTED_API(print)("0%o\n", *ip);
+	HOSTED_API(print)("operands\n");
 	for(stk=andstack; stk<andp; stk++)
-		print("0%o\t0%o\n", stk->first->type, stk->last->type);
+		HOSTED_API(print)("0%o\t0%o\n", stk->first->type, stk->last->type);
 }
 
 static	void
@@ -300,22 +300,22 @@ dump(Reprog *pp)
 
 	l = pp->firstinst;
 	do{
-		print("%d:\t0%o\t%d\t%d", l-pp->firstinst, l->type,
+		HOSTED_API(print)("%d:\t0%o\t%d\t%d", l-pp->firstinst, l->type,
 			l->u2.left-pp->firstinst, l->u1.right-pp->firstinst);
 		if(l->type == RUNE)
-			print("\t%C\n", l->r);
+			HOSTED_API(print)("\t%C\n", l->r);
 		else if(l->type == CCLASS || l->type == NCCLASS){
-			print("\t[");
+			HOSTED_API(print)("\t[");
 			if(l->type == NCCLASS)
-				print("^");
+				HOSTED_API(print)("^");
 			for(p = l->cp->spans; p < l->cp->end; p += 2)
 				if(p[0] == p[1])
-					print("%C", p[0]);
+					HOSTED_API(print)("%C", p[0]);
 				else
-					print("%C-%C", p[0], p[1]);
-			print("]\n");
+					HOSTED_API(print)("%C-%C", p[0], p[1]);
+			HOSTED_API(print)("]\n");
 		} else
-			print("\n");
+			HOSTED_API(print)("\n");
 	}while(l++->type);
 }
 #endif
@@ -527,7 +527,7 @@ regcomp1(char *s, int literal, int dot_type)
 #endif
 	pp = optimize(pp);
 #ifdef DEBUG
-	print("start: %d\n", andp->first-pp->firstinst);
+	HOSTED_API(print)("start: %d\n", andp->first-pp->firstinst);
 	dump(pp);
 #endif
 out:

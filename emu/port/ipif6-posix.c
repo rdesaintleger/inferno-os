@@ -255,7 +255,7 @@ so_bind(int fd, int su, uchar *addr, ushort port)
 	one = 1;
 	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one)) < 0) {
 		oserrstr(up->genbuf, sizeof(up->genbuf));
-		print("setsockopt: %s", up->genbuf);
+		HOSTED_API(print)("setsockopt: %s", up->genbuf);
 	}
 
 	if(su) {
@@ -304,7 +304,7 @@ resolve(char *name, char **hostv, int n, int isnumeric)
 		else
 			continue;
 
-		snprint(buf, sizeof buf, "%I", addr);
+		HOSTED_API(snprint)(buf, sizeof buf, "%I", addr);
 		hostv[i++] = HOSTED_API(strdup)(buf);
 	}
 
@@ -334,7 +334,7 @@ so_getservbyname(char *service, char *net, char *port)
 	if(s == 0)
 		return -1;
 	p = s->s_port;
-	sprint(port, "%d", nhgets(&p));	
+	HOSTED_API(sprint)(port, "%d", nhgets(&p));	
 	return 0;
 }
 

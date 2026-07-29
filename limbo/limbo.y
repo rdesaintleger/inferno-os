@@ -1821,7 +1821,7 @@ main(int argc, char *argv[])
 			else
 				s++;
 			if(argc > 1)
-				print("%s:\n", argv[i]);
+				HOSTED_API(print)("%s:\n", argv[i]);
 			ofile = mkfileext(s, ".b", ext);
 			translate(argv[i], ofile, mkfileext(ofile, ext, ".sbl"));
 		}
@@ -1834,7 +1834,7 @@ main(int argc, char *argv[])
 static void
 usage(void)
 {
-	fprint(2, "usage: limbo [-CGSacgwe] [-I incdir] [-o outfile] [-{T|t|d} module] [-D debug] file ...\n");
+	HOSTED_API(fprint)(2, "usage: limbo [-CGSacgwe] [-I incdir] [-o outfile] [-{T|t|d} module] [-D debug] file ...\n");
 	exits("usage");
 }
 
@@ -1866,7 +1866,7 @@ translate(char *in, char *out, char *dbg)
 	errors = 0;
 	bins[0] = Bopen(in, OREAD);
 	if(bins[0] == nil){
-		fprint(2, "can't open %s: %r\n", in);
+		HOSTED_API(fprint)(2, "can't open %s: %r\n", in);
 		toterrors++;
 		return;
 	}
@@ -1874,7 +1874,7 @@ translate(char *in, char *out, char *dbg)
 	if(!doemit){
 		bout = Bopen(out, OWRITE);
 		if(bout == nil){
-			fprint(2, "can't open %s: %r\n", out);
+			HOSTED_API(fprint)(2, "can't open %s: %r\n", out);
 			toterrors++;
 			Bterm(bins[0]);
 			return;
@@ -1882,7 +1882,7 @@ translate(char *in, char *out, char *dbg)
 		if(dosym){
 			bsym = Bopen(dbg, OWRITE);
 			if(bsym == nil)
-				fprint(2, "can't open %s: %r\n", dbg);
+				HOSTED_API(fprint)(2, "can't open %s: %r\n", dbg);
 		}
 	}
 
@@ -1962,7 +1962,7 @@ cleann(char *s)
 		strcpy(s, t);
 	}
 	HOSTED_API(free)(r);
-	/* print("cleann: %s\n", p); */
+	/* HOSTED_API(print)("cleann: %s\n", p); */
 	return HOSTED_API(cleanname)(s);
 }
 
@@ -1995,7 +1995,7 @@ srcpath(char *name, int nlen)
 	name[nlen-1] = '\0';
 	HOSTED_API(free)(r);
 	HOSTED_API(free)(srcp);
-	/* print("srcpath: %s\n", name); */
+	/* HOSTED_API(print)("srcpath: %s\n", name); */
 	return name;
 }
 

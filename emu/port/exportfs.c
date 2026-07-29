@@ -257,7 +257,7 @@ exportproc(void *a)
 			if(q != nil || n > 6000)
 				break;
 			if(n%600 == 0)
-				print("exportproc %ld: waiting for memory (%d) for request\n", up->pid, msize);
+				HOSTED_API(print)("exportproc %ld: waiting for memory (%d) for request\n", up->pid, msize);
 			osenter();
 			osmillisleep(100);
 			osleave();
@@ -287,7 +287,7 @@ exportproc(void *a)
 		}
 
 		if(exdebug)
-			print("export %ld <- %F\n", up->pid, &q->in);
+			HOSTED_API(print)("export %ld <- %F\n", up->pid, &q->in);
 
 		q->out.type = type+1;
 		q->out.tag = q->in.tag;
@@ -317,7 +317,7 @@ exportproc(void *a)
 			if(exflushed(fs, q)){
 				/* not yet started or not found (flush arrived after reply); we reply */
 				if(exdebug)
-					print("export: flush %d\n", q->in.oldtag);
+					HOSTED_API(print)("export: flush %d\n", q->in.oldtag);
 				exreply(q, "exportproc");
 				exfreeq(q);
 			}
@@ -339,9 +339,9 @@ exportproc(void *a)
 
 	if(exdebug){
 		if(n < 0)
-			print("exportproc %ld shut down: %s\n", up->pid, up->env->errstr);
+			HOSTED_API(print)("exportproc %ld shut down: %s\n", up->pid, up->env->errstr);
 		else
-			print("exportproc %ld shut down\n", up->pid);
+			HOSTED_API(print)("exportproc %ld shut down\n", up->pid);
 	}
 
 	HOSTED_API(free)(q);
@@ -396,7 +396,7 @@ exflushed(Export *fs, Exq *fq)
 			unlock(&q->l);
 			unlock(&fs->l);
 			if(exdebug && pid)
-				print("export: swiproc %ld to flush %d\n", pid, fq->in.oldtag);
+				HOSTED_API(print)("export: swiproc %ld to flush %d\n", pid, fq->in.oldtag);
 			return 0;
 		}
 	unlock(&fs->l);
@@ -462,7 +462,7 @@ exfreefids(Export *fs)
 				freeuqid(&fs->uqids, f->qid);
 				HOSTED_API(free)(f);
 			} else
-				print("exfreefids: busy fid\n");
+				HOSTED_API(print)("exfreefids: busy fid\n");
 		}
 	}
 }
@@ -471,7 +471,7 @@ static void
 exfree(Export *fs)
 {
 	if(exdebug)
-		print("export p/s %ld free %p ref %ld\n", up->pid, fs, fs->r.ref);
+		HOSTED_API(print)("export p/s %ld free %p ref %ld\n", up->pid, fs, fs->r.ref);
 	if(decref(&fs->r) != 0)
 		return;
 	closepgrp(fs->pgrp);
@@ -543,14 +543,14 @@ exslave(void *a)
 		kstrdup(&up->env->user, q->export->user);
 
 		if(exdebug > 1)
-			print("exslave %ld dispatch %F\n", up->pid, &q->in);
+			HOSTED_API(print)("exslave %ld dispatch %F\n", up->pid, &q->in);
 
 		if(waserror()){
-			print("exslave %ld err %s\n", up->pid, up->env->errstr);	/* shouldn't happen */
+			HOSTED_API(print)("exslave %ld err %s\n", up->pid, up->env->errstr);	/* shouldn't happen */
 			err = up->env->errstr;
 		}else{
 			if(q->in.type >= Tmax || !fcalls[q->in.type]){
-				snprint(up->genbuf, sizeof(up->genbuf), "unknown message: %F", &q->in);
+				HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "unknown message: %F", &q->in);
 				err = up->genbuf;
 			}else{
 				switch(q->in.type){
@@ -633,7 +633,7 @@ exreply(Exq *q, char *who)
 	}
 
 	if(exdebug)
-		print("%s %ld -> %F\n", who, up->pid, r);
+		HOSTED_API(print)("%s %ld -> %F\n", who, up->pid, r);
 
 	if(!waserror()){
 		devtab[fs->io->type]->write(fs->io, q->buf, n, 0);
@@ -773,7 +773,7 @@ Exversion(Export *fs, Fcall *t, Fcall *r)
 	if(r->msize < 64)
 		return "message size too small";
 	if(0)
-		print("msgsize=%d\n", r->msize);
+		HOSTED_API(print)("msgsize=%d\n", r->msize);
 	if((p = strchr(t->version, '.')) != nil)
 		*p = 0;
 	if(strncmp(t->version, "9P", 2) ==0 && strcmp(version, t->version) <= 0){
@@ -1069,7 +1069,7 @@ Exread(Export *fs, Fcall *t, Fcall *r)
 		}
 		if(dir && c->umh != nil){
 			if(0)
-				print("union read %d uri %d dri %d\n", seek, c->uri, c->dri);
+				HOSTED_API(print)("union read %d uri %d dri %d\n", seek, c->uri, c->dri);
 			n = unionread(c, r->data, n);
 		}
 		else{

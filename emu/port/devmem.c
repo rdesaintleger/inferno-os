@@ -364,7 +364,7 @@ memread(Chan *c, void *va, long count, vlong offset)
 			}
 			e = poolaudit(memaudit);
 			if(e != nil){
-				print("mem: %s\n", e);
+				HOSTED_API(print)("mem: %s\n", e);
 				error(e);
 			}
 		}
@@ -431,7 +431,7 @@ memread(Chan *c, void *va, long count, vlong offset)
 			HOSTED_API(free)(s);
 			nexterror();
 		}
-		snprint(s, READSTR, "runs: %lud\nsweeps: %lud\nbchain: %lud\nhalted: %lud\nepochs: %lud\ndestroy: %llud\ninspects: %llud\nbusy: %llud\nidle: %llud\nidlepass: %llud\npartial: %llud\n",
+		HOSTED_API(snprint)(s, READSTR, "runs: %lud\nsweeps: %lud\nbchain: %lud\nhalted: %lud\nepochs: %lud\ndestroy: %llud\ninspects: %llud\nbusy: %llud\nidle: %llud\nidlepass: %llud\npartial: %llud\n",
 			gcnruns, gcsweeps, gcbroken, gchalted, gcepochs, gcdestroys, gcinspects, gcbusy, gcidle, gcidlepass, gcpartial);
 		count = readstr(offset, va, count, s);
 		poperror();

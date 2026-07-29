@@ -20,7 +20,7 @@ devtabread(Chan *c, void* buf, long n, vlong off)
 	e = p + READSTR;
 	for(i = 0; devtab[i] != nil; i++){
 		dev = devtab[i];
-		p = seprint(p, e, "#%C %s\n", dev->dc, dev->name);
+		p = HOSTED_API(seprint)(p, e, "#%C %s\n", dev->dc, dev->name);
 	}
 
 	if(waserror()){

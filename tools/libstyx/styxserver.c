@@ -63,9 +63,9 @@ styxfatal(char *fmt, ...)
 {
 	char buf[1024], *out;
 	va_list arg;
-	out = seprint(buf, buf+sizeof(buf), "Fatal error: ");
+	out = HOSTED_API(seprint)(buf, buf+sizeof(buf), "Fatal error: ");
 	va_start(arg, fmt);
-	out = vseprint(out, buf+sizeof(buf), fmt, arg);
+	out = HOSTED_API(vseprint)(out, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	write(2, buf, out-buf);
 	styxexit(1);
@@ -106,7 +106,7 @@ newclient(Styxserver *server, int fd)
 	Client *c = (Client *)styxmalloc(sizeof(Client));
 
 	if(Debug)
-		fprint(2, "New client at %lux\n", (ulong)c);
+		HOSTED_API(fprint)(2, "New client at %lux\n", (ulong)c);
 	c->server = server;
 	c->fd = fd;
 	c->nread = 0;
@@ -129,7 +129,7 @@ freeclient(Client *c)
 	Styxserver *server;
 
 	if(Debug)
-		fprint(2, "Freeing client at %lux\n", (ulong)c);
+		HOSTED_API(fprint)(2, "Freeing client at %lux\n", (ulong)c);
 	server = c->server;
 	if(server->ops->freeclient)
 		server->ops->freeclient(c);
@@ -197,7 +197,7 @@ rd(Client *c, Fcall *r)
 		c->state &= ~CNREAD;
 	if(c->nc == 0)
 		return 0;
-	/* fprint(2, "rd: %F\n", r); */
+	/* HOSTED_API(fprint)(2, "rd: %F\n", r); */
 	return 1;
 }
 
@@ -212,7 +212,7 @@ wr(Client *c, Fcall *r)
 		r->ename = "bad message type in wr";
 		return -1;
 	}
-	/* fprint(2, "wr: %F\n", r); */
+	/* HOSTED_API(fprint)(2, "wr: %F\n", r); */
 	return styxsend(c->server, c->fd, buf, n, 0);
 }
 
@@ -224,7 +224,7 @@ sremove(Styxserver *server, Styxfile *f)
 	if(f == nil)
 		return;
 	if(Debug)
-		fprint(2, "Remove file %s Qid=%llx\n", f->d.name, f->d.qid.path);
+		HOSTED_API(fprint)(2, "Remove file %s Qid=%llx\n", f->d.name, f->d.qid.path);
 	if(f->d.qid.type&QTDIR)
 		for(s = f->child; s != nil; s = next){
 			next = s->sibling;
@@ -607,7 +607,7 @@ newfile(Styxserver *server, Styxfile *parent, int isdir, Path qid, char *name, i
 	file->ref = 0;
 	file->open = 0;
 	if(Debug)
-		fprint(2, "New file %s Qid=%llx\n", name, qid);
+		HOSTED_API(fprint)(2, "New file %s Qid=%llx\n", name, qid);
 	return file;
 }
 
@@ -654,14 +654,14 @@ run(Client *c)
 			}
 		}
 	}
-	/* if(fp == nil) fprint(2, "fid not found for %d\n", f.fid); */
+	/* if(fp == nil) HOSTED_API(fprint)(2, "fid not found for %d\n", f.fid); */
 	switch(f.type){
 	case	Twalk:
 		if(Debug){
-			fprint(2, "Twalk %d %d", f.fid, f.newfid);
+			HOSTED_API(fprint)(2, "Twalk %d %d", f.fid, f.newfid);
 			for(i = 0; i < f.nwname; i++)
-				fprint(2, " %s", f.wname[i]);
-			fprint(2, "\n");
+				HOSTED_API(fprint)(2, " %s", f.wname[i]);
+			HOSTED_API(fprint)(2, "\n");
 		}
 		nfp = findfid(c, f.newfid);
 		f.type = Rerror;
@@ -671,7 +671,7 @@ run(Client *c)
 		}
 		if(nfp){
 			f.ename = "fid in use";
-			if(Debug) fprint(2, "walk: %s\n", f.ename);
+			if(Debug) HOSTED_API(fprint)(2, "walk: %s\n", f.ename);
 			wr(c, &f);
 			break;
 		}else if(fp->open){
@@ -702,7 +702,7 @@ run(Client *c)
 		break;
 	case	Topen:
 		if(Debug)
-			fprint(2, "Topen %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Topen %d\n", f.fid);
 		f.ename = nil;
 		if(fp->open)
 			f.ename = Eopen;
@@ -734,7 +734,7 @@ run(Client *c)
 		break;
 	case	Tcreate:
 		if(Debug)
-			fprint(2, "Tcreate %d %s\n", f.fid, f.name);
+			HOSTED_API(fprint)(2, "Tcreate %d %s\n", f.fid, f.name);
 		f.ename = nil;
 		if(fp->open)
 			f.ename = Eopen;
@@ -772,7 +772,7 @@ run(Client *c)
 		break;
 	case	Tread:
 		if(Debug)
-			fprint(2, "Tread %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Tread %d\n", f.fid);
 		if(!fp->open){
 			f.type = Rerror;
 			f.ename = Ebadfid;
@@ -805,7 +805,7 @@ run(Client *c)
 		break;
 	case	Twrite:
 		if(Debug)
-			fprint(2, "Twrite %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Twrite %d\n", f.fid);
 		if(!fp->open){
 			f.type = Rerror;
 			f.ename = Ebadfid;
@@ -821,7 +821,7 @@ run(Client *c)
 		break;
 	case	Tclunk:
 		if(Debug)
-			fprint(2, "Tclunk %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Tclunk %d\n", f.fid);
 		open = fp->open;
 		mode = fp->mode;
 		qid = fp->qid;
@@ -833,7 +833,7 @@ run(Client *c)
 		break;
 	case	Tremove:
 		if(Debug)
-			fprint(2, "Tremove %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Tremove %d\n", f.fid);
 		if(file != nil && file->parent != nil && !styxperm(file->parent, c->uname, OWRITE)){
 			f.type = Rerror;
 			f.ename = Eperm;
@@ -851,7 +851,7 @@ run(Client *c)
 		break;
 	case	Tstat:
 		if(Debug)
-			fprint(2, "Tstat %d qid=%llx\n", f.fid, fp->qid.path);
+			HOSTED_API(fprint)(2, "Tstat %d qid=%llx\n", f.fid, fp->qid.path);
 		f.stat = styxmalloc(MAXSTAT);
 		f.ename = "stat error";
 		if(ops->stat == nil && file != nil){
@@ -869,7 +869,7 @@ run(Client *c)
 		break;
 	case	Twstat:
 		if(Debug)
-			fprint(2, "Twstat %d\n", f.fid);
+			HOSTED_API(fprint)(2, "Twstat %d\n", f.fid);
 		f.ename = Eperm;
 		convM2D(f.stat, f.nstat, &dir, strs);
 		dir.name = nilconv(dir.name);
@@ -884,20 +884,20 @@ run(Client *c)
 		break;
 	case	Tversion:
 		if(Debug)
-			fprint(2, "Tversion\n");
+			HOSTED_API(fprint)(2, "Tversion\n");
 		f.type = Rversion;
 		f.tag = NOTAG;
 		wr(c, &f);
 		break;
 	case Tauth:
 		if(Debug)
-			fprint(2, "Tauth\n");
+			HOSTED_API(fprint)(2, "Tauth\n");
 		f.type = Rauth;
 		wr(c, &f);
 		break;
 	case	Tattach:
 		if(Debug)
-			fprint(2, "Tattach %d %s %s\n", f.fid, f.uname[0] ? f.uname : c->uname, f.aname[0]? f.aname: c->aname);
+			HOSTED_API(fprint)(2, "Tattach %d %s %s\n", f.fid, f.uname[0] ? f.uname : c->uname, f.aname[0]? f.aname: c->aname);
 		if(fp){
 			f.type = Rerror;
 			f.ename = "fid in use";
@@ -933,7 +933,7 @@ styxinit(Styxserver *server, Styxops *ops, char *port, int perm, int needfile)
 	int i;
 
 	if(Debug)
-		fprint(2, "Initialising Styx server on port %s\n", port);
+		HOSTED_API(fprint)(2, "Initialising Styx server on port %s\n", port);
 	if(perm == -1)
 		perm = 0555;
 	server->ops = ops;

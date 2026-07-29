@@ -250,7 +250,7 @@ so_bind(int fd, int su, uchar *addr, ushort port)
 	one = 1;
 	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one)) < 0) {
 		oserrstr(up->genbuf, sizeof(up->genbuf));
-		print("setsockopt: %s", up->genbuf);
+		HOSTED_API(print)("setsockopt: %s", up->genbuf);
 	}
 
 	if(su) {
@@ -289,7 +289,7 @@ so_gethostbyname(char *host, char**hostv, int n)
 
 	for(i = 0; hp->h_addr_list[i] && i < n; i++) {
 		p = (uchar*)hp->h_addr_list[i];
-		sprint(buf, "%ud.%ud.%ud.%ud", p[0], p[1], p[2], p[3]);
+		HOSTED_API(sprint)(buf, "%ud.%ud.%ud.%ud", p[0], p[1], p[2], p[3]);
 		hostv[i] = HOSTED_API(strdup)(buf);
 		if(hostv[i] == 0)
 			break;
@@ -333,7 +333,7 @@ so_getservbyname(char *service, char *net, char *port)
 	if(s == 0)
 		return -1;
 	p = s->s_port;
-	sprint(port, "%d", nhgets(&p));	
+	HOSTED_API(sprint)(port, "%d", nhgets(&p));	
 	return 0;
 }
 

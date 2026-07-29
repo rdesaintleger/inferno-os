@@ -37,11 +37,11 @@ aconv(Fmt *f)
 	if(a == nil)
 		return fmtstrcpy(f, "AZ");
 	switch(a->mode & AMASK) {
-	case AFP:	sprint(buf, "%d(fp)", a->a.ind);	break;
-	case AMP:	sprint(buf, "%d(mp)", a->a.ind);	break;
-	case AIMM:	sprint(buf, "$%d", a->a.imm);		break;
-	case AIND|AFP:	sprint(buf, "%d(%d(fp))", a->a.i.s, a->a.i.f); break;
-	case AIND|AMP:	sprint(buf, "%d(%d(mp))", a->a.i.s, a->a.i.f); break;
+	case AFP:	HOSTED_API(sprint)(buf, "%d(fp)", a->a.ind);	break;
+	case AMP:	HOSTED_API(sprint)(buf, "%d(mp)", a->a.ind);	break;
+	case AIMM:	HOSTED_API(sprint)(buf, "$%d", a->a.imm);		break;
+	case AIND|AFP:	HOSTED_API(sprint)(buf, "%d(%d(fp))", a->a.i.s, a->a.i.f); break;
+	case AIND|AMP:	HOSTED_API(sprint)(buf, "%d(%d(mp))", a->a.i.s, a->a.i.f); break;
 	}
 	return fmtstrcpy(f, buf);
 }
@@ -69,12 +69,12 @@ Dconv(Fmt *f)
 
 	switch(keywds[i->op].terminal) {
 	case TOKI0:
-		sprint(buf, "%s", opnam[i->op]);
+		HOSTED_API(sprint)(buf, "%s", opnam[i->op]);
 		break;
 	case TOKI1:
 		d.a = i->d;
 		d.mode = UDST(i->add);
-		sprint(buf, "%s\t%a", opnam[i->op], &d);
+		HOSTED_API(sprint)(buf, "%s\t%a", opnam[i->op], &d);
 		break;
 	case TOKI3:
 		d.a = i->d;
@@ -83,16 +83,16 @@ Dconv(Fmt *f)
 		s.mode = USRC(i->add);
 		switch(i->add&ARM) {
 		default:
-			sprint(buf, "%s\t%a, %a", opnam[i->op], &s, &d);
+			HOSTED_API(sprint)(buf, "%s\t%a, %a", opnam[i->op], &s, &d);
 			break;
 		case AXIMM:
-			sprint(buf, "%s\t%a, $%d, %a", opnam[i->op], &s, i->reg, &d);
+			HOSTED_API(sprint)(buf, "%s\t%a, $%d, %a", opnam[i->op], &s, i->reg, &d);
 			break;
 		case AXINF:
-			sprint(buf, "%s\t%a, %d(fp), %a", opnam[i->op], &s, i->reg, &d);
+			HOSTED_API(sprint)(buf, "%s\t%a, %d(fp), %a", opnam[i->op], &s, i->reg, &d);
 			break;
 		case AXINM:
-			sprint(buf, "%s\t%a, %d(mp), %a", opnam[i->op], &s, i->reg, &d);
+			HOSTED_API(sprint)(buf, "%s\t%a, %d(mp), %a", opnam[i->op], &s, i->reg, &d);
 			break;
 		}
 		break;
@@ -101,7 +101,7 @@ Dconv(Fmt *f)
 		d.mode = UDST(i->add);
 		s.a = i->s;
 		s.mode = USRC(i->add);
-		sprint(buf, "%s\t%a, %a", opnam[i->op], &s, &d);
+		HOSTED_API(sprint)(buf, "%s\t%a, %a", opnam[i->op], &s, &d);
 		break;
 	}
 

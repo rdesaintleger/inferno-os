@@ -316,11 +316,11 @@ consread(Chan *c, void *va, long n, vlong offset)
 		return readstr(offset, va, n, up->env->user);
 
 	case Qjit:
-		snprint(buf, sizeof(buf), "%d", cflag);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%d", cflag);
 		return readstr(offset, va, n, buf);
 
 	case Qtime:
-		snprint(buf, sizeof(buf), "%.lld", timeoffset + osusectime());
+		HOSTED_API(snprint)(buf, sizeof(buf), "%.lld", timeoffset + osusectime());
 		return readstr(offset, va, n, buf);
 
 	case Qdrivers:

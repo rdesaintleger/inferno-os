@@ -273,7 +273,7 @@ mktalt(Case *c)
 
 	t = mktype(&noline, &noline, Talt, nil, nil);
 	t->decl = mkdecl(&nosrc, Dtype, t);
-	seprint(buf, buf+sizeof(buf), ".a%d", nalt++);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".a%d", nalt++);
 	t->decl->sym = enter(buf, 0);
 	t->cse = c;
 	return usetype(t);
@@ -605,7 +605,7 @@ adtdefd(Type *t)
 	int seentags;
 
 	if(debug['x'])
-		print("adt %T defd\n", t);
+		HOSTED_API(print)("adt %T defd\n", t);
 	d = t->decl;
 	tagnext = nil;
 	store = nil;
@@ -779,12 +779,12 @@ moddecled(Node *n)
 	t = d->ty;
 	t->decl = d;
 	if(debug['m'])
-		print("declare module %s\n", d->sym->name);
+		HOSTED_API(print)("declare module %s\n", d->sym->name);
 
 	/*
 	 * add the iface declaration in case it's needed later
 	 */
-	seprint(buf, buf+sizeof(buf), ".m.%s", d->sym->name);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".m.%s", d->sym->name);
 	installids(Dglobal, mkids(&d->src, enter(buf, 0), tnone, nil));
 
 	if(isimp){
@@ -860,7 +860,7 @@ mkiface(Decl *m)
 	 * the iface has a ref count if it is loaded
 	 */
 	t = mktype(&m->src.start, &m->src.stop, Tiface, nil, iface);
-	seprint(buf, buf+sizeof(buf), ".m.%s", m->sym->name);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".m.%s", m->sym->name);
 	id = enter(buf, 0)->decl;
 	t->decl = id;
 	id->ty = t;
@@ -936,7 +936,7 @@ addiface(Decl *m, Decl *d)
 		d->dot = dd->dot = m;
 	d->iface = dd;
 	dd->iface = d;
-if(debug['v']) print("addiface %p %p\n", d, dd);
+if(debug['v']) HOSTED_API(print)("addiface %p %p\n", d, dd);
 	if(last == nil)
 		t->ids = dd;
 	else
@@ -1355,7 +1355,7 @@ fatal("verifytypes bogus ok for %t", t);
 		for(id = t->ids; id != nil; id = id->next){
 			id->store = Dfield;
 			if(id->sym == nil){
-				seprint(buf, buf+sizeof(buf), "t%d", i);
+				HOSTED_API(seprint)(buf, buf+sizeof(buf), "t%d", i);
 				id->sym = enter(buf, 0);
 			}
 			i++;
@@ -1604,10 +1604,10 @@ insttype(Type *t, Decl *adtt, Tpair **tp)
 	if(t != tt){
 		t->u.tmap = tp1;
 		if(debug['w']){
-			print("tmap for %T: ", t);
+			HOSTED_API(print)("tmap for %T: ", t);
 			for( ; tp1!=nil; tp1=tp1->nxt)
-				print("%T -> %T ", tp1->t1, tp1->t2);
-			print("\n");
+				HOSTED_API(print)("%T -> %T ", tp1->t1, tp1->t2);
+			HOSTED_API(print)("\n");
 		}
 	}
 	t->src = src;
@@ -2385,7 +2385,7 @@ gendesc(Decl *d, long size, Decl *decls)
 	Desc *desc;
 
 	if(debug['D'])
-		print("generate desc for %D\n", d);
+		HOSTED_API(print)("generate desc for %D\n", d);
 	if(ispoly(d))
 		addfnptrs(d, 0);
 	desc = usedesc(mkdesc(size, decls));
@@ -2420,7 +2420,7 @@ mktdesc(Type *t)
 
 usedty(t);
 	if(debug['D'])
-		print("generate desc for %T\n", t);
+		HOSTED_API(print)("generate desc for %T\n", t);
 	if(t->decl == nil){
 		t->decl = mkdecl(&t->src, Dtype, t);
 		t->decl->sym = enter("_mktdesc_", 0);
@@ -2442,12 +2442,12 @@ usedty(t);
 	if(debug['j']){
 		uchar *m, *e;
 
-		print("generate desc for %T\n", t);
-		print("\tdesc\t$%d,%lud,\"", d->id, d->size);
+		HOSTED_API(print)("generate desc for %T\n", t);
+		HOSTED_API(print)("\tdesc\t$%d,%lud,\"", d->id, d->size);
 		e = d->map + d->nmap;
 		for(m = d->map; m < e; m++)
-			print("%.2x", *m);
-		print("\"\n");
+			HOSTED_API(print)("%.2x", *m);
+		HOSTED_API(print)("\"\n");
 	}
 	return d;
 }
@@ -2508,7 +2508,7 @@ descmap(Decl *decls, uchar *map, long start)
 	long last, m;
 
 	if(debug['D'])
-		print("descmap offset %ld\n", start);
+		HOSTED_API(print)("descmap offset %ld\n", start);
 	last = -1;
 	for(d = decls; d != nil; d = d->next){
 		if(d->store == Dtype && d->ty->kind == Tmodule
@@ -2520,10 +2520,10 @@ descmap(Decl *decls, uchar *map, long start)
 		m = tdescmap(d->ty, map, d->offset + start);
 		if(debug['D']){
 			if(d->sym != nil)
-				print("descmap %s type %T offset %ld returns %ld\n",
+				HOSTED_API(print)("descmap %s type %T offset %ld returns %ld\n",
 					d->sym->name, d->ty, d->offset+start, m);
 			else
-				print("descmap type %T offset %ld returns %ld\n", d->ty, d->offset+start, m);
+				HOSTED_API(print)("descmap type %T offset %ld returns %ld\n", d->ty, d->offset+start, m);
 		}
 		if(m >= 0)
 			last = m;
@@ -2580,7 +2580,7 @@ tdescmap(Type *t, uchar *map, long offset)
 		t = t->tof;
 	if(t->kind == Ttuple || t->kind == Tadt || t->kind == Texception){
 		if(debug['D'])
-			print("descmap adt offset %ld\n", offset);
+			HOSTED_API(print)("descmap adt offset %ld\n", offset);
 		if(t->rec != 0)
 			fatal("illegal cyclic type %t in tdescmap", t);
 		t->rec = 1;
@@ -2629,7 +2629,7 @@ rtcompat(Type *t1, Type *t2, int any, int inaorc)
 		t2 = mkextuptype(t2);
 
 	if(debug['x'])
-		print("rtcompat: %t and %t\n", t1, t2);
+		HOSTED_API(print)("rtcompat: %t and %t\n", t1, t2);
 
 	t1->rec |= TRcom;
 	t2->rec |= TRcom;
@@ -2835,7 +2835,7 @@ rtequal(Type *t1, Type *t2)
 		return t1->eq == t2->eq;
 
 	if(debug['x'])
-		print("rtequal: %t and %t\n", t1, t2);
+		HOSTED_API(print)("rtequal: %t and %t\n", t1, t2);
 
 	t1->rec |= TReq;
 	t2->rec |= TReq;
@@ -3126,10 +3126,10 @@ rtunify(Type *t1, Type *t2, Tpair **tp, int swapped)
 {
 	Type *tmp;
 
-if(debug['w']) print("rtunifya - %T %T\n", t1, t2);
+if(debug['w']) HOSTED_API(print)("rtunifya - %T %T\n", t1, t2);
 	t1 = valtmap(t1, *tp);
 	t2 = valtmap(t2, *tp);
-if(debug['w']) print("rtunifyb - %T %T\n", t1, t2);
+if(debug['w']) HOSTED_API(print)("rtunifyb - %T %T\n", t1, t2);
 	if(t1 == t2)
 		return 1;
 	if(t1 == nil || t2 == nil)
@@ -3446,7 +3446,7 @@ expandids(Decl *ids, Decl *adtt, Tpair **tp, int sym)
 		if(sym && q->ty->decl != nil)
 			q->sym = q->ty->decl->sym;
 		if(q->store == Dfn){
-if(debug['v']) print("%p->link = %p\n", q, p);
+if(debug['v']) HOSTED_API(print)("%p->link = %p\n", q, p);
 			q->link = p;
 		}
 		if(nids == nil)
@@ -3466,10 +3466,10 @@ expandtype(Type *t, Type *instt, Decl *adtt, Tpair **tp)
 
 	if(t == nil)
 		return nil;
-if(debug['w']) print("expandtype %d %#p %T\n", t->kind, t, t);
+if(debug['w']) HOSTED_API(print)("expandtype %d %#p %T\n", t->kind, t, t);
 	if(!toccurs(t, tp))
 		return t;
-if(debug['w']) print("\texpanding\n");
+if(debug['w']) HOSTED_API(print)("\texpanding\n");
 	switch(t->kind){
 		default:
 			fatal("unknown type %t in expandtype", t);
@@ -3523,9 +3523,9 @@ if(debug['w']) print("\texpanding\n");
 				for(p = t->u.tmap; p != nil; p = p->nxt)
 					addtmap(valtmap(p->t1, *tp), valtmap(p->t2, *tp), &nt->u.tmap);
 				if(debug['w']){
-					print("new tmap for %T->%T: ", t, nt);
-					for(p=nt->u.tmap;p!=nil;p=p->nxt)print("%T -> %T ", p->t1, p->t2);
-					print("\n");
+					HOSTED_API(print)("new tmap for %T->%T: ", t, nt);
+					for(p=nt->u.tmap;p!=nil;p=p->nxt)HOSTED_API(print)("%T -> %T ", p->t1, p->t2);
+					HOSTED_API(print)("\n");
 				}
 			}
 			return nt;
@@ -3568,10 +3568,10 @@ sign(Decl *d)
 	sig[sigend] = '\0';
 
 	if(signdump != nil){
-		seprint(buf, buf+sizeof(buf), "%D", d);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%D", d);
 		if(strcmp(buf, signdump) == 0){
-			print("sign %D len %d\n", d, sigend);
-			print("%s\n", (char*)sig);
+			HOSTED_API(print)("sign %D len %d\n", d, sigend);
+			HOSTED_API(print)("%s\n", (char*)sig);
 		}
 	}
 
@@ -3579,7 +3579,7 @@ sign(Decl *d)
 	for(i = 0; i < MD5dlen; i += 4)
 		t->sig ^= md5sig[i+0] | (md5sig[i+1]<<8) | (md5sig[i+2]<<16) | (md5sig[i+3]<<24);
 	if(debug['S'])
-		print("signed %D type %T len %d sig %#lux\n", d, t, sigend, t->sig);
+		HOSTED_API(print)("signed %D type %T len %d sig %#lux\n", d, t, sigend, t->sig);
 	HOSTED_API(free)(sig);
 	return t->sig;
 }
@@ -3632,7 +3632,7 @@ rtsign(Type *t, uchar *sig, int lensig, int spos)
 			fatal("sign rec %T %d %d", t, t->eq->id, eqrec);
 
 		sig[spos++] = SIGREC;
-		seprint(name, name+sizeof(name), "%d", t->eq->id);
+		HOSTED_API(seprint)(name, name+sizeof(name), "%d", t->eq->id);
 		lenname = strlen(name);
 		if(spos + lenname > lensig)
 			return -1;
@@ -3664,7 +3664,7 @@ rtsign(Type *t, uchar *sig, int lensig, int spos)
 	case Tpoly:
 		return spos;
 	case Tfix:
-		seprint(name, name+sizeof(name), "%g", t->val->rval);
+		HOSTED_API(seprint)(name, name+sizeof(name), "%g", t->val->rval);
 		lenname = strlen(name);
 		if(spos+lenname-1 >= lensig)
 			return -1;
@@ -3968,17 +3968,17 @@ tprint(char *buf, char *end, Type *t)
 	if(t == nil)
 		return buf;
 	if(t->kind >= Tend)
-		return seprint(buf, end, "kind %d", t->kind);
+		return HOSTED_API(seprint)(buf, end, "kind %d", t->kind);
 	switch(t->kind){
 	case Tarrow:
-		buf = seprint(buf, end, "%T->%s", t->tof, t->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "%T->%s", t->tof, t->decl->sym->name);
 		break;
 	case Tdot:
-		buf = seprint(buf, end, "%T.%s", t->tof, t->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "%T.%s", t->tof, t->decl->sym->name);
 		break;
 	case Tid:
 	case Tpoly:
-		buf = seprint(buf, end, "%s", t->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "%s", t->decl->sym->name);
 		break;
 	case Tinst:
 		buf = tprint(buf, end, t->tof);
@@ -4010,7 +4010,7 @@ tprint(char *buf, char *end, Type *t)
 		buf = secpy(buf, end, kindname[t->kind]);
 		break;
 	case Tfix:
-		buf = seprint(buf, end, "%s(%v)", kindname[t->kind], t->val);
+		buf = HOSTED_API(seprint)(buf, end, "%s(%v)", kindname[t->kind], t->val);
 		break;
 	case Tref:
 		buf = secpy(buf, end, "ref ");
@@ -4019,24 +4019,24 @@ tprint(char *buf, char *end, Type *t)
 	case Tchan:
 	case Tarray:
 	case Tlist:
-		buf = seprint(buf, end, "%s of ", kindname[t->kind]);
+		buf = HOSTED_API(seprint)(buf, end, "%s of ", kindname[t->kind]);
 		buf = tprint(buf, end, t->tof);
 		break;
 	case Tadtpick:
-		buf = seprint(buf, end, "%s.%s", t->decl->dot->sym->name, t->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "%s.%s", t->decl->dot->sym->name, t->decl->sym->name);
 		break;
 	case Tadt:
 		if(t->decl->dot != nil && !isimpmod(t->decl->dot->sym))
-			buf = seprint(buf, end, "%s->%s", t->decl->dot->sym->name, t->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "%s->%s", t->decl->dot->sym->name, t->decl->sym->name);
 		else
-			buf = seprint(buf, end, "%s", t->decl->sym->name);
+			buf = HOSTED_API(seprint)(buf, end, "%s", t->decl->sym->name);
 		if(t->polys != nil){
 			buf = secpy(buf ,end, "[");
 			for(id = t->polys; id != nil; id = id->next){
 				if(t->u.tmap != nil)
 					buf = tprint(buf, end, valtmap(id->ty, t->u.tmap));
 				else
-					buf = seprint(buf, end, "%s", id->sym->name);
+					buf = HOSTED_API(seprint)(buf, end, "%s", id->sym->name);
 				if(id->next != nil)
 					buf = secpy(buf, end, ", ");
 			}
@@ -4044,7 +4044,7 @@ tprint(char *buf, char *end, Type *t)
 		}
 		break;
 	case Tmodule:
-		buf = seprint(buf, end, "%s", t->decl->sym->name);
+		buf = HOSTED_API(seprint)(buf, end, "%s", t->decl->sym->name);
 		break;
 	case Ttuple:
 		buf = secpy(buf, end, "(");
@@ -4060,7 +4060,7 @@ tprint(char *buf, char *end, Type *t)
 		if(t->polys != nil){
 			buf = secpy(buf, end, "[");
 			for(id = t->polys; id != nil; id = id->next){
-				buf = seprint(buf, end, "%s", id->sym->name);
+				buf = HOSTED_API(seprint)(buf, end, "%s", id->sym->name);
 				if(id->next != nil)
 					buf = secpy(buf, end, ", ");
 			}
@@ -4071,7 +4071,7 @@ tprint(char *buf, char *end, Type *t)
 			if(id->sym == nil)
 				buf = secpy(buf, end, "nil: ");
 			else
-				buf = seprint(buf, end, "%s: ", id->sym->name);
+				buf = HOSTED_API(seprint)(buf, end, "%s: ", id->sym->name);
 			if(id->implicit)
 				buf = secpy(buf, end, "self ");
 			buf = tprint(buf, end, id->ty);
@@ -4103,7 +4103,7 @@ stprint(char *buf, char *end, Type *t)
 		return buf;
 	switch(t->kind){
 	case Tid:
-		return seprint(buf, end, "id %s", t->decl->sym->name);
+		return HOSTED_API(seprint)(buf, end, "id %s", t->decl->sym->name);
 	case Tadt:
 	case Tadtpick:
 	case Tmodule:
@@ -4664,7 +4664,7 @@ modimp(Dlist *dl, Decl *im)
 	dl0 = dl;
 	sg0 = 0;
 	un = uname(im);
-	seprint(buf, buf+sizeof(buf), ".m.%s", un);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".m.%s", un);
 	installids(Dglobal, mkids(&dl->d->src, enter(buf, 0), tnone, nil));
 	u = dupdecl(dl->d);
 	u->sym = enter(un, 0);

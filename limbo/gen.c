@@ -154,7 +154,7 @@ talloc(Node *n, Type *t, Node *nok)
 		d->tref = 2;
 		d->refs = 1;
 		n->decl = d;
-		seprint(buf, buf+sizeof(buf), ".b%d", ntemp++);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), ".b%d", ntemp++);
 		d->sym = enter(buf, 0);
 		d->next = bigtemp;
 		bigtemp = d;
@@ -181,7 +181,7 @@ talloc(Node *n, Type *t, Node *nok)
 	d->tref = 2;
 	d->refs = 1;
 	n->decl = d;
-	seprint(buf, buf+sizeof(buf), ".t%d", ntemp++);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".t%d", ntemp++);
 	d->sym = enter(buf, 0);
 	d->next = wtemp;
 	wtemp = d;
@@ -727,7 +727,7 @@ resolvemod(Decl *m)
 		case Dfn:
 			id->iface->pc = id->pc;
 			id->iface->desc = id->desc;
-if(debug['v']) print("R1: %s %p %p %p\n", id->sym->name, id, id->iface, id->pc);
+if(debug['v']) HOSTED_API(print)("R1: %s %p %p %p\n", id->sym->name, id, id->iface, id->pc);
 			break;
 		case Dtype:
 			if(id->ty->kind != Tadt)
@@ -736,7 +736,7 @@ if(debug['v']) print("R1: %s %p %p %p\n", id->sym->name, id, id->iface, id->pc);
 				if(d->store == Dfn){
 					d->iface->pc = d->pc;
 					d->iface->desc = d->desc;
-if(debug['v']) print("R2: %s %p %p %p\n", d->sym->name, d, d->iface, d->pc);
+if(debug['v']) HOSTED_API(print)("R2: %s %p %p %p\n", d->sym->name, d, d->iface, d->pc);
 				}
 			}
 			break;
@@ -749,7 +749,7 @@ if(debug['v']) print("R2: %s %p %p %p\n", d->sym->name, d, d->iface, d->pc);
 				id->pc = id->iface->pc;
 			if(id->desc == nil)
 				id->desc = id->iface->desc;
-if(debug['v']) print("R3: %s %p %p %p\n", id->sym->name, id, id->iface, id->pc);
+if(debug['v']) HOSTED_API(print)("R3: %s %p %p %p\n", id->sym->name, id, id->iface, id->pc);
 		}
 	}
 	return m->ty->tof->decl->init->val;
@@ -982,30 +982,30 @@ instconv(Fmt *f)
 	buf[0] = '\0';
 	if(in->op == INOP)
 		return fmtstrcpy(f, "\tnop");
-	p = seprint(buf, buf + sizeof(buf), "\t%s\t", op);
+	p = HOSTED_API(seprint)(buf, buf + sizeof(buf), "\t%s\t", op);
 	comma = "";
 	if(in->sm != Anone){
 		p = addrprint(p, buf + sizeof(buf), in->sm, &in->s);
 		comma = ",";
 	}
 	if(in->mm != Anone){
-		p = seprint(p, buf + sizeof(buf), "%s", comma);
+		p = HOSTED_API(seprint)(p, buf + sizeof(buf), "%s", comma);
 		p = addrprint(p, buf + sizeof(buf), in->mm, &in->m);
 		comma = ",";
 	}
 	if(in->dm != Anone){
-		p = seprint(p, buf + sizeof(buf), "%s", comma);
+		p = HOSTED_API(seprint)(p, buf + sizeof(buf), "%s", comma);
 		p = addrprint(p, buf + sizeof(buf), in->dm, &in->d);
 	}
 	
 	if(asmsym && in->s.decl != nil && in->sm == Adesc)
-		p = seprint(p, buf+sizeof(buf), "	#%D", in->s.decl);
+		p = HOSTED_API(seprint)(p, buf+sizeof(buf), "	#%D", in->s.decl);
 	if(0 && asmsym && in->m.decl != nil)
-		p = seprint(p, buf+sizeof(buf), "	#%D", in->m.decl);
+		p = HOSTED_API(seprint)(p, buf+sizeof(buf), "	#%D", in->m.decl);
 	if(asmsym && in->d.decl != nil && in->dm == Apc)
-		p = seprint(p, buf+sizeof(buf), "	#%D", in->d.decl);
+		p = HOSTED_API(seprint)(p, buf+sizeof(buf), "	#%D", in->d.decl);
 	if(asmsym)
-		p = seprint(p, buf+sizeof(buf), "	#%U", in->src);
+		p = HOSTED_API(seprint)(p, buf+sizeof(buf), "	#%U", in->src);
 	USED(p);
 	return fmtstrcpy(f, buf);
 }
@@ -1019,24 +1019,24 @@ addrprint(char *buf, char *end, int am, Addr *a)
 	case Aimm:
 	case Apc:
 	case Adesc:
-		return seprint(buf, end, "$%ld", a->offset);
+		return HOSTED_API(seprint)(buf, end, "$%ld", a->offset);
 	case Aoff:
-		return seprint(buf, end, "$%ld", a->decl->iface->offset);
+		return HOSTED_API(seprint)(buf, end, "$%ld", a->decl->iface->offset);
 	case Anoff:
-		return seprint(buf, end, "-$%ld", a->decl->iface->offset);
+		return HOSTED_API(seprint)(buf, end, "-$%ld", a->decl->iface->offset);
 	case Afp:
-		return seprint(buf, end, "%ld(fp)", a->reg);
+		return HOSTED_API(seprint)(buf, end, "%ld(fp)", a->reg);
 	case Afpind:
-		return seprint(buf, end, "%ld(%ld(fp))", a->offset, a->reg);
+		return HOSTED_API(seprint)(buf, end, "%ld(%ld(fp))", a->offset, a->reg);
 	case Amp:
-		return seprint(buf, end, "%ld(mp)", a->reg);
+		return HOSTED_API(seprint)(buf, end, "%ld(mp)", a->reg);
 	case Ampind:
-		return seprint(buf, end, "%ld(%ld(mp))", a->offset, a->reg);
+		return HOSTED_API(seprint)(buf, end, "%ld(%ld(mp))", a->offset, a->reg);
 	case Aldt:
-		return seprint(buf, end, "$%ld", a->reg);
+		return HOSTED_API(seprint)(buf, end, "$%ld", a->reg);
 	case Aerr:
 	default:
-		return seprint(buf, end, "%ld(%ld(?%d?))", a->offset, a->reg, am);
+		return HOSTED_API(seprint)(buf, end, "%ld(%ld(?%d?))", a->offset, a->reg, am);
 	}
 }
 

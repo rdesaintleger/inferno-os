@@ -961,7 +961,7 @@ OP(isend)
 	}
 
 	if(c->buf != H && c->size > 0)
-		print("non-empty buffer in isend\n");
+		HOSTED_API(print)("non-empty buffer in isend\n");
 
 	cqdel(&c->recv);
 	if(p->state == Palt)
@@ -996,7 +996,7 @@ OP(irecv)
 	}
 
 	if(c->buf != H && c->size != c->buf->len)
-		print("non-full buffer in irecv\n");
+		HOSTED_API(print)("non-full buffer in irecv\n");
 
 	cqdel(&c->send);
 	if(p->state == Palt)
@@ -1026,7 +1026,7 @@ csendalt(Channel *c, void *ip, Type *t, int len)
 
 	if(c->recv->prog == nil && (c->buf == H || c->size == c->buf->len)){
 		if(c->buf != H){
-			print("csendalt failed\n");
+			HOSTED_API(print)("csendalt failed\n");
 			freeptrs(ip, t);
 			return 0;
 		}
@@ -1683,7 +1683,7 @@ xec(Prog *p)
 		error(m);
 	}
 
-// print("%lux %lux %lux %lux %lux\n", (ulong)&R, R.xpc, R.FP, R.MP, R.PC);
+// HOSTED_API(print)("%lux %lux %lux %lux %lux\n", (ulong)&R, R.xpc, R.FP, R.MP, R.PC);
 
 	do {
 		dec[R.PC->add]();

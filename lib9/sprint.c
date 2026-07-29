@@ -14,7 +14,7 @@
 #include "lib9.h"
 
 int
-sprint(char *buf, char *fmt, ...)
+HOSTED_API(sprint)(char *buf, char *fmt, ...)
 {
 	int n;
 	uint len;
@@ -29,7 +29,7 @@ sprint(char *buf, char *fmt, ...)
 		len = -(uint)buf-1;
 
 	va_start(args, fmt);
-	n = vsnprint(buf, len, fmt, args);
+	n = HOSTED_API(vsnprint)(buf, len, fmt, args);
 	va_end(args);
 	return n;
 }

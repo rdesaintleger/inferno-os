@@ -659,7 +659,7 @@ void
 tksee(Tk *tk, Rectangle r, Point p)
 {
 	Point g;
-//print("tksee %R, %P in %s\n", r, p, tk->name->name);
+//HOSTED_API(print)("tksee %R, %P in %s\n", r, p, tk->name->name);
 	g = Pt(tk->borderwidth, tk->borderwidth);
 	if(tk->parent != nil) {
 		g = addpt(g, tkmethod[tk->parent->type]->relpos(tk));
@@ -673,9 +673,9 @@ tksee(Tk *tk, Rectangle r, Point p)
 	p = addpt(p, g);
 	while (tk != nil) {
 		if (tkmethod[tk->type]->see != nil){
-//print("see r %R, p %P in %s\n", r, p, tk->name->name);
+//HOSTED_API(print)("see r %R, p %P in %s\n", r, p, tk->name->name);
 			tkmethod[tk->type]->see(tk, &r, &p);
-//print("now r %R, p %P\n", r, p);
+//HOSTED_API(print)("now r %R, p %P\n", r, p);
 		}
 		g = Pt(tk->borderwidth, tk->borderwidth);
 		if (tk->parent != nil) {

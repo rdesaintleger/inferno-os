@@ -504,7 +504,7 @@ pbit(int x, int n)
 	m = 1;
 	for(i = 0; i < BLEN; i++){
 		if(x&m)
-			print("%d ", i+n);
+			HOSTED_API(print)("%d ", i+n);
 		m <<= 1;
 	}
 }
@@ -768,7 +768,7 @@ padr(int am, Addr *a, Inst *br)
 	long reg;
 
 	if(br != nil){
-		print("$%ld", br->pc);
+		HOSTED_API(print)("$%ld", br->pc);
 		return;
 	}
 	reg = a->reg;
@@ -776,37 +776,37 @@ padr(int am, Addr *a, Inst *br)
 		reg += a->decl->offset;
 	switch(am){
 	case Anone:
-		print("-");
+		HOSTED_API(print)("-");
 		break;
 	case Aimm:
 	case Apc:
 	case Adesc:
-		print("$%ld", a->offset);
+		HOSTED_API(print)("$%ld", a->offset);
 		break;
 	case Aoff:
-		print("$%ld", a->decl->iface->offset);
+		HOSTED_API(print)("$%ld", a->decl->iface->offset);
 		break;
 	case Anoff:
-		print("-$%ld", a->decl->iface->offset);
+		HOSTED_API(print)("-$%ld", a->decl->iface->offset);
 		break;
 	case Afp:
-		print("%ld(fp)", reg);
+		HOSTED_API(print)("%ld(fp)", reg);
 		break;
 	case Afpind:
-		print("%ld(%ld(fp))", a->offset, reg);
+		HOSTED_API(print)("%ld(%ld(fp))", a->offset, reg);
 		break;
 	case Amp:
-		print("%ld(mp)", reg);
+		HOSTED_API(print)("%ld(mp)", reg);
 		break;
 	case Ampind:
-		print("%ld(%ld(mp))", a->offset, reg);
+		HOSTED_API(print)("%ld(%ld(mp))", a->offset, reg);
 		break;
 	case Aldt:
-		print("$%ld", reg);
+		HOSTED_API(print)("$%ld", reg);
 		break;
 	case Aerr:
 	default:
-		print("%ld(%ld(?%d?))", a->offset, reg, am);
+		HOSTED_API(print)("%ld(%ld(?%d?))", a->offset, reg, am);
 		break;
 	}
 }
@@ -814,19 +814,19 @@ padr(int am, Addr *a, Inst *br)
 static void
 pins(Inst *i)
 {
-	/* print("%L		%ld	", i->src.start, i->pc); */
-	print("		%ld	", i->pc);
+	/* HOSTED_API(print)("%L		%ld	", i->src.start, i->pc); */
+	HOSTED_API(print)("		%ld	", i->pc);
 	if(i->op < MAXDIS)
-		print("%s", instname[i->op]);
+		HOSTED_API(print)("%s", instname[i->op]);
 	else
-		print("noop");
-	print("	");
+		HOSTED_API(print)("noop");
+	HOSTED_API(print)("	");
 	padr(i->sm, &i->s, nil);
-	print(", ");
+	HOSTED_API(print)(", ");
 	padr(i->mm, &i->m, nil);
-	print(", ");
+	HOSTED_API(print)(", ");
 	padr(i->dm, &i->d, i->branch);
-	print("\n");
+	HOSTED_API(print)("\n");
 }
 
 static void
@@ -1117,26 +1117,26 @@ pblocks(Block *b, int nb)
 	Inst *i;
 	Blist *bl;
 
-	print("--------------------%d blocks--------------------\n", nb);
-	print("------------------------------------------------\n");
+	HOSTED_API(print)("--------------------%d blocks--------------------\n", nb);
+	HOSTED_API(print)("------------------------------------------------\n");
 	for( ; b != nil; b = b->next){
-		print("dfn=%d\n", b->dfn);
-		print("    pred	");
+		HOSTED_API(print)("dfn=%d\n", b->dfn);
+		HOSTED_API(print)("    pred	");
 		for(bl = b->pred; bl != nil; bl = bl->next)
-			print("%d%s ", bl->block->dfn, back(bl->block, b) ? "*" : "");
-		print("\n");
-		print("    succ	");
+			HOSTED_API(print)("%d%s ", bl->block->dfn, back(bl->block, b) ? "*" : "");
+		HOSTED_API(print)("\n");
+		HOSTED_API(print)("    succ	");
 		for(bl = b->succ; bl != nil; bl = bl->next)
-			print("%d%s ", bl->block->dfn, back(b, bl->block) ? "*" : "");
-		print("\n");
+			HOSTED_API(print)("%d%s ", bl->block->dfn, back(b, bl->block) ? "*" : "");
+		HOSTED_API(print)("\n");
 		for(i = b->first; i != nil; i = i->next){
-			// print("	%I\n", i);
+			// HOSTED_API(print)("	%I\n", i);
 			pins(i);
 			if(i == b->last)
 				break;
 		}
 	}
-	print("------------------------------------------------\n");
+	HOSTED_API(print)("------------------------------------------------\n");
 }
 
 static void
@@ -1239,19 +1239,19 @@ static void
 loop(Block *b, Block *b1, Block *b2)
 {
 	if(0 && debug['o'])
-		print("back edge %d->%d\n", b1->dfn, b2->dfn);
+		HOSTED_API(print)("back edge %d->%d\n", b1->dfn, b2->dfn);
 	b2->flags = 1;
 	if(b1->flags == 0)
 		loop0(b1);
 	if(0 && debug['o'])
-		print("	loop	");
+		HOSTED_API(print)("	loop	");
 	for( ; b != nil; b = b->next){
 		if(b->flags && 0 && debug['o'])
-			print("%d ", b->dfn);
+			HOSTED_API(print)("%d ", b->dfn);
 		b->flags = 0;
 	}
 	if(0 && debug['o'])
-		print("\n");
+		HOSTED_API(print)("\n");
 }
 
 static void
@@ -1377,7 +1377,7 @@ finddec(int o, int s, Decl *vars, int *nv, Inst *i)
 		}
 		n++;
 	}
-	// print("%d %d missing\n", o, s);
+	// HOSTED_API(print)("%d %d missing\n", o, s);
 	pins(i);
 	fatal("missing decl");
 	return -1;
@@ -1528,12 +1528,12 @@ pusedef(Bits *ud, int nv, Decl *d, char *s)
 {
 	int i;
 
-	print("%s\n", s);
+	HOSTED_API(print)("%s\n", s);
 	for(i = 0; i < nv; i++){
 		if(!bzero(ud[i])){
-			print("\t%s(%ld):	", decname(d), d->offset);
+			HOSTED_API(print)("\t%s(%ld):	", decname(d), d->offset);
 			pbits(ud[i]);
-			print("\n");
+			HOSTED_API(print)("\n");
 		}
 		d = d->next;
 	}
@@ -1618,11 +1618,11 @@ static void
 pflows(Block *b)
 {
 	for( ; b != nil; b = b->next){
-		print("block %d\n", b->dfn);
-		print("	gen:	"); pbits(b->gen); print("\n");
-		print("	kill:	"); pbits(b->kill); print("\n");
-		print("	in:	"); pbits(b->in); print("\n");
-		print("	out:	"); pbits(b->out); print("\n");
+		HOSTED_API(print)("block %d\n", b->dfn);
+		HOSTED_API(print)("	gen:	"); pbits(b->gen); HOSTED_API(print)("\n");
+		HOSTED_API(print)("	kill:	"); pbits(b->kill); HOSTED_API(print)("\n");
+		HOSTED_API(print)("	in:	"); pbits(b->in); HOSTED_API(print)("\n");
+		HOSTED_API(print)("	out:	"); pbits(b->out); HOSTED_API(print)("\n");
 	}
 }
 
@@ -1680,7 +1680,7 @@ udchain(Block *b, Decl *ds, int nv, int npc, Bits *defs, Bits *uses, Decl *sd)
 				if(q >= 0){
 					bclr(ud, q);
 					if(debug['o'])
-						print("udc b=%d v=%d(%s/%ld) u=%d d=%d\n", b->dfn, i, decname(ds), ds->offset, p, q);
+						HOSTED_API(print)("udc b=%d v=%d(%s/%ld) u=%d d=%d\n", b->dfn, i, decname(ds), ds->offset, p, q);
 				}
 				else{
 					boper(Bstore, defs[i], dd);
@@ -1688,9 +1688,9 @@ udchain(Block *b, Decl *ds, int nv, int npc, Bits *defs, Bits *uses, Decl *sd)
 					boper(Bandrev, dd, ud);
 					if(!bzero(dd)){
 						if(debug['o']){
-							print("udc b=%d v=%d(%s/%ld) u=%d d=", b->dfn, i, decname(ds), ds->offset, p);
+							HOSTED_API(print)("udc b=%d v=%d(%s/%ld) u=%d d=", b->dfn, i, decname(ds), ds->offset, p);
 							pbits(dd);
-							print("\n");
+							HOSTED_API(print)("\n");
 						}
 						if(bmem(dd, npc+i) && !set(ds))
 							warning(pc2i(b0, p), "used and not set", ds, sd);
@@ -1760,7 +1760,7 @@ optim(Inst *in, Decl *d)
 
 	ckflags();
 	if(debug['o'])
-		print("************************************************\nfunction %s\n************************************************\n", d->sym->name);
+		HOSTED_API(print)("************************************************\nfunction %s\n************************************************\n", d->sym->name);
 	if(in == nil || errors > 0)
 		return;
 	d = d->ty->ids;
@@ -1798,6 +1798,6 @@ optim(Inst *in, Decl *d)
 	freebits(uses, nv);
 	freebits(defs, nv);
 	if(debug['o'])
-		print("nb=%d npc=%d nv=%d nd=%d nu=%d\n", nb, npc, nv, nd, nu);
+		HOSTED_API(print)("nb=%d npc=%d nv=%d nd=%d nu=%d\n", nb, npc, nv, nd, nu);
 }
 

@@ -37,123 +37,123 @@ fcallfmt(Fmt *fmt)
 	tag = f->tag;
 	switch(type){
 	case Tversion:	/* 100 */
-		seprint(buf, e, "Tversion tag %ud msize %ud version '%s'", tag, f->msize, f->version);
+		HOSTED_API(seprint)(buf, e, "Tversion tag %ud msize %ud version '%s'", tag, f->msize, f->version);
 		break;
 	case Rversion:
-		seprint(buf, e, "Rversion tag %ud msize %ud version '%s'", tag, f->msize, f->version);
+		HOSTED_API(seprint)(buf, e, "Rversion tag %ud msize %ud version '%s'", tag, f->msize, f->version);
 		break;
 	case Tauth:	/* 102 */
-		seprint(buf, e, "Tauth tag %ud afid %d uname %s aname %s", tag,
+		HOSTED_API(seprint)(buf, e, "Tauth tag %ud afid %d uname %s aname %s", tag,
 			f->afid, f->uname, f->aname);
 		break;
 	case Rauth:
-		seprint(buf, e, "Rauth tag %ud qid " QIDFMT, tag,
+		HOSTED_API(seprint)(buf, e, "Rauth tag %ud qid " QIDFMT, tag,
 			f->aqid.path, f->aqid.vers, qidtype(tmp, f->aqid.type));
 		break;
 	case Tattach:	/* 104 */
-		seprint(buf, e, "Tattach tag %ud fid %d afid %d uname %s aname %s", tag,
+		HOSTED_API(seprint)(buf, e, "Tattach tag %ud fid %d afid %d uname %s aname %s", tag,
 			fid, f->afid, f->uname, f->aname);
 		break;
 	case Rattach:
-		seprint(buf, e, "Rattach tag %ud qid " QIDFMT, tag,
+		HOSTED_API(seprint)(buf, e, "Rattach tag %ud qid " QIDFMT, tag,
 			f->qid.path, f->qid.vers, qidtype(tmp, f->qid.type));
 		break;
 	case Rerror:	/* 107; 106 (Terror) illegal */
-		seprint(buf, e, "Rerror tag %ud ename %s", tag, f->ename);
+		HOSTED_API(seprint)(buf, e, "Rerror tag %ud ename %s", tag, f->ename);
 		break;
 	case Tflush:	/* 108 */
-		seprint(buf, e, "Tflush tag %ud oldtag %ud", tag, f->oldtag);
+		HOSTED_API(seprint)(buf, e, "Tflush tag %ud oldtag %ud", tag, f->oldtag);
 		break;
 	case Rflush:
-		seprint(buf, e, "Rflush tag %ud", tag);
+		HOSTED_API(seprint)(buf, e, "Rflush tag %ud", tag);
 		break;
 	case Twalk:	/* 110 */
-		p = seprint(buf, e, "Twalk tag %ud fid %d newfid %d nwname %d ", tag, fid, f->newfid, f->nwname);
+		p = HOSTED_API(seprint)(buf, e, "Twalk tag %ud fid %d newfid %d nwname %d ", tag, fid, f->newfid, f->nwname);
 		if(f->nwname <= MAXWELEM)
 			for(i=0; i<f->nwname; i++)
-				p = seprint(p, e, "%d:%s ", i, f->wname[i]);
+				p = HOSTED_API(seprint)(p, e, "%d:%s ", i, f->wname[i]);
 		break;
 	case Rwalk:
-		p = seprint(buf, e, "Rwalk tag %ud nwqid %ud ", tag, f->nwqid);
+		p = HOSTED_API(seprint)(buf, e, "Rwalk tag %ud nwqid %ud ", tag, f->nwqid);
 		if(f->nwqid <= MAXWELEM)
 			for(i=0; i<f->nwqid; i++){
 				q = &f->wqid[i];
-				p = seprint(p, e, "%d:" QIDFMT " ", i,
+				p = HOSTED_API(seprint)(p, e, "%d:" QIDFMT " ", i,
 					q->path, q->vers, qidtype(tmp, q->type));
 			}
 		break;
 	case Topen:	/* 112 */
-		seprint(buf, e, "Topen tag %ud fid %ud mode %d", tag, fid, f->mode);
+		HOSTED_API(seprint)(buf, e, "Topen tag %ud fid %ud mode %d", tag, fid, f->mode);
 		break;
 	case Ropen:
-		seprint(buf, e, "Ropen tag %ud qid " QIDFMT " iounit %ud ", tag,
+		HOSTED_API(seprint)(buf, e, "Ropen tag %ud qid " QIDFMT " iounit %ud ", tag,
 			f->qid.path, f->qid.vers, qidtype(tmp, f->qid.type), f->iounit);
 		break;
 	case Tcreate:	/* 114 */
-		seprint(buf, e, "Tcreate tag %ud fid %ud name %s perm %M mode %d", tag, fid, f->name, (ulong)f->perm, f->mode);
+		HOSTED_API(seprint)(buf, e, "Tcreate tag %ud fid %ud name %s perm %M mode %d", tag, fid, f->name, (ulong)f->perm, f->mode);
 		break;
 	case Rcreate:
-		seprint(buf, e, "Rcreate tag %ud qid " QIDFMT " iounit %ud ", tag,
+		HOSTED_API(seprint)(buf, e, "Rcreate tag %ud qid " QIDFMT " iounit %ud ", tag,
 			f->qid.path, f->qid.vers, qidtype(tmp, f->qid.type), f->iounit);
 		break;
 	case Tread:	/* 116 */
-		seprint(buf, e, "Tread tag %ud fid %d offset %lld count %ud",
+		HOSTED_API(seprint)(buf, e, "Tread tag %ud fid %d offset %lld count %ud",
 			tag, fid, f->offset, f->count);
 		break;
 	case Rread:
-		p = seprint(buf, e, "Rread tag %ud count %ud ", tag, f->count);
+		p = HOSTED_API(seprint)(buf, e, "Rread tag %ud count %ud ", tag, f->count);
 			dumpsome(p, e, f->data, f->count);
 		break;
 	case Twrite:	/* 118 */
-		p = seprint(buf, e, "Twrite tag %ud fid %d offset %lld count %ud ",
+		p = HOSTED_API(seprint)(buf, e, "Twrite tag %ud fid %d offset %lld count %ud ",
 			tag, fid, f->offset, f->count);
 		dumpsome(p, e, f->data, f->count);
 		break;
 	case Rwrite:
-		seprint(buf, e, "Rwrite tag %ud count %ud", tag, f->count);
+		HOSTED_API(seprint)(buf, e, "Rwrite tag %ud count %ud", tag, f->count);
 		break;
 	case Tclunk:	/* 120 */
-		seprint(buf, e, "Tclunk tag %ud fid %ud", tag, fid);
+		HOSTED_API(seprint)(buf, e, "Tclunk tag %ud fid %ud", tag, fid);
 		break;
 	case Rclunk:
-		seprint(buf, e, "Rclunk tag %ud", tag);
+		HOSTED_API(seprint)(buf, e, "Rclunk tag %ud", tag);
 		break;
 	case Tremove:	/* 122 */
-		seprint(buf, e, "Tremove tag %ud fid %ud", tag, fid);
+		HOSTED_API(seprint)(buf, e, "Tremove tag %ud fid %ud", tag, fid);
 		break;
 	case Rremove:
-		seprint(buf, e, "Rremove tag %ud", tag);
+		HOSTED_API(seprint)(buf, e, "Rremove tag %ud", tag);
 		break;
 	case Tstat:	/* 124 */
-		seprint(buf, e, "Tstat tag %ud fid %ud", tag, fid);
+		HOSTED_API(seprint)(buf, e, "Tstat tag %ud fid %ud", tag, fid);
 		break;
 	case Rstat:
-		p = seprint(buf, e, "Rstat tag %ud ", tag);
+		p = HOSTED_API(seprint)(buf, e, "Rstat tag %ud ", tag);
 		if(f->nstat > sizeof tmp)
-			seprint(p, e, " stat(%d bytes)", f->nstat);
+			HOSTED_API(seprint)(p, e, " stat(%d bytes)", f->nstat);
 		else{
 			d = (Dir*)tmp;
 			convM2D(f->stat, f->nstat, d, (char*)(d+1));
-			seprint(p, e, " stat ");
+			HOSTED_API(seprint)(p, e, " stat ");
 			fdirconv(p+6, e, d);
 		}
 		break;
 	case Twstat:	/* 126 */
-		p = seprint(buf, e, "Twstat tag %ud fid %ud", tag, fid);
+		p = HOSTED_API(seprint)(buf, e, "Twstat tag %ud fid %ud", tag, fid);
 		if(f->nstat > sizeof tmp)
-			seprint(p, e, " stat(%d bytes)", f->nstat);
+			HOSTED_API(seprint)(p, e, " stat(%d bytes)", f->nstat);
 		else{
 			d = (Dir*)tmp;
 			convM2D(f->stat, f->nstat, d, (char*)(d+1));
-			seprint(p, e, " stat ");
+			HOSTED_API(seprint)(p, e, " stat ");
 			fdirconv(p+6, e, d);
 		}
 		break;
 	case Rwstat:
-		seprint(buf, e, "Rwstat tag %ud", tag);
+		HOSTED_API(seprint)(buf, e, "Rwstat tag %ud", tag);
 		break;
 	default:
-		seprint(buf, e,  "unknown type %d", type);
+		HOSTED_API(seprint)(buf, e,  "unknown type %d", type);
 	}
 	return fmtstrcpy(fmt, buf);
 }
@@ -181,7 +181,7 @@ fdirconv(char *buf, char *e, Dir *d)
 {
 	char tmp[16];
 
-	seprint(buf, e, "'%s' '%s' '%s' '%s' "
+	HOSTED_API(seprint)(buf, e, "'%s' '%s' '%s' '%s' "
 		"q " QIDFMT " m %#luo "
 		"at %ld mt %ld l %lld "
 		"t %d d %d",
@@ -205,7 +205,7 @@ dumpsome(char *ans, char *e, char *buf, long count)
 	char *p;
 
 	if(buf == nil){
-		seprint(ans, e, "<no data>");
+		HOSTED_API(seprint)(ans, e, "<no data>");
 		return strlen(ans);
 	}
 	printable = 1;
@@ -227,7 +227,7 @@ dumpsome(char *ans, char *e, char *buf, long count)
 		for(i=0; i<count; i++){
 			if(i>0 && i%4==0)
 				*p++ = ' ';
-			sprint(p, "%2.2ux", buf[i]);
+			HOSTED_API(sprint)(p, "%2.2ux", buf[i]);
 			p += 2;
 		}
 	}

@@ -103,7 +103,7 @@ seterror(char *err, ...)
 
 	estr = up->env->errstr;
 	va_start(arg, err);
-	vseprint(estr, estr+ERRMAX, err, arg);
+	HOSTED_API(vseprint)(estr, estr+ERRMAX, err, arg);
 	va_end(arg);
 }
 

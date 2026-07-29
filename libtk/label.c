@@ -173,7 +173,7 @@ tklabelmargin(Tk *tk)
 		return Textpadx;
 
 	default:
-		fprint(2, "label margin: type %d\n", tk->type);
+		HOSTED_API(fprint)(2, "label margin: type %d\n", tk->type);
 		return 0;
 	}
 }

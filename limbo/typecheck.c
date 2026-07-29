@@ -573,7 +573,7 @@ fncheck(Decl *d)
 
 	n = d->init;
 	if(debug['t'])
-		print("typecheck tree: %n\n", n);
+		HOSTED_API(print)("typecheck tree: %n\n", n);
 
 	fndecls = nil;
 	adtp = outerpolys(n->left);
@@ -872,7 +872,7 @@ exname(Decl *d)
 	char buf[16];
 
 	n = 0;
-	sprint(buf, "%d", scope-ScopeGlobal);
+	HOSTED_API(sprint)(buf, "%d", scope-ScopeGlobal);
 	m = nil;
 	if(d->dot)
 		m = d->dot->sym;
@@ -2448,11 +2448,11 @@ passfns0(Src *src, Decl *fn, Node *args0, Node **args, Node **a, Tpair *tp, Decl
 	Tpair *p;
 
 if(debug['w']){
-	print("polys: ");
-	for(id=polys; id!=nil; id=id->next) print("%s ", id->sym->name);
-	print("\nmap: ");
-	for(p=tp; p!=nil; p=p->nxt) print("%T -> %T ", p->t1, p->t2);
-	print("\n");
+	HOSTED_API(print)("polys: ");
+	for(id=polys; id!=nil; id=id->next) HOSTED_API(print)("%s ", id->sym->name);
+	HOSTED_API(print)("\nmap: ");
+	for(p=tp; p!=nil; p=p->nxt) HOSTED_API(print)("%T -> %T ", p->t1, p->t2);
+	HOSTED_API(print)("\n");
 }
 	for(idt = polys; idt != nil; idt = idt->next){
 		tt = valtmap(idt->ty, tp);
@@ -2463,7 +2463,7 @@ if(debug['w']){
 			id = fnlookup(sym, tt, &mod);
 			while(id != nil && id->link != nil)
 				id = id->link;
-if(debug['v']) print("fnlookup: %p\n", id);
+if(debug['v']) HOSTED_API(print)("fnlookup: %p\n", id);
 			if(id == nil)	/* error flagged already */
 				continue;
 			id->refs++;
@@ -2482,7 +2482,7 @@ if(debug['v']) print("fnlookup: %p\n", id);
 			if(mod == nil && (dot = module(id)) != nil && !isimpmod(dot->sym))
 				error(src->start, "cannot use %s without importing %s from a variable", id->sym->name, id->dot->sym->name);
 
-if(debug['U']) print("fp: %s %s %s\n", fn->sym->name, mod ? mod->decl->sym->name : "nil", id->sym->name);
+if(debug['U']) HOSTED_API(print)("fp: %s %s %s\n", fn->sym->name, mod ? mod->decl->sym->name : "nil", id->sym->name);
 			n = mkn(Ofnptr, mod, mkdeclname(src, id));
 			n->src = *src;
 			n->decl = fn;
@@ -3083,7 +3083,7 @@ exccheck(Node *en, Type *ret)
 
 	pushscope(nil, Sother);
 	if(en->left == nil){
-		seprint(buf, buf+sizeof(buf), ".ex%d", nexc++);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), ".ex%d", nexc++);
 		en->left = mkdeclname(&en->src, mkids(&en->src, enter(buf, 0), texception, nil));
 	}
 	oinexcept = inexcept;

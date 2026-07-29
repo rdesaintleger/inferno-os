@@ -156,7 +156,7 @@ makesharedfb(void)
 
 	shminfo = HOSTED_API(malloc)(sizeof(XShmSegmentInfo));
 	if(shminfo == nil) {
-		fprint(2, "emu: cannot allocate XShmSegmentInfo\n");
+		HOSTED_API(fprint)(2, "emu: cannot allocate XShmSegmentInfo\n");
 		cleanexit(0);
 	}
 
@@ -181,7 +181,7 @@ makesharedfb(void)
 	}
 	
 	if(img == nil) {
-		fprint(2, "emu: cannot allocate virtual screen buffer\n");
+		HOSTED_API(fprint)(2, "emu: cannot allocate virtual screen buffer\n");
 		cleanexit(0);
 	}
 	
@@ -190,7 +190,7 @@ makesharedfb(void)
 	shminfo->readOnly = True;
 
 	if(!XShmAttach(xdisplay, shminfo)) {
-		fprint(2, "emu: cannot allocate virtual screen buffer\n");
+		HOSTED_API(fprint)(2, "emu: cannot allocate virtual screen buffer\n");
 		cleanexit(0);
 	}
 	XSync(xdisplay, 0);
@@ -216,7 +216,7 @@ makesharedfb(void)
 
 	gscreendata = HOSTED_API(malloc)(Xsize * Ysize * (displaydepth >> 3));
 	if(gscreendata == nil) {
-		fprint(2, "emu: cannot allocate screen buffer (%dx%dx%d)\n", Xsize, Ysize, displaydepth);
+		HOSTED_API(fprint)(2, "emu: cannot allocate screen buffer (%dx%dx%d)\n", Xsize, Ysize, displaydepth);
 		cleanexit(0);
 	}
 	xscreendata = (uchar*)img->data;
@@ -267,13 +267,13 @@ attachscreen(Rectangle *r, ulong *chan, int *d, int *width, int *softscreen)
 		gscreendata = HOSTED_API(malloc)(Xsize * Ysize * (displaydepth >> 3));
 		xscreendata = HOSTED_API(malloc)(Xsize * Ysize * (depth >> 3));
 		if(gscreendata == nil || xscreendata == nil) {
-			fprint(2, "emu: can not allocate virtual screen buffer (%dx%dx%d[%d])\n", Xsize, Ysize, displaydepth, depth);
+			HOSTED_API(fprint)(2, "emu: can not allocate virtual screen buffer (%dx%dx%d[%d])\n", Xsize, Ysize, displaydepth, depth);
 			return 0;
 		}
 		img = XCreateImage(xdisplay, xvis, xscreendepth, ZPixmap, 0, 
 				   (char*)xscreendata, Xsize, Ysize, 8, Xsize * (depth >> 3));
 		if(img == nil) {
-			fprint(2, "emu: can not allocate virtual screen buffer (%dx%dx%d)\n", Xsize, Ysize, depth);
+			HOSTED_API(fprint)(2, "emu: can not allocate virtual screen buffer (%dx%dx%d)\n", Xsize, Ysize, depth);
 			return 0;
 		}
 		
@@ -468,7 +468,7 @@ flushmemscreen(Rectangle r)
             copy16to16(r);
             break;
         default:
-		    fprint(2, "emu: bad display depth %d chan %s xscreendepth %d\n", displaydepth,
+		    HOSTED_API(fprint)(2, "emu: bad display depth %d chan %s xscreendepth %d\n", displaydepth,
 			    chantostr(chanbuf, displaychan), xscreendepth);
 		    cleanexit(0);
         }
@@ -493,7 +493,7 @@ flushmemscreen(Rectangle r)
 		}
 		break;
 	default:
-		fprint(2, "emu: bad display depth %d chan %s xscreendepth %d\n", displaydepth,
+		HOSTED_API(fprint)(2, "emu: bad display depth %d chan %s xscreendepth %d\n", displaydepth,
 			chantostr(chanbuf, displaychan), xscreendepth);
 		cleanexit(0);
 	}
@@ -811,7 +811,7 @@ xtruevisual(int screenno, int reqdepth, XVisualInfo *vi, ulong *chan)
 				return 0;
 			pad = d - (r.len + g.len + b.len);
 			if(0){
-				fprint(2, "r: %8.8lux %d %d\ng: %8.8lux %d %d\nb: %8.8lux %d %d\n",
+				HOSTED_API(fprint)(2, "r: %8.8lux %d %d\ng: %8.8lux %d %d\nb: %8.8lux %d %d\n",
 				 xv->red_mask, r.bit, r.len, xv->green_mask, g.bit, g.len, xv->blue_mask, b.bit, b.len);
 			}
 			if(r.bit > b.bit)
@@ -823,7 +823,7 @@ xtruevisual(int screenno, int reqdepth, XVisualInfo *vi, ulong *chan)
 			*chan = c;
 			xscreendepth = reqdepth;
 			if(0)
-				fprint(2, "chan=%s reqdepth=%d bits=%d\n", chantostr(buf, c), reqdepth, d);
+				HOSTED_API(fprint)(2, "chan=%s reqdepth=%d bits=%d\n", chantostr(buf, c), reqdepth, d);
 			return 1;
 		}
 	}
@@ -867,7 +867,7 @@ xinitscreen(int xsize, int ysize, ulong reqchan, ulong *chan, int *d)
 	XInitThreads();
 	xdisplay = XOpenDisplay(NULL);
 	if(xdisplay == 0){
-		fprint(2, "emu: win-x11 open %r, DISPLAY is %s\n", dispname);
+		HOSTED_API(fprint)(2, "emu: win-x11 open %r, DISPLAY is %s\n", dispname);
 		cleanexit(0);
 	}
 
@@ -890,7 +890,7 @@ xinitscreen(int xsize, int ysize, ulong reqchan, ulong *chan, int *d)
 			xtruevisual(rootscreennum, 24, &xvi, chan);
 		}
 		if(*chan == 0){
-			fprint(2, "emu: could not find suitable x11 pixel format for depth %d on this display\n", xscreendepth);
+			HOSTED_API(fprint)(2, "emu: could not find suitable x11 pixel format for depth %d on this display\n", xscreendepth);
 			cleanexit(0);
 		}
 		reqchan = *chan;
@@ -901,7 +901,7 @@ xinitscreen(int xsize, int ysize, ulong reqchan, ulong *chan, int *d)
 		*chan = reqchan;		/* not every channel description will work */
 		*d = chantodepth(reqchan);
 		if(*d != xactualdepth(rootscreennum, *d)){
-			fprint(2, "emu: current x11 display configuration does not support %s (depth %d) directly\n",
+			HOSTED_API(fprint)(2, "emu: current x11 display configuration does not support %s (depth %d) directly\n",
 				chantostr(buf, reqchan), *d);
 			cleanexit(0);
 		}
@@ -965,7 +965,7 @@ xinitscreen(int xsize, int ysize, ulong reqchan, ulong *chan, int *d)
 	xsnarfcon = XOpenDisplay(NULL);
 	xkbdcon = XOpenDisplay(NULL);
 	if(xmcon == 0 || xsnarfcon == 0 || xkbdcon == 0){
-		fprint(2, "emu: win-x11 open %r, DISPLAY is %s\n", dispname);
+		HOSTED_API(fprint)(2, "emu: win-x11 open %r, DISPLAY is %s\n", dispname);
 		cleanexit(0);
 	}
 
@@ -1093,7 +1093,7 @@ initxcmap(XWindow w)
 			c = map[i];
 			/* find index into colormap for our RGB */
 			if(!XAllocColor(xdisplay, xcmap, &c)) {
-				fprint(2, "emu: win-x11 can't alloc color\n");
+				HOSTED_API(fprint)(2, "emu: win-x11 can't alloc color\n");
 				cleanexit(0);
 			}
 			infernotox11[map[i].pixel] = c.pixel;
@@ -1109,7 +1109,7 @@ initxcmap(XWindow w)
 				infernobtox11[i] = (c.pixel>>0)&0xff;
 			}
 		}
-if(0){int i, j; for(i=0;i<256; i+=16){print("%3d", i); for(j=i; j<i+16; j++)print(" %2.2ux/%2.2ux/%2.2ux", infernortox11[j], infernogtox11[j],infernobtox11[j]); print("\n");}}
+if(0){int i, j; for(i=0;i<256; i+=16){HOSTED_API(print)("%3d", i); for(j=i; j<i+16; j++)HOSTED_API(print)(" %2.2ux/%2.2ux/%2.2ux", infernortox11[j], infernogtox11[j],infernobtox11[j]); HOSTED_API(print)("\n");}}
 		/* TO DO: if the map(s) used give the identity map, don't use the map during copy */
 		break;
 
@@ -1124,7 +1124,7 @@ if(0){int i, j; for(i=0;i<256; i+=16){print("%3d", i); for(j=i; j<i+16; j++)prin
 			for(i = 0; i < 128; i++) {
 				c = map7[i];
 				if(!XAllocColor(xdisplay, xcmap, &c)) {
-					fprint(2, "emu: win-x11 can't alloc colors in default map, don't use -7\n");
+					HOSTED_API(fprint)(2, "emu: win-x11 can't alloc colors in default map, don't use -7\n");
 					cleanexit(0);
 				}
 				infernotox11[map7to8[i][0]] = c.pixel;
@@ -1135,7 +1135,7 @@ if(0){int i, j; for(i=0;i<256; i+=16){print("%3d", i); for(j=i; j<i+16; j++)prin
 
 	default:
 		xtblbit = 0;
-		fprint(2, "emu: win-x11 unsupported visual class %d\n", xvis->class);
+		HOSTED_API(fprint)(2, "emu: win-x11 unsupported visual class %d\n", xvis->class);
 		break;
 	}
 }

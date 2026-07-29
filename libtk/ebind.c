@@ -214,7 +214,7 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 		return;
 	cmd = HOSTED_API(malloc)(2*Tkmaxitem);
 	if (cmd == nil) {
-		print("tk: bind command \"%s\": %s\n",
+		HOSTED_API(print)("tk: bind command \"%s\": %s\n",
 			tk->name ? tk->name->name : "(noname)", TkNomem);
 		return;
 	}
@@ -247,21 +247,21 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 				else if(event & (TkButton3P|TkButton3R))
 					v = 3;
 			}
-			c += snprint(c, len, "%d", v);
+			c += HOSTED_API(snprint)(c, len, "%d", v);
 			break;
 		case 'h':
 			if((event & TkConfigure) == 0)
 				goto def;
 			g = (TkGeom*)data;
-			c += snprint(c, len, "%d", g->height);
+			c += HOSTED_API(snprint)(c, len, "%d", g->height);
 			break;
 		case 's':
 			if((event & TkKey))
-				c += snprint(c, len, "%d", TKKEY(event));
+				c += HOSTED_API(snprint)(c, len, "%d", TKKEY(event));
 			else if((event & (TkEmouse|TkEnter)))
-				c += snprint(c, len, "%d", m->b);
+				c += HOSTED_API(snprint)(c, len, "%d", m->b);
 			else if((event & TkFocusin))
-				c += snprint(c, len, "%d", (int)data);
+				c += HOSTED_API(snprint)(c, len, "%d", (int)data);
 			else
 				goto def;
 			break;
@@ -269,7 +269,7 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 			if((event & TkConfigure) == 0)
 				goto def;
 			g = (TkGeom*)data;
-			c += snprint(c, len, "%d", g->width);
+			c += HOSTED_API(snprint)(c, len, "%d", g->width);
 			break;
 		case 'x':		/* Relative mouse coords */
 		case 'y':
@@ -280,31 +280,31 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 				v = m->x - p.x;
 			else
 				v = m->y - p.y;
-			c += snprint(c, len, "%d", v - tk->borderwidth);
+			c += HOSTED_API(snprint)(c, len, "%d", v - tk->borderwidth);
 			break;
 		case 'X':		/* Absolute mouse coords */
 		case 'Y':
 			if((event & TkKey) || (event & TkEmouse) == 0)
 				goto def;
-			c += snprint(c, len, "%d", s[-1] == 'X' ? m->x : m->y);
+			c += HOSTED_API(snprint)(c, len, "%d", s[-1] == 'X' ? m->x : m->y);
 			break;
 		case 'A':
 			if((event & TkKey) == 0)
 				goto def;
 			v = TKKEY(event);
 			if(v == '{' || v == '}' || v == '\\')
-				c += snprint(c, len, "\\%C", v);
+				c += HOSTED_API(snprint)(c, len, "\\%C", v);
 			else if(v != '\0')
-				c += snprint(c, len, "%C", v);
+				c += HOSTED_API(snprint)(c, len, "%C", v);
 			break;
 		case 'K':
 			if((event & TkKey) == 0)
 				goto def;
-			c += snprint(c, len, "%.4X", TKKEY(event));
+			c += HOSTED_API(snprint)(c, len, "%.4X", TKKEY(event));
 			break;
 		case 'W':
 		        if (tk->name != nil) 
-			  c += snprint(c, len, "%s", tk->name->name);
+			  c += HOSTED_API(snprint)(c, len, "%s", tk->name->name);
 			break;
 		}
 	}
@@ -330,7 +330,7 @@ tkcmdbind(Tk *tk, int event, char *s, void *data)
 			s = tkerrstr(t, e);
 		else
 			s = e;
-		print("tk: bind command \"%s\": %s: %s\n", tk->name->name, cmd, s);
+		HOSTED_API(print)("tk: bind command \"%s\": %s: %s\n", tk->name->name, cmd, s);
 		if(s != e)
 			HOSTED_API(free)(s);
 	}
@@ -779,7 +779,7 @@ tkputs(TkTop *t, char *arg, char **ret)
 	if(buf == nil)
 		return TkNomem;
 	tkword(t, arg, buf, buf+Tkmaxitem, nil);
-	print("%s\n", buf);
+	HOSTED_API(print)("%s\n", buf);
 	HOSTED_API(free)(buf);
 	return nil;
 }
@@ -834,7 +834,7 @@ tkdestroy(TkTop *t, char *arg, char **ret)
 				tkdeliver(tk, TkDestroy, nil);
 		} else
 			tkdeliver(tk, TkDestroy, nil);
-if(0)print("tkdestroy %q\n", tkname(tk));
+if(0)HOSTED_API(print)("tkdestroy %q\n", tkname(tk));
 		if(tk->destroyed != nil)
 			tk->destroyed(tk);
 		tkpackqit(tk->master);

@@ -99,13 +99,13 @@ main(int argc, char *argv[])
 	case 0:	break;
 	default:	goto Usage;
 	Usage:
-		fprint(2, "usage: dtest [dchan [schan [mchan]]]\n");
+		HOSTED_API(fprint)(2, "usage: dtest [dchan [schan [mchan]]]\n");
 		exits("usage");
 	}
 
 	fmtinstall('b', numbconv);	/* binary! */
 
-	fprint(2, "%s -x %d -y %d -s 0x%x %s %s %s\n", argv0, Xrange, Yrange, seed, dchan, schan, mchan);
+	HOSTED_API(fprint)(2, "%s -x %d -y %d -s 0x%x %s %s %s\n", argv0, Xrange, Yrange, seed, dchan, schan, mchan);
 	srand(seed);
 
 	dst = allocmemimage(Rect(0, 0, Xrange, Yrange), strtochan(dchan));
@@ -114,10 +114,10 @@ main(int argc, char *argv[])
 	stmp = allocmemimage(Rect(0, 0, Xrange, Yrange), strtochan(schan));
 	mtmp = allocmemimage(Rect(0, 0, Xrange, Yrange), strtochan(mchan));
 	ones = allocmemimage(Rect(0, 0, Xrange, Yrange), strtochan(mchan));
-//	print("chan %lux %lux %lux %lux %lux %lux\n", dst->chan, src->chan, mask->chan, stmp->chan, mtmp->chan, ones->chan);
+//	HOSTED_API(print)("chan %lux %lux %lux %lux %lux %lux\n", dst->chan, src->chan, mask->chan, stmp->chan, mtmp->chan, ones->chan);
 	if(dst==0 || src==0 || mask==0 || mtmp==0 || ones==0) {
 	Alloc:
-		fprint(2, "dtest: allocation failed: %r\n");
+		HOSTED_API(fprint)(2, "dtest: allocation failed: %r\n");
 		exits("alloc");
 	}
 	nbytes = (4*Xrange+4)*Yrange;
@@ -134,22 +134,22 @@ main(int argc, char *argv[])
 	memset(ones->data->bdata, 0xFF, ones->width*sizeof(ulong)*Yrange);
 
 
-	fprint(2, "dtest: verify single pixel operation\n");
+	HOSTED_API(fprint)(2, "dtest: verify single pixel operation\n");
 	verifyone();
 
-	fprint(2, "dtest: verify full line non-replicated\n");
+	HOSTED_API(fprint)(2, "dtest: verify full line non-replicated\n");
 	verifyline();
 
-	fprint(2, "dtest: verify full rectangle non-replicated\n");
+	HOSTED_API(fprint)(2, "dtest: verify full rectangle non-replicated\n");
 	verifyrect();
 
-	fprint(2, "dtest: verify full rectangle source replicated\n");
+	HOSTED_API(fprint)(2, "dtest: verify full rectangle source replicated\n");
 	verifyrectrepl(1, 0);
 
-	fprint(2, "dtest: verify full rectangle mask replicated\n");
+	HOSTED_API(fprint)(2, "dtest: verify full rectangle mask replicated\n");
 	verifyrectrepl(0, 1);
 
-	fprint(2, "dtest: verify full rectangle source and mask replicated\n");
+	HOSTED_API(fprint)(2, "dtest: verify full rectangle source and mask replicated\n");
 	verifyrectrepl(1, 1);
 
 	exits(0);
@@ -224,7 +224,7 @@ dumpimage(char *name, Memimage *img, void *vdata, Point labelpt)
 		break;
 	}
 	if(fmt == nil){
-		fprint(2, "bad format\n");
+		HOSTED_API(fprint)(2, "bad format\n");
 		abort();
 	}
 
@@ -262,7 +262,7 @@ dumpimage(char *name, Memimage *img, void *vdata, Point labelpt)
 				nb += 8;
 			}
 			nb -= bpp;
-//			print("bpp %d v %.8lux mask %.8lux nb %d\n", bpp, v, mask, nb);
+//			HOSTED_API(print)("bpp %d v %.8lux mask %.8lux nb %d\n", bpp, v, mask, nb);
 			fmt(&b, arg, (v>>nb)&mask);
 		}
 		Bprint(&b, "\n");
@@ -286,10 +286,10 @@ checkone(Point p, Point sp, Point mp)
 	sdp = (uchar*)savedstbits+delta;
 
 	if(memcmp(dp, sdp, (dst->depth+7)/8) != 0) {
-		fprint(2, "dtest: one bad pixel drawing at dst %P from source %P mask %P\n", p, sp, mp);
-		fprint(2, " %.2ux %.2ux %.2ux %.2ux should be %.2ux %.2ux %.2ux %.2ux\n",
+		HOSTED_API(fprint)(2, "dtest: one bad pixel drawing at dst %P from source %P mask %P\n", p, sp, mp);
+		HOSTED_API(fprint)(2, " %.2ux %.2ux %.2ux %.2ux should be %.2ux %.2ux %.2ux %.2ux\n",
 			dp[0], dp[1], dp[2], dp[3], sdp[0], sdp[1], sdp[2], sdp[3]);
-		fprint(2, "addresses dst %p src %p mask %p\n", dp, byteaddr(src, sp), byteaddr(mask, mp));
+		HOSTED_API(fprint)(2, "addresses dst %p src %p mask %p\n", dp, byteaddr(src, sp), byteaddr(mask, mp));
 		dumpimage("src", src, src->data->bdata, sp);
 		dumpimage("mask", mask, mask->data->bdata, mp);
 		dumpimage("origdst", dst, dstbits, p);
@@ -317,8 +317,8 @@ checkline(Rectangle r, Point sp, Point mp, int y, Memimage *stmp, Memimage *mtmp
 	else
 		nb = Xrange*(dst->depth/8);
 	if(memcmp(dp, saved, nb) != 0){
-		fprint(2, "dtest: bad line at y=%d; saved %p dp %p\n", y, saved, dp);
-		fprint(2, "draw dst %R src %P mask %P\n", r, sp, mp);
+		HOSTED_API(fprint)(2, "dtest: bad line at y=%d; saved %p dp %p\n", y, saved, dp);
+		HOSTED_API(fprint)(2, "draw dst %R src %P mask %P\n", r, sp, mp);
 		dumpimage("src", src, src->data->bdata, sp);
 		if(stmp) dumpimage("stmp", stmp, stmp->data->bdata, sp);
 		dumpimage("mask", mask, mask->data->bdata, mp);
@@ -634,7 +634,7 @@ replicate(Memimage *i, Memimage *tmp)
 	i->flags |= Frepl;
 	i->r = r;
 	i->clipr = randrect();
-//	fprint(2, "replicate [[%d %d] [%d %d]] [[%d %d][%d %d]]\n", r.min.x, r.min.y, r.max.x, r.max.y,
+//	HOSTED_API(fprint)(2, "replicate [[%d %d] [%d %d]] [[%d %d][%d %d]]\n", r.min.x, r.min.y, r.max.x, r.max.y,
 //		i->clipr.min.x, i->clipr.min.y, i->clipr.max.x, i->clipr.max.y);
 	tmp->clipr = i->clipr;
 }
@@ -650,7 +650,7 @@ verifyrectmaskrepl(int srcrepl, int maskrepl)
 	int x, y;
 	Memimage *s, *m;
 
-//	print("verfrect %d %d\n", srcrepl, maskrepl);
+//	HOSTED_API(print)("verfrect %d %d\n", srcrepl, maskrepl);
 	src->flags &= ~Frepl;
 	src->r = Rect(0, 0, Xrange, Yrange);
 	src->clipr = src->r;
@@ -690,7 +690,7 @@ verifyrectmaskrepl(int srcrepl, int maskrepl)
 	mp.x = nrand(Xrange);
 	mp.y = nrand(Yrange);
 
-DBG	print("smalldraws\n");
+DBG	HOSTED_API(print)("smalldraws\n");
 	for(tp.y=sp.y,up.y=mp.y,y=dr.min.y; y<dr.max.y && tp.y<Yrange && up.y<Yrange; y++,tp.y++,up.y++)
 		for(tp.x=sp.x,up.x=mp.x,x=dr.min.x; x<dr.max.x && tp.x<Xrange && up.x<Xrange; x++,tp.x++,up.x++)
 			memimagedraw(dst, Rect(x, y, x+1, y+1), s, tp, m, up, SoverD);
@@ -698,7 +698,7 @@ DBG	print("smalldraws\n");
 
 	memmove(dst->data->bdata, dstbits, dst->width*sizeof(ulong)*Yrange);
 
-DBG	print("bigdraw\n");
+DBG	HOSTED_API(print)("bigdraw\n");
 	memimagedraw(dst, dr, src, sp, mask, mp, SoverD);
 	for(y=0; y<Yrange; y++)
 		checkline(dr, drawrepl(src->r, sp), drawrepl(mask->r, mp), y, srcrepl?stmp:nil, maskrepl?mtmp:nil);
@@ -835,7 +835,7 @@ getpixel(Memimage *img, Point pt)
 			case CIgnore:
 				break;
 			default:
-				fprint(2, "unknown channel type %lud\n", TYPE(c));
+				HOSTED_API(fprint)(2, "unknown channel type %lud\n", TYPE(c));
 				abort();
 			}
 		}
@@ -892,7 +892,7 @@ putpixel(Memimage *img, Point pt, ulong nv)
 	p = byteaddr(img, pt);
 	v = p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24);
 	bpp = img->depth;
-DBG print("v %.8lux...", v);
+DBG HOSTED_API(print)("v %.8lux...", v);
 	if(bpp < 8){
 		/*
 		 * Sub-byte greyscale pixels.  We need to skip the leftmost pt.x%npack pixels,
@@ -901,13 +901,13 @@ DBG print("v %.8lux...", v);
 		npack = 8/bpp;
 		sh = bpp*(npack - pt.x%npack - 1);
 		bits = RGB2K(r,g,b);
-DBG print("repl %lux 8 %d = %lux...", bits, bpp, replbits(bits, 8, bpp));
+DBG HOSTED_API(print)("repl %lux 8 %d = %lux...", bits, bpp, replbits(bits, 8, bpp));
 		bits = replbits(bits, 8, bpp);
 		mask = (1<<bpp)-1;
-DBG print("bits %lux mask %lux sh %d...", bits, mask, sh);
+DBG HOSTED_API(print)("bits %lux mask %lux sh %d...", bits, mask, sh);
 		mask <<= sh;
 		bits <<= sh;
-DBG print("(%lux & %lux) | (%lux & %lux)", v, ~mask, bits, mask);
+DBG HOSTED_API(print)("(%lux & %lux) | (%lux & %lux)", v, ~mask, bits, mask);
 		v = (v & ~mask) | (bits & mask);
 	} else {
 		/*
@@ -941,22 +941,22 @@ DBG print("(%lux & %lux) | (%lux & %lux)", v, ~mask, bits, mask);
 				break;
 			default:
 				SET(bits);
-				fprint(2, "unknown channel type %lud\n", TYPE(c));
+				HOSTED_API(fprint)(2, "unknown channel type %lud\n", TYPE(c));
 				abort();
 			}
 
-DBG print("repl %lux 8 %d = %lux...", bits, nbits, replbits(bits, 8, nbits));
+DBG HOSTED_API(print)("repl %lux 8 %d = %lux...", bits, nbits, replbits(bits, 8, nbits));
 			if(TYPE(c) != CMap)
 				bits = replbits(bits, 8, nbits);
 			mask = (1<<nbits)-1;
-DBG print("bits %lux mask %lux sh %d...", bits, mask, sh);
+DBG HOSTED_API(print)("bits %lux mask %lux sh %d...", bits, mask, sh);
 			bits <<= sh;
 			mask <<= sh;
 			v = (v & ~mask) | (bits & mask);
 			sh += nbits;
 		}
 	}
-DBG print("v %.8lux\n", v);
+DBG HOSTED_API(print)("v %.8lux\n", v);
 	p[0] = v;
 	p[1] = v>>8;
 	p[2] = v>>16;
@@ -975,7 +975,7 @@ drawonepixel(Memimage *dst, Point dp, Memimage *src, Point sp, Memimage *mask, P
 	m = getmask(mask, mp);
 	M = 255-(sa*m)/255;
 
-DBG print("dst %x %x %x %x src %x %x %x %x m %x = ", dr,dg,db,da, sr,sg,sb,sa, m);
+DBG HOSTED_API(print)("dst %x %x %x %x src %x %x %x %x m %x = ", dr,dg,db,da, sr,sg,sb,sa, m);
 	if(dst->flags&Fgrey){
 		/*
 		 * We need to do the conversion to grey before the alpha calculation
@@ -998,6 +998,6 @@ DBG print("dst %x %x %x %x src %x %x %x %x m %x = ", dr,dg,db,da, sr,sg,sb,sa, m
 		da = (sa*m + da*M)/255;
 	}
 
-DBG print("%x %x %x %x\n", dr,dg,db,da);
+DBG HOSTED_API(print)("%x %x %x %x\n", dr,dg,db,da);
 	putpixel(dst, dp, rgbatopix(dr, dg, db, da));
 }

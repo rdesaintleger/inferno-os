@@ -45,7 +45,7 @@ styxannounce(Styxserver *server, char *port)
 		return s;
 	one = 1;
 	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one)) < 0)
-		fprint(2, "setsockopt failed\n");
+		HOSTED_API(fprint)(2, "setsockopt failed\n");
 	memset(&sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = 0;
@@ -74,7 +74,7 @@ styxaccept(Styxserver *server)
 	s = accept(server->connfd, (struct sockaddr *)&sin, &len);
 	if(s < 0){
 		if(errno != EINTR)
-			fprint(2, "error in accept: %s\n", strerror(errno));
+			HOSTED_API(fprint)(2, "error in accept: %s\n", strerror(errno));
 	}
 	return s;
 }

@@ -233,7 +233,7 @@ modcom(Decl *entry)
 	ok = 0;
 	for(i = 0; i < nfns; i++){
 		d = fns[i];
-if(debug['v']) print("fncom: %s %d %p\n", d->sym->name, d->refs, d);
+if(debug['v']) HOSTED_API(print)("fncom: %s %d %p\n", d->sym->name, d->refs, d);
 		if(d->refs > 1 && !(d->caninline == 1 && local(d) && d->iface == nil)){
 			fns[ok++] = d;
 			fncom(d);
@@ -257,7 +257,7 @@ if(debug['v']) print("fncom: %s %d %p\n", d->sym->name, d->refs, d);
 	m = nil;
 	for(d = nils; d != nil; d = d->next){
 		if(debug['n'])
-			print("nil '%s' ref %d\n", d->sym->name, d->refs);
+			HOSTED_API(print)("nil '%s' ref %d\n", d->sym->name, d->refs);
 		if(d->refs && m == nil)
 			m = dupdecl(d);
 		d->offset = 0;
@@ -275,13 +275,13 @@ if(debug['v']) print("fncom: %s %d %p\n", d->sym->name, d->refs, d);
 		ldtoff = idindices(ldts);	/* ldtoff = idoffsets(ldts, 0, IBY2WD); */
 	for(d = nils; d != nil; d = d->next){
 		if(debug['n'])
-			print("nil '%s' ref %d\n", d->sym->name, d->refs);
+			HOSTED_API(print)("nil '%s' ref %d\n", d->sym->name, d->refs);
 		if(d->refs)
 			d->offset = m->offset;
 	}
 
 	if(debug['g']){
-		print("globals:\n");
+		HOSTED_API(print)("globals:\n");
 		printdecls(globals);
 	}
 
@@ -301,7 +301,7 @@ if(debug['v']) print("fncom: %s %d %p\n", d->sym->name, d->refs, d);
 		maxstack = fixss;
 
 	if(debug['s'])
-		print("%ld instructions\n%ld data elements\n%ld type descriptors\n%ld functions exported\n%ld stack size\n",
+		HOSTED_API(print)("%ld instructions\n%ld data elements\n%ld type descriptors\n%ld functions exported\n%ld stack size\n",
 			ninst, ndata, ndesc, nlink, maxstack);
 
 	excs = reve(excs);
@@ -435,7 +435,7 @@ fncom(Decl *decl)
 		decl->ty->ids = loc;
 
 	if(debug['f']){
-		print("fn: %s\n", decl->sym->name);
+		HOSTED_API(print)("fn: %s\n", decl->sym->name);
 		printdecls(decl->ty->ids);
 	}
 
@@ -806,11 +806,11 @@ casecom(Node *cn)
 	 * generate global which has case labels
 	 */
 	if(igoto){
-		seprint(buf, buf+sizeof(buf), ".g%d", nlabel++);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), ".g%d", nlabel++);
 		cn->ty->kind = Tgoto;
 	}
 	else
-		seprint(buf, buf+sizeof(buf), ".c%d", nlabel++);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), ".c%d", nlabel++);
 	d = mkids(&cn->src, enter(buf, 0), cn->ty, nil);
 	d->init = mkdeclname(&cn->src, d);
 
@@ -827,7 +827,7 @@ casecom(Node *cn)
 	cn->left = left;
 	sumark(left);
 	if(debug['c'])
-		print("case %n\n", left);
+		HOSTED_API(print)("case %n\n", left);
 	ctype = cn->left->ty;
 	if(left->addable >= Rcant){
 		if(cn->op == Opick){
@@ -881,7 +881,7 @@ casecom(Node *cn)
 		j = nextinst();
 		for(p = n->left->left; p != nil; p = p->right){
 			if(debug['c'])
-				print("case qualifier %n\n", p->left);
+				HOSTED_API(print)("case qualifier %n\n", p->left);
 			switch(p->left->op){
 			case Oconst:
 				labs[findlab(ctype, p->left, labs, nlab)].inst = j;
@@ -903,7 +903,7 @@ casecom(Node *cn)
 		}
 
 		if(debug['c'])
-			print("case body for %V: %n\n", n->left->left, n->left->right);
+			HOSTED_API(print)("case body for %V: %n\n", n->left->left, n->left->right);
 
 		k = nextinst();
 		scom(n->left->right);
@@ -1076,7 +1076,7 @@ altcom(Node *nalt)
 	pp = genrawop(&altsrc, altop, &tab, nil, &which);
 	pp->m.offset = talt->size;	/* for optimizer */
 
-	seprint(buf, buf+sizeof(buf), ".g%d", nlabel++);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), ".g%d", nlabel++);
 	d = mkids(&nalt->src, enter(buf, 0), mktype(&nalt->src.start, &nalt->src.stop, Tgoto, nil, nil), nil);
 	d->ty->cse = c;
 	d->init = mkdeclname(&nalt->src, d);
@@ -1117,7 +1117,7 @@ altcom(Node *nalt)
 				}
 				sumark(p->left);
 				if(debug['a'])
-					print("alt guard %n\n", p->left);
+					HOSTED_API(print)("alt guard %n\n", p->left);
 				ecom(&p->left->src, nil, p->left);
 				tfree(&tmps[i]);
 				tfreenow();
@@ -1132,7 +1132,7 @@ altcom(Node *nalt)
 
 		patch(j, nextinst());
 		if(debug['a'])
-			print("alt body %n\n", n->left->right);
+			HOSTED_API(print)("alt body %n\n", n->left->right);
 		scom(n->left);
 
 		j = genrawop(&lastinst->src, IJMP, nil, nil, nil);
@@ -1364,7 +1364,7 @@ zcom1(Node *n, Node **nn)
 		return;
 	}
 	if (debug['Z'])
-		print("zcom1 : %n\n", n);
+		HOSTED_API(print)("zcom1 : %n\n", n);
 	if (ty->kind == Tadtpick)
 		ty = ty->tof;
 	if (ty->kind == Ttuple || ty->kind == Tadt) {
@@ -1388,7 +1388,7 @@ zcom1(Node *n, Node **nn)
 		e->ty = e->right->ty = ty;
 /*
 		if (debug['Z'])
-			print("ecom %n\n", e);
+			HOSTED_API(print)("ecom %n\n", e);
 */
 		pushblock();
 		e = simplify(e);

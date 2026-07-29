@@ -28,7 +28,7 @@ dumpa(char *s, Arc *a)
 	Bprint(&bout, "\n");
 
 	if(a->n){
-		snprint(buf, sizeof(buf), "%s    ", (*s == ' ')? s:"");
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s    ", (*s == ' ')? s:"");
 		dumpn(buf, a->n);
 	}
 }

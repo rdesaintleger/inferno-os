@@ -147,7 +147,7 @@ tkcachecol(TkCtxt *c, Image *i, ulong one, ulong three)
 		static int warn;
 		if(warn == 0){
 			warn = 1;
-			print("tk: %d colours cached\n", TkColcachesize);
+			HOSTED_API(print)("tk: %d colours cached\n", TkColcachesize);
 		}
 	}
 	return 1;
@@ -417,7 +417,7 @@ tkdefaultenv(TkTop *t)
 		static int warn;
 		if(warn == 0) {
 			warn = 1;
-			print("tk: font not found: %s\n", tkfont);
+			HOSTED_API(print)("tk: font not found: %s\n", tkfont);
 		}
 		env->font = font_open(d, "*default*");
 		if(env->font == nil) {
@@ -953,10 +953,10 @@ tkdeliver(Tk *tk, int event, void *data)
 	Tk *dest;
 
 	if(tk != nil && ((ulong)tk->type >= TKwidgets || (ulong)tk->name < 4096 && tk->name != nil)){
-		print("invalid Tk: type %d name %p\n", tk->type, tk->name);
+		HOSTED_API(print)("invalid Tk: type %d name %p\n", tk->type, tk->name);
 		abort();
 	}
-//print("tkdeliver %v to %s\n", event, tkname(tk));
+//HOSTED_API(print)("tkdeliver %v to %s\n", event, tkname(tk));
 	if(tk == nil || ((tk->flag&Tkdestroy) && event != TkDestroy))
 		return tk;
 	if(event&(TkFocusin|TkFocusout) && (tk->flag&Tktakefocus))
@@ -994,7 +994,7 @@ tksubdeliver(Tk *tk, TkAction *binds, int event, void *data, int extn)
 	if (!extn)
 		return tkextndeliver(tk, binds, event, data);
 
-//debug = (tk->name && !strcmp(tk->name->name, ".cd")) ? print : nullop;
+//debug = (tk->name && !strcmp(tk->name->name, ".cd")) ? HOSTED_API(print) : nullop;
 //debug("subdeliver %v\n", event);
 
 	if (event & TkTakefocus) {
@@ -1367,7 +1367,7 @@ tkfprint(char *v, int frac)
 		*v++ = '-';
 		frac = -frac;
 	}
-	v += sprint(v, "%d", frac/Tkfpscalar);
+	v += HOSTED_API(sprint)(v, "%d", frac/Tkfpscalar);
 	frac = frac%Tkfpscalar;
 	if(frac != 0)
 		*v++ = '.';
@@ -1533,7 +1533,7 @@ tksinglecmd(TkTop *t, char *arg, char **val)
 	char *e, *buf;
 
 	if(t->debug)
-		print("tk: '%s'\n", arg);
+		HOSTED_API(print)("tk: '%s'\n", arg);
 
 	buf = HOSTED_API(mallocz)(Tkmaxitem, 0);
 	if(buf == nil)
@@ -1786,7 +1786,7 @@ tksetmgrab(TkTop *t, Tk *tk)
 			c->focused = 1;
 			c->mfocus = tk;
 		}
-//print("setmgrab(%s) focus now %s\n", tkname(tk), tkname(c->mfocus));
+//HOSTED_API(print)("setmgrab(%s) focus now %s\n", tkname(tk), tkname(c->mfocus));
 		tkenterleave(t);
 	}
 	return nil;

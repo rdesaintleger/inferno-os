@@ -155,7 +155,7 @@ cacheinstall(Cache **cache, Display *d, char *name, void *ptr, char *type)
 	USED(type);
 	c = cachelookup(cache, d, name);
 	if(c){
-/*		print("%s %s already in cache\n", type, name); /**/
+/*		HOSTED_API(print)("%s %s already in cache\n", type, name); /**/
 		return nil;
 	}
 	c = HOSTED_API(malloc)(sizeof(Cache));
@@ -185,7 +185,7 @@ cacheuninstall(Cache **cache, Display *d, char *name, char *type)
 	if(c == nil){
    Notfound:
 		libqunlock(cacheqlock);
-		print("%s not in %s cache\n", name, type);
+		HOSTED_API(print)("%s not in %s cache\n", name, type);
 		return;
 	}
 	prev = nil;
@@ -348,7 +348,7 @@ Display_allocate(void *fp)
 	df = getdefont(display);
 	if(df){
 		display->defaultsubfont = df;
-		sprint(buf, "%d %d\n0 %d\t%s\n", df->height, df->ascent,
+		HOSTED_API(sprint)(buf, "%d %d\n0 %d\t%s\n", df->height, df->ascent,
 			df->n-1, deffontname);
 		display->defaultfont = buildfont(display, buf, deffontname);
 		if(display->defaultfont){
@@ -1458,7 +1458,7 @@ Font_build(void *fp)
 	if(font == nil) {
 		if(strcmp(name, deffontname) == 0) {
 			df = disp->defaultsubfont;
-			sprint(buf, "%d %d\n0 %d\t%s\n",
+			HOSTED_API(sprint)(buf, "%d %d\n0 %d\t%s\n",
 				df->height, df->ascent, df->n-1, name);
 			data = buf;
 		}
@@ -1554,7 +1554,7 @@ freecachedsubfont(Subfont *sf)
 	disp = sf->bits->display;
 	c = cachelookup(sfcache, disp, sf->name);
 	if(c == nil){
-		fprint(2, "subfont %s not cached\n", sf->name);
+		HOSTED_API(fprint)(2, "subfont %s not cached\n", sf->name);
 		return;
 	}
 	if(c->ref > 0)
@@ -2134,7 +2134,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 			u[0] = 0;
 		else
 			strcpy(tmp2, ".");
-		snprint(tmp1, sizeof tmp1, "%s/%s", tmp2, t);
+		HOSTED_API(snprint)(tmp1, sizeof tmp1, "%s/%s", tmp2, t);
 		t = tmp1;
 	}
 
@@ -2145,7 +2145,7 @@ subfontname(char *cfname, char *fname, int maxdepth)
 		if((1<<i) > maxdepth)
 			continue;
 		/* try i-bit grey */
-		snprint(tmp2, sizeof tmp2, "%s.%d", t, i);
+		HOSTED_API(snprint)(tmp2, sizeof tmp2, "%s.%d", t, i);
 		fd = libopen(tmp2, OREAD);
 		if(fd >= 0){
 			libclose(fd);
@@ -2210,10 +2210,10 @@ doflush(Display *d)
 			acquire();
 		kgerrstr(err, sizeof err);
 		if(_drawdebug || strcmp(err, "screen id in use") != 0 && strcmp(err, exImage) != 0){
-			print("flushimage fail: (%d not %d) d=%lux: %s\nbuffer: ", m, n, (ulong)d, err);
+			HOSTED_API(print)("flushimage fail: (%d not %d) d=%lux: %s\nbuffer: ", m, n, (ulong)d, err);
 			for(tp = d->buf; tp < d->bufp; tp++)
-				print("%.2x ", (int)*tp);
-			print("\n");
+				HOSTED_API(print)("%.2x ", (int)*tp);
+			HOSTED_API(print)("\n");
 		}
 		d->bufp = d->buf;	/* might as well; chance of continuing */
 		return -1;
@@ -2258,7 +2258,7 @@ bufimage(Display *d, int n)
 	}
 	if(d->bufp+n > d->buf+Displaybufsize){
 		if(d->local==0 && currun()!=libqlowner(d->qlock)) {
-			print("bufimage: %lux %lux\n", (ulong)libqlowner(d->qlock), (ulong)currun());
+			HOSTED_API(print)("bufimage: %lux %lux\n", (ulong)libqlowner(d->qlock), (ulong)currun());
 			abort();
 		}
 		if(doflush(d) < 0)

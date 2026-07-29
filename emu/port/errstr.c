@@ -11,7 +11,7 @@ kwerrstr(char *fmt, ...)
 	char buf[ERRMAX];
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	kstrcpy(up->env->errstr, buf, ERRMAX);
 }

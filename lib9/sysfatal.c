@@ -5,11 +5,11 @@ _sysfatalimpl(char *fmt, va_list arg)
 {
 	char buf[1024];
 
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	if(argv0)
-		fprint(2, "%s: %s\n", argv0, buf);
+		HOSTED_API(fprint)(2, "%s: %s\n", argv0, buf);
 	else
-		fprint(2, "%s\n", buf);
+		HOSTED_API(fprint)(2, "%s\n", buf);
 	exits(buf);
 }
 

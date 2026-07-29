@@ -116,7 +116,7 @@ nextword(char **s)
 		case '"':
 			cp = expandquote(cp, r, b);
 			if(cp == 0){
-				fprint(2, "missing closing quote: %s\n", *s);
+				HOSTED_API(fprint)(2, "missing closing quote: %s\n", *s);
 				Exit();
 			}
 			break;

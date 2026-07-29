@@ -14,13 +14,13 @@
 #include "lib9.h"
 
 char*
-seprint(char *buf, char *e, char *fmt, ...)
+HOSTED_API(seprint)(char *buf, char *e, char *fmt, ...)
 {
 	char *p;
 	va_list args;
 
 	va_start(args, fmt);
-	p = vseprint(buf, e, fmt, args);
+	p = HOSTED_API(vseprint)(buf, e, fmt, args);
 	va_end(args);
 	return p;
 }

@@ -428,8 +428,8 @@ others(void)
 		j = tokset[i].value;
 		if(j >= 0 && j < 256) {
 			if(temp1[j]) {
-				print("yacc bug -- cant have 2 different Ts with same value\n");
-				print("	%s and %s\n", tokset[i].name, tokset[temp1[j]].name);
+				HOSTED_API(print)("yacc bug -- cant have 2 different Ts with same value\n");
+				HOSTED_API(print)("	%s and %s\n", tokset[i].name, tokset[temp1[j]].name);
 				nerrors++;
 			}
 			temp1[j] = i;
@@ -446,8 +446,8 @@ others(void)
 		j = tokset[i].value - PRIVATE;
 		if(j >= 0 && j < 256) {
 			if(temp1[j]) {
-				print("yacc bug -- cant have 2 different Ts with same value\n");
-				print("	%s and %s\n", tokset[i].name, tokset[temp1[j]].name);
+				HOSTED_API(print)("yacc bug -- cant have 2 different Ts with same value\n");
+				HOSTED_API(print)("	%s and %s\n", tokset[i].name, tokset[temp1[j]].name);
 				nerrors++;
 			}
 			temp1[j] = i;
@@ -547,7 +547,7 @@ writem(int *pp)
 	i = *pp;
 	if(i < 0 ) {
 		q = chcopy(q, "    (");
-		sprint(q, "%d)", -i);
+		HOSTED_API(sprint)(q, "%d)", -i);
 	}
 	return sarr;
 }
@@ -591,14 +591,14 @@ summary(void)
 		Bprint(foutput, "%d entries saved by goto default\n", zzgobest);
 	}
 	if(zzsrconf != 0 || zzrrconf != 0) {
-		print("\nconflicts: ");
+		HOSTED_API(print)("\nconflicts: ");
 		if(zzsrconf)
-			print("%d shift/reduce", zzsrconf);
+			HOSTED_API(print)("%d shift/reduce", zzsrconf);
 		if(zzsrconf && zzrrconf)
-			print(", ");
+			HOSTED_API(print)(", ");
 		if(zzrrconf)
-			print("%d reduce/reduce", zzrrconf);
-		print("\n");
+			HOSTED_API(print)("%d reduce/reduce", zzrrconf);
+		HOSTED_API(print)("\n");
 	}
 	if(ftemp != 0) {
 		Bterm(ftemp);
@@ -618,9 +618,9 @@ error(char *s, ...)
 {
 
 	nerrors++;
-	fprint(2, "\n fatal error:");
-	fprint(2, s, (&s)[1]);
-	fprint(2, ", %s:%d\n", infile, lineno);
+	HOSTED_API(fprint)(2, "\n fatal error:");
+	HOSTED_API(fprint)(2, s, (&s)[1]);
+	HOSTED_API(fprint)(2, ", %s:%d\n", infile, lineno);
 	if(!fatfl)
 		return;
 	summary();
@@ -1210,7 +1210,7 @@ setup(int argc, char *argv[])
 	cp = getenv("ROOT");
 	if(cp == 0)
 		cp = ROOT;
-	snprint(par, sizeof(par), "%s/utils/lib/%s", cp, parser);
+	HOSTED_API(snprint)(par, sizeof(par), "%s/utils/lib/%s", cp, parser);
 	parser = par;
 
 	openup(stemc, dflag, vflag, ytab, ytabc);
@@ -1430,7 +1430,7 @@ setup(int argc, char *argv[])
 			if((t=gettok()) == IDENTIFIER) {
 
 				/* action within rule... */
-				sprint(actnm, "$$%d", nprod);
+				HOSTED_API(sprint)(actnm, "$$%d", nprod);
 
 				/* make it a nonterminal */
 				j = chfind(1, actnm);
@@ -2111,24 +2111,24 @@ openup(char *stem, int dflag, int vflag, int ytab, char *ytabc)
 	char buf[256];
 
 	if(vflag) {
-		sprint(buf, "%s.%s", stem, FILEU);
+		HOSTED_API(sprint)(buf, "%s.%s", stem, FILEU);
 		foutput = Bopen(buf, OWRITE);
 		if(foutput == 0)
 			error("cannot open %s", buf);
 	}
 	if(yydebug) {
-		sprint(buf, "%s.%s", stem, FILEDEBUG);
+		HOSTED_API(sprint)(buf, "%s.%s", stem, FILEDEBUG);
 		if((fdebug = Bopen(buf, OWRITE)) == 0)
 			error("can't open %s", buf);
 	}
 	if(dflag) {
-		sprint(buf, "%s.%s", stem, FILED);
+		HOSTED_API(sprint)(buf, "%s.%s", stem, FILED);
 		fdefine = Bopen(buf, OWRITE);
 		if(fdefine == 0)
 			error("can't create %s", buf);
 	}
 	if(ytab == 0)
-		sprint(buf, "%s.%s", stem, OFILE);
+		HOSTED_API(sprint)(buf, "%s.%s", stem, OFILE);
 	else
 		strcpy(buf, ytabc);
 	ftable = Bopen(buf, OWRITE);
@@ -2595,7 +2595,7 @@ hideprod(void)
 		levprd[i] = *prdptr[i] - NTBASE;
 	}
 	if(j)
-		print("%d rules never reduced\n", j);
+		HOSTED_API(print)("%d rules never reduced\n", j);
 }
 
 void

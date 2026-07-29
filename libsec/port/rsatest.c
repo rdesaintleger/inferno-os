@@ -31,27 +31,27 @@ main(void)
 	start = nsec();
 	for(n = 0; n < 10; n++)
 		rsadecrypt(rsa, enc, clr);
-	print("%lld\n", nsec()-start);
+	HOSTED_API(print)("%lld\n", nsec()-start);
 
 	start = nsec();
 	for(n = 0; n < 10; n++)
 		mpexp(enc, rsa->dk, rsa->pub.n, clr2);
-	print("%lld\n", nsec()-start);
+	HOSTED_API(print)("%lld\n", nsec()-start);
 
 	if(mpcmp(clr, clr2) != 0)
-		print("%B != %B\n", clr, clr2);
+		HOSTED_API(print)("%B != %B\n", clr, clr2);
 	
-	print("> ");
+	HOSTED_API(print)("> ");
 	while(p = Brdline(&b, '\n')){
 		n = Blinelen(&b);
 		letomp((uchar*)p, n, clr);
-		print("clr %B\n", clr);
+		HOSTED_API(print)("clr %B\n", clr);
 		rsaencrypt(&rsa->pub, clr, enc);
-		print("enc %B\n", enc);
+		HOSTED_API(print)("enc %B\n", enc);
 		rsadecrypt(rsa, enc, clr);
-		print("clr %B\n", clr);
+		HOSTED_API(print)("clr %B\n", clr);
 		n = mptole(clr, buf, sizeof(buf), nil);
 		write(1, buf, n);
-		print("> ");
+		HOSTED_API(print)("> ");
 	}
 }

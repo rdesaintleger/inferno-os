@@ -141,7 +141,7 @@ sslgen(Chan *c, char *dname, Dirtab *d, int nd, int s, Dir *dp)
  				nm = ds->user;
  			else
  				nm = eve;
-			snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
+			HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%d", s);
 			devdir(c, q, up->genbuf, 0, nm, DMDIR|0555, dp);
 			return 1;
 		}
@@ -515,7 +515,7 @@ sslbread(Chan *c, long n, ulong offset)
 			pad = count[nc.nc];
 			nc.nc++;
 			if(pad > len){
-				print("pad %d buf len %d\n", pad, len);
+				HOSTED_API(print)("pad %d buf len %d\n", pad, len);
 				error("bad pad in ssl message");
 			}
 		}
@@ -584,7 +584,7 @@ sslread(Chan *c, void *a, long n, vlong offset)
 	default:
 		error(Ebadusefd);
 	case Qctl:
-		sprint(buf, "%ld", CONV(c->qid));
+		HOSTED_API(sprint)(buf, "%ld", CONV(c->qid));
 		return readstr(offset, a, n, buf);
 	case Qdata:
 		b.b = sslbread(c, n, offset);

@@ -158,7 +158,7 @@ found:
 		n = 10+1+strlen(name)+1+strlen(estr)+1;
 		p->exstr = HOSTED_API(realloc)(p->exstr, n);
 		if(p->exstr != nil)
-			snprint(p->exstr, n, "%lud %s %s", pc, name, estr);
+			HOSTED_API(snprint)(p->exstr, n, "%lud %s %s", pc, name, estr);
 	}
 
 	/*

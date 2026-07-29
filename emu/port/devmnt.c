@@ -133,7 +133,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 		HOSTED_API(strecpy)(buf, buf+sizeof buf, m->version);
 		k = strlen(buf);
 		if(strncmp(buf, v, k) != 0){
-			snprint(buf, sizeof buf, "incompatible 9P versions %s %s", m->version, v);
+			HOSTED_API(snprint)(buf, sizeof buf, "incompatible 9P versions %s %s", m->version, v);
 			error(buf);
 		}
 		if(returnlen > 0){
@@ -386,7 +386,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 	Walkqid *wq;
 
 	if(nc != nil)
-		print("mntwalk: nc != nil\n");
+		HOSTED_API(print)("mntwalk: nc != nil\n");
 	if(nname > MAXWELEM)
 		error("devmnt: too many name elements");
 	alloc = 0;
@@ -759,7 +759,7 @@ mountrpc(Mnt *m, Mntrpc *r)
 		cn = "?";
 		if(r->c != nil && r->c->name != nil)
 			cn = r->c->name->s;
-		print("mnt: proc %s %lud: mismatch from %s %s rep 0x%p tag %d fid %d T%d R%d rp %d\n",
+		HOSTED_API(print)("mnt: proc %s %lud: mismatch from %s %s rep 0x%p tag %d fid %d T%d R%d rp %d\n",
 			up->text, up->pid, sn, cn,
 			r, r->request.tag, r->request.fid, r->request.type,
 			r->reply.type, r->reply.tag);
@@ -879,7 +879,7 @@ mntrpcread(Mnt *m, Mntrpc *r)
 
 	if(convM2S(nb->rp, len, &r->reply) <= 0){
 		/* bad message, dump it */
-		print("mntrpcread: convM2S failed\n");
+		HOSTED_API(print)("mntrpcread: convM2S failed\n");
 		qdiscard(m->q, len);
 		return -1;
 	}
@@ -963,9 +963,9 @@ mountmux(Mnt *m, Mntrpc *r)
 	}
 	unlock(&m->l);
 	if(r->reply.type == Rerror)
-		print("unexpected reply tag %ud; type %d (error %q)\n", r->reply.tag, r->reply.type, r->reply.ename);
+		HOSTED_API(print)("unexpected reply tag %ud; type %d (error %q)\n", r->reply.tag, r->reply.type, r->reply.ename);
 	else
-		print("unexpected reply tag %ud; type %d\n", r->reply.tag, r->reply.type);
+		HOSTED_API(print)("unexpected reply tag %ud; type %d\n", r->reply.tag, r->reply.type);
 }
 
 /*
@@ -1146,7 +1146,7 @@ mntchk(Chan *c)
 	m = c->mchan->mux;
 
 	if(m == nil)
-		print("mntchk 2: nil mux c %s c->mchan %s \n", c2name(c), c2name(c->mchan));
+		HOSTED_API(print)("mntchk 2: nil mux c %s c->mchan %s \n", c2name(c), c2name(c->mchan));
 
 	/*
 	 * Was it closed and reused (was error(Eshutdown); now, it can't happen)

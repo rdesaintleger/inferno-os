@@ -25,7 +25,7 @@ main(void)
 		p = (uchar*)*pp;
 		md4(p, strlen(*pp), digest, 0);
 		for(i = 0; i < MD5dlen; i++)
-			print("%2.2ux", digest[i]);
-		print("\n");
+			HOSTED_API(print)("%2.2ux", digest[i]);
+		HOSTED_API(print)("\n");
 	}
 }

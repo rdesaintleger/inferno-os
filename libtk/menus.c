@@ -385,7 +385,7 @@ mkchoicemenu(Tk *tkb)
 		tkcl->ul = -1;
 		tkcl->justify = Tkleft;
 		tkcl->text = HOSTED_API(strdup)(tkl->values[i]);
-		tkcl->command = smprint("%s invoke %d", tkb->name->name, i);
+		tkcl->command = HOSTED_API(smprint)("%s invoke %d", tkb->name->name, i);
 		/* XXX recover from malloc failure */
 		tksizelabel(tkc);
 		tkc->req.height = tkb->req.height;
@@ -415,7 +415,7 @@ tkMBpress(Tk *tk, char *arg, char **val)
 		menu = mkchoicemenu(tk);
 		if (menu == nil)
 			return TkNomem;
-		sprint(buf, "%d", tkl->check);
+		HOSTED_API(sprint)(buf, "%d", tkl->check);
 		bufp = buf;
 		item = tkmenuindex2ptr(menu, &bufp);
 		if(item == nil)
@@ -488,7 +488,7 @@ tkchoicebutset(Tk *tk, char *arg, char **val)
 	/* XXX recover from malloc error */
 	tkl->check = v;
 
-	sprint(buf, "%d", v);
+	HOSTED_API(sprint)(buf, "%d", v);
 	e = tksetvar(tk->env->top, tkl->variable, buf);
 	if(e != nil)
 		return e;
@@ -1016,7 +1016,7 @@ tkmpost(Tk *tk, int x, int y, int cascade, int bh, int adjust)
 	if(w->postcmd != nil) {
 		e = tkexec(tk->env->top, w->postcmd, nil);
 		if(e != nil) {
-			print("%s: postcommand: %s: %s\n", tkname(tk), w->postcmd, e);
+			HOSTED_API(print)("%s: postcommand: %s: %s\n", tkname(tk), w->postcmd, e);
 			return e;
 		}
 	}
@@ -1601,7 +1601,7 @@ autoscroll(Tk *tk, void *v, int cancelled)
 		return;
 	}
 	if(!eqpt(tkw->act, tkw->req)){
-print("not autoscrolling, act: %P, req: %P\n", tkw->act, tkw->req);
+HOSTED_API(print)("not autoscrolling, act: %P, req: %P\n", tkw->act, tkw->req);
 		return;
 }
 	dr = tk->env->top->screenr;
@@ -1661,7 +1661,7 @@ startautoscroll(Tk *tk, TkMouse *m)
 		d.y = 1;
 	else if (m->y >= dr.max.y - 1 && r.max.y >= dr.max.y)
 		d.y = -1;
-//print("startautoscroll, delta %P\n", d);
+//HOSTED_API(print)("startautoscroll, delta %P\n", d);
 	if (d.x == 0 && d.y == 0){
 		if (tkw->speed > 0){
 			tkcancelrepeat(tk);

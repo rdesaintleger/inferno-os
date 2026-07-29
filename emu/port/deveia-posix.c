@@ -76,7 +76,7 @@ ftos(char *buf, struct tcdef_t *tbl, tcflag_t flag)
 {
 	for(; tbl->val >= 0; tbl++)
 		if(tbl->flag == flag){
-			sprint(buf, "%d", tbl->val);
+			HOSTED_API(sprint)(buf, "%d", tbl->val);
 			return buf;
 		}
 	return "unknown";
@@ -106,11 +106,11 @@ rdstat(int port, void *buf, long n, ulong offset)
 		oserror();
 
 	s = str;
-	s += sprint(s, "opens %d ferr %d oerr %d baud %s", 
+	s += HOSTED_API(sprint)(s, "opens %d ferr %d oerr %d baud %s", 
 		    eia[port].r.ref-1, eia[port].frame, eia[port].overrun,
 		    ftos(sbuf, bps, (tcflag_t)cfgetospeed(&ts)));
 	s = rdxtra(port, &ts, s);
-	sprint(s, "\n");
+	HOSTED_API(sprint)(s, "\n");
 
 	return readstr(offset, buf, n, str);
 }
@@ -253,15 +253,15 @@ eiainit(void)
 	if(eia == 0)
 		panic("eiainit");
 	for(i = 0; i < nports; i++) {
-		sprint(dp->name, "%s%d", Devname, i);
+		HOSTED_API(sprint)(dp->name, "%s%d", Devname, i);
 		dp->qid.path = NETQID(i, Ndataqid);
 		dp->perm = 0660;
 		dp++;
-		sprint(dp->name, "%s%dctl", Devname, i);
+		HOSTED_API(sprint)(dp->name, "%s%dctl", Devname, i);
 		dp->qid.path = NETQID(i, Nctlqid);
 		dp->perm = 0660;
 		dp++;
-		sprint(dp->name, "%s%dstatus", Devname, i);
+		HOSTED_API(sprint)(dp->name, "%s%dstatus", Devname, i);
 		dp->qid.path = NETQID(i, Nstatqid);
 		dp->perm = 0660;
 		dp++;

@@ -11,7 +11,7 @@ sha1pickle(SHA1state *s)
 	p = HOSTED_API(malloc)(m);
 	if(p == nil)
 		return p;
-	n = sprint(p, "%8.8ux %8.8ux %8.8ux %8.8ux %8.8ux ",
+	n = HOSTED_API(sprint)(p, "%8.8ux %8.8ux %8.8ux %8.8ux %8.8ux ",
 		s->state[0], s->state[1], s->state[2],
 		s->state[3], s->state[4]);
 	enc64(p+n, m-n, s->buf, s->blen);

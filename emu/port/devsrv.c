@@ -167,7 +167,7 @@ srvattach(char *spec)
 	d->ref = 1;
 	kstrdup(&d->spec, spec);
 	kstrdup(&d->user, up->env->user);
-	snprint(srvname, sizeof(srvname), "srv%ld", up->env->pgrp->pgrpid);
+	HOSTED_API(snprint)(srvname, sizeof(srvname), "srv%ld", up->env->pgrp->pgrpid);
 	kstrdup(&d->name, srvname);
 	d->perm = DMDIR|0770;
 	mkqid(&d->qid, dev.pathgen++, 0, QTDIR);

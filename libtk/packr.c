@@ -156,7 +156,7 @@ tkpackqit(Tk *t)
 	tkpackqrm(t);
 	f = HOSTED_API(malloc)(sizeof(Pack));
 	if(f == nil) {
-		print("tkpackqit: malloc failed\n");
+		HOSTED_API(print)("tkpackqit: malloc failed\n");
 		return;
 	}
 

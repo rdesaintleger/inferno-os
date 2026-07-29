@@ -341,7 +341,7 @@ Tk_pointer(void *a)
 
 	lockctxt(c);
 //if (f->p.buttons != 0 || c->mstate.b != 0)
-//print("tkmouse %d [%d %d], focused %d[%s], grab %s, entered %s\n",
+//HOSTED_API(print)("tkmouse %d [%d %d], focused %d[%s], grab %s, entered %s\n",
 //	f->p.buttons, f->p.xy.x, f->p.xy.y, c->focused, tkname(c->mfocus), tkname(c->mgrab), tkname(c->entered));
 	/*
 	 * target is the widget that we're deliver the mouse event to.
@@ -1086,7 +1086,7 @@ tksetwindrawimage(Tk *tk, Draw_Image *di)
 
 	locked = lockdisplay(i->display);
 	if(originwindow(i, ZP, i->r.min) == -1)
-		print("tk originwindow failed: %r\n");
+		HOSTED_API(print)("tk originwindow failed: %r\n");
 	di->r = DRECT(i->r);
 	di->clipr = DRECT(i->clipr);
 	if(locked)
@@ -1206,7 +1206,7 @@ tkwreq(TkTop *top, char *fmt, ...)
 	va_list arg;
 
 	va_start(arg, fmt);
-	buf = vsmprint(fmt, arg);
+	buf = HOSTED_API(vsmprint)(fmt, arg);
 	va_end(arg);
 	tktolimbo(top->wreq, buf);
 	HOSTED_API(free)(buf);
@@ -1286,7 +1286,7 @@ tkcursorswitch(TkTop *top, Image *i, TkImg *img)
 	buf = HOSTED_API(mallocz)(maxb, 0);
 	if(buf == nil)
 		return TkNomem;
-	n = sprint(buf, "cursor %d %d %d %d ", i->r.min.x, i->r.min.y, ci->r.max.x, ci->r.max.y);
+	n = HOSTED_API(sprint)(buf, "cursor %d %d %d %d ", i->r.min.x, i->r.min.y, ci->r.max.x, ci->r.max.y);
 	unloadimage(ci, ci->r, (uchar*)buf+n, maxb-n);
 	hexify(buf+n, nb);
 	tktolimbo(top->wreq, buf);

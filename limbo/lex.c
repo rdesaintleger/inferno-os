@@ -319,10 +319,10 @@ includef(Sym *file)
 	p = "";
 	if(file->name[0] != '/')
 		p = srcdir;
-	seprint(buf, buf+sizeof(buf), "%s%s", p, file->name);
+	HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s%s", p, file->name);
 	b = Bopen(buf, OREAD);
 	for(i = 0; b == nil && i < MaxIncPath && incpath[i] != nil && file->name[0] != '/'; i++){
-		seprint(buf, buf+sizeof(buf), "%s/%s", incpath[i], file->name);
+		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s/%s", incpath[i], file->name);
 		b = Bopen(buf, OREAD);
 	}
 	bins[bstack] = b;
@@ -471,13 +471,13 @@ lineconv(Fmt *f)
 	fl = fline(line.line);
 	file = fl.file;
 
-	s = seprint(buf, buf+sizeof(buf), "%s:%d", file->name, fl.line);
+	s = HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s:%d", file->name, fl.line);
 	if(file->act != nil)
-		s = seprint(s, buf+sizeof(buf), " [ %s:%d ]", file->act, file->actoff+fl.line);
+		s = HOSTED_API(seprint)(s, buf+sizeof(buf), " [ %s:%d ]", file->act, file->actoff+fl.line);
 	if(file->in >= 0){
 		inl.line = file->in;
 		inl.pos = 0;
-		seprint(s, buf+sizeof(buf), ": %L", inl);
+		HOSTED_API(seprint)(s, buf+sizeof(buf), ": %L", inl);
 	}
 	return fmtstrcpy(f, buf);
 }
@@ -491,7 +491,7 @@ posconv(char *s, char *e, Line line)
 		return secpy(s, e, "nopos");
 
 	fl = fline(line.line);
-	return seprint(s, e, "%s:%d.%d", fl.file->name, fl.line, line.pos);
+	return HOSTED_API(seprint)(s, e, "%s:%d.%d", fl.file->name, fl.line, line.pos);
 }
 
 int
@@ -1108,13 +1108,13 @@ toksp(int t)
 
 	switch(t){
 		case Lconst:
-			snprint(buf, sizeof(buf), "%lld", lastyylval.tok.v.ival);
+			HOSTED_API(snprint)(buf, sizeof(buf), "%lld", lastyylval.tok.v.ival);
 			return buf;
 		case Lrconst:
-			snprint(buf, sizeof(buf), "%f", lastyylval.tok.v.rval);
+			HOSTED_API(snprint)(buf, sizeof(buf), "%f", lastyylval.tok.v.rval);
 			return buf;
 		case Lsconst:
-			snprint(buf, sizeof(buf), "\"%s\"", lastyylval.tok.v.idval->name);
+			HOSTED_API(snprint)(buf, sizeof(buf), "\"%s\"", lastyylval.tok.v.idval->name);
 			return buf;
 		case Ltid:
 		case Lid:
@@ -1288,9 +1288,9 @@ warn(Line line, char *fmt, ...)
 	if(errors || !dowarn)
 		return;
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%L: warning: %s\n", line, buf);
+	HOSTED_API(fprint)(2, "%L: warning: %s\n", line, buf);
 }
 
 void
@@ -1302,9 +1302,9 @@ nwarn(Node *n, char *fmt, ...)
 	if(errors || !dowarn)
 		return;
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%L: warning: %s\n", n->src.start, buf);
+	HOSTED_API(fprint)(2, "%L: warning: %s\n", n->src.start, buf);
 }
 
 void
@@ -1316,13 +1316,13 @@ error(Line line, char *fmt, ...)
 	errors++;
 	if(errors >= maxerr){
 		if(errors == maxerr)
-			fprint(2, "too many errors, stopping\n");
+			HOSTED_API(fprint)(2, "too many errors, stopping\n");
 		return;
 	}
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%L: %s\n", line, buf);
+	HOSTED_API(fprint)(2, "%L: %s\n", line, buf);
 }
 
 void
@@ -1334,13 +1334,13 @@ nerror(Node *n, char *fmt, ...)
 	errors++;
 	if(errors >= maxerr){
 		if(errors == maxerr)
-			fprint(2, "too many errors, stopping\n");
+			HOSTED_API(fprint)(2, "too many errors, stopping\n");
 		return;
 	}
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%L: %s\n", n->src.start, buf);
+	HOSTED_API(fprint)(2, "%L: %s\n", n->src.start, buf);
 }
 
 void
@@ -1352,16 +1352,16 @@ yyerror(char *fmt, ...)
 	errors++;
 	if(errors >= maxerr){
 		if(errors == maxerr)
-			fprint(2, "too many errors, stopping\n");
+			HOSTED_API(fprint)(2, "too many errors, stopping\n");
 		return;
 	}
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	if(lasttok != 0)
-		fprint(2, "%L: near ` %s ` : %s\n", curline(), toksp(lasttok), buf);
+		HOSTED_API(fprint)(2, "%L: near ` %s ` : %s\n", curline(), toksp(lasttok), buf);
 	else
-		fprint(2, "%L: %s\n", curline(), buf);
+		HOSTED_API(fprint)(2, "%L: %s\n", curline(), buf);
 }
 
 void
@@ -1372,9 +1372,9 @@ fatal(char *fmt, ...)
 
 	if(errors == 0 || isfatal){
 		va_start(arg, fmt);
-		vseprint(buf, buf+sizeof(buf), fmt, arg);
+		HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
 		va_end(arg);
-		fprint(2, "fatal limbo compiler error: %s\n", buf);
+		HOSTED_API(fprint)(2, "fatal limbo compiler error: %s\n", buf);
 	}
 	if(bout != nil)
 		remove(outfile);
@@ -1417,14 +1417,14 @@ secpy(char *p, char *e, char *s)
 }
 
 char*
-seprint(char *buf, char *end, char *fmt, ...)
+HOSTED_API(seprint)(char *buf, char *end, char *fmt, ...)
 {
 	va_list arg;
 
 	if(buf == end)
 		return buf;
 	va_start(arg, fmt);
-	buf = vseprint(buf, end, fmt, arg);
+	buf = HOSTED_API(vseprint)(buf, end, fmt, arg);
 	va_end(arg);
 	return buf;
 }

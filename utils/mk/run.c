@@ -54,7 +54,7 @@ sched(void)
 	j = jobs;
 	jobs = j->next;
 	if(DEBUG(D_EXEC))
-		fprint(1, "firing up job for target %s\n", wtos(j->t, ' '));
+		HOSTED_API(fprint)(1, "firing up job for target %s\n", wtos(j->t, ' '));
 	slot = nextslot();
 	events[slot].job = j;
 	buf = newbuf();
@@ -76,7 +76,7 @@ sched(void)
 		}
 	} else {
 		if(DEBUG(D_EXEC))
-			fprint(1, "recipe='%s'", j->r->recipe);/**/
+			HOSTED_API(fprint)(1, "recipe='%s'", j->r->recipe);/**/
 		Bflush(&bout);
 		if(j->r->attr&NOMINUSE)
 			flags = 0;
@@ -86,7 +86,7 @@ sched(void)
 		usage();
 		nrunning++;
 		if(DEBUG(D_EXEC))
-			fprint(1, "pid for target %s = %d\n", wtos(j->t, ' '), events[slot].pid);
+			HOSTED_API(fprint)(1, "pid for target %s = %d\n", wtos(j->t, ' '), events[slot].pid);
 	}
 }
 
@@ -121,13 +121,13 @@ again:		/* rogue processes */
 		if(echildok > 0)
 			return(1);
 		else {
-			fprint(2, "mk: (waitup %d) ", echildok);
+			HOSTED_API(fprint)(2, "mk: (waitup %d) ", echildok);
 			perror("mk wait");
 			Exit();
 		}
 	}
 	if(DEBUG(D_EXEC))
-		fprint(1, "waitup got pid=%d, status='%s'\n", pid, buf);
+		HOSTED_API(fprint)(1, "waitup got pid=%d, status='%s'\n", pid, buf);
 	if(retstatus && pid == *retstatus){
 		*retstatus = buf[0]? 1:0;
 		return(-1);
@@ -135,7 +135,7 @@ again:		/* rogue processes */
 	slot = pidslot(pid);
 	if(slot < 0){
 		if(DEBUG(D_EXEC))
-			fprint(2, "mk: wait returned unexpected process %d\n", pid);
+			HOSTED_API(fprint)(2, "mk: wait returned unexpected process %d\n", pid);
 		pnew(pid, buf[0]? 1:0);
 		goto again;
 	}
@@ -148,16 +148,16 @@ again:		/* rogue processes */
 		bp = newbuf();
 		shprint(j->r->recipe, e, bp);
 		front(bp->start);
-		fprint(2, "mk: %s: exit status=%s", bp->start, buf);
+		HOSTED_API(fprint)(2, "mk: %s: exit status=%s", bp->start, buf);
 		freebuf(bp);
 		for(n = j->n, done = 0; n; n = n->next)
 			if(n->flags&DELETE){
 				if(done++ == 0)
-					fprint(2, ", deleting");
-				fprint(2, " '%s'", n->name);
+					HOSTED_API(fprint)(2, ", deleting");
+				HOSTED_API(fprint)(2, " '%s'", n->name);
 				delete(n->name);
 			}
-		fprint(2, "\n");
+		HOSTED_API(fprint)(2, "\n");
 		if(kflag){
 			runerrs++;
 			uarg = 1;
@@ -190,7 +190,7 @@ nproc(void)
 	if(nproclimit < 1)
 		nproclimit = 1;
 	if(DEBUG(D_EXEC))
-		fprint(1, "nprocs = %d\n", nproclimit);
+		HOSTED_API(fprint)(1, "nprocs = %d\n", nproclimit);
 	if(nproclimit > nevents){
 		if(nevents)
 			events = (Event *)Realloc((char *)events, nproclimit*sizeof(Event));
@@ -220,7 +220,7 @@ pidslot(int pid)
 	for(i = 0; i < nevents; i++)
 		if(events[i].pid == pid) return(i);
 	if(DEBUG(D_EXEC))
-		fprint(2, "mk: wait returned unexpected process %d\n", pid);
+		HOSTED_API(fprint)(2, "mk: wait returned unexpected process %d\n", pid);
 	return(-1);
 }
 
@@ -293,5 +293,5 @@ prusage(void)
 
 	usage();
 	for(i = 0; i <= nevents; i++)
-		fprint(1, "%d: %ld\n", i, tslot[i]);
+		HOSTED_API(fprint)(1, "%d: %ld\n", i, tslot[i]);
 }

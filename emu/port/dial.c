@@ -81,18 +81,18 @@ csdial(DS *ds)
 	/*
 	 *  open connection server
 	 */
-	snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
+	HOSTED_API(snprint)(buf, sizeof(buf), "%s/cs", ds->netdir);
 	fd = kopen(buf, ORDWR);
 	if(fd < 0){
 		/* no connection server, don't translate */
-		snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
+		HOSTED_API(snprint)(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
 		return call(clone, ds->rem, ds);
 	}
 
 	/*
 	 *  ask connection server to translate
 	 */
-	sprint(buf, "%s!%s", ds->proto, ds->rem);
+	HOSTED_API(sprint)(buf, "%s!%s", ds->proto, ds->rem);
 	if(kwrite(fd, buf, strlen(buf)) < 0){
 		kerrstr(err, sizeof err);
 		kclose(fd);
@@ -155,18 +155,18 @@ call(char *clone, char *dest, DS *ds)
 	name[n] = 0;
 	for(p = name; *p == ' '; p++)
 		;
-	sprint(name, "%ld", strtoul(p, 0, 0));
+	HOSTED_API(sprint)(name, "%ld", strtoul(p, 0, 0));
 	p = strrchr(clone, '/');
 	*p = 0;
 	if(ds->dir)
-		snprint(ds->dir, NETPATHLEN, "%s/%s", clone, name);
-	snprint(data, sizeof(data), "%s/%s/data", clone, name);
+		HOSTED_API(snprint)(ds->dir, NETPATHLEN, "%s/%s", clone, name);
+	HOSTED_API(snprint)(data, sizeof(data), "%s/%s/data", clone, name);
 
 	/* connect */
 	if(ds->local)
-		snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
+		HOSTED_API(snprint)(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
-		snprint(name, sizeof(name), "connect %s", dest);
+		HOSTED_API(snprint)(name, sizeof(name), "connect %s", dest);
 	if(kwrite(cfd, name, strlen(name)) < 0){
 		err[0] = 0;
 		kerrstr(err, sizeof err);
@@ -255,7 +255,7 @@ kannounce(char *addr, char *dir)
 	/*
 	 *  find out which line we have
 	 */
-	n = sprint(buf, "%.*s/", sizeof buf, netdir);
+	n = HOSTED_API(sprint)(buf, "%.*s/", sizeof buf, netdir);
 	m = kread(ctl, &buf[n], sizeof(buf)-n-1);
 	if(m <= 0){
 		kclose(ctl);
@@ -266,7 +266,7 @@ kannounce(char *addr, char *dir)
 	/*
 	 *  make the call
 	 */
-	n = snprint(buf2, sizeof buf2, "announce %s", naddr);
+	n = HOSTED_API(snprint)(buf2, sizeof buf2, "announce %s", naddr);
 	if(kwrite(ctl, buf2, n)!=n){
 		kclose(ctl);
 		return -1;
@@ -293,7 +293,7 @@ klisten(char *dir, char *newdir)
 	/*
 	 *  open listen, wait for a call
 	 */
-	snprint(buf, sizeof buf, "%s/listen", dir);
+	HOSTED_API(snprint)(buf, sizeof buf, "%s/listen", dir);
 	ctl = kopen(buf, ORDWR);
 	if(ctl < 0)
 		return -1;
@@ -339,7 +339,7 @@ identtrans(char *netdir, char *addr, char *naddr, int na, char *file, int nf)
 	if(p)
 		*p++ = 0;
 
-	snprint(file, nf, "%s/%s/clone", netdir, proto);
+	HOSTED_API(snprint)(file, nf, "%s/%s/clone", netdir, proto);
 	strncpy(naddr, p, na);
 	naddr[na-1] = 0;
 
@@ -384,7 +384,7 @@ nettrans(char *addr, char *naddr, int na, char *file, int nf)
 	/*
 	 *  ask the connection server
 	 */
-	sprint(buf, "%s/cs", netdir);
+	HOSTED_API(sprint)(buf, "%s/cs", netdir);
 	fd = kopen(buf, ORDWR);
 	if(fd < 0)
 		return identtrans(netdir, addr, naddr, na, file, nf);
@@ -416,6 +416,6 @@ nettrans(char *addr, char *naddr, int na, char *file, int nf)
 		else
 			p++;
 	}
-	snprint(file, nf, "%s/%s", netdir, p);
+	HOSTED_API(snprint)(file, nf, "%s/%s", netdir, p);
 	return 0;
 }

@@ -256,7 +256,7 @@ ipgen(Chan *c, char *name, Dirtab *tab, int x, int s, Dir *dp)
 	case Qtopdir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, Qtopdir), 0, QTDIR);
-			sprint(up->genbuf, "#I%lud", c->dev);
+			HOSTED_API(sprint)(up->genbuf, "#I%lud", c->dev);
 			devdir(c, q, up->genbuf, 0, network, 0555, dp);
 			return 1;
 		}
@@ -278,13 +278,13 @@ ipgen(Chan *c, char *name, Dirtab *tab, int x, int s, Dir *dp)
 	case Qprotodir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, Qtopdir), 0, QTDIR);
-			sprint(up->genbuf, "#I%lud", c->dev);
+			HOSTED_API(sprint)(up->genbuf, "#I%lud", c->dev);
 			devdir(c, q, up->genbuf, 0, network, 0555, dp);
 			return 1;
 		}
 		if(s < f->p[PROTO(c->qid)]->ac) {
 			cv = f->p[PROTO(c->qid)]->conv[s];
-			sprint(up->genbuf, "%d", s);
+			HOSTED_API(sprint)(up->genbuf, "%d", s);
 			mkqid(&q, QID(PROTO(c->qid), s, Qconvdir), 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, cv->owner, 0555, dp);
 			return 1;
@@ -559,17 +559,17 @@ ipread(Chan *ch, void *a, long n, vlong off)
 	case Qndb:
 		return readstr(off, a, n, f->ndb);
 	case Qctl:
-		sprint(up->genbuf, "%lud", CONV(ch->qid));
+		HOSTED_API(sprint)(up->genbuf, "%lud", CONV(ch->qid));
 		return readstr(offset, p, n, up->genbuf);
 	case Qremote:
 		x = f->p[PROTO(ch->qid)];
 		c = x->conv[CONV(ch->qid)];
-		sprint(up->genbuf, "%I!%d\n", c->raddr, c->rport);
+		HOSTED_API(sprint)(up->genbuf, "%I!%d\n", c->raddr, c->rport);
 		return readstr(offset, p, n, up->genbuf);
 	case Qlocal:
 		x = f->p[PROTO(ch->qid)];
 		c = x->conv[CONV(ch->qid)];
-		sprint(up->genbuf, "%I!%d\n", c->laddr, c->lport);
+		HOSTED_API(sprint)(up->genbuf, "%I!%d\n", c->laddr, c->lport);
 		return readstr(offset, p, n, up->genbuf);
 	case Qstatus:
 		x = f->p[PROTO(ch->qid)];
@@ -579,7 +579,7 @@ ipread(Chan *ch, void *a, long n, vlong off)
 			HOSTED_API(free)(s);
 			nexterror();
 		}
-		snprint(s, Statelen, "%s\n", ipstates[c->state]);
+		HOSTED_API(snprint)(s, Statelen, "%s\n", ipstates[c->state]);
 		n = readstr(offset, p, n, s);
 		poperror();
 		HOSTED_API(free)(s);

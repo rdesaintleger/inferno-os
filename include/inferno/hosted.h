@@ -2,12 +2,22 @@
 #define _HOSTED_H_
 
 #ifdef HOSTED_PREFIX
+/*
+ * goal of the hosted prefix is to avoid colliding with host native implementations
+ * this macro is used for functions protos/calls so compiling without prefix will allow baremetal/native implementation.
+ */
 #define __HOSTED_CONCAT(prefix, name) prefix##_##name
 #define _HOSTED_CONCAT(prefix, name) __HOSTED_CONCAT(prefix, name)
 #define HOSTED_API(name) _HOSTED_CONCAT(HOSTED_PREFIX, name)
 #else
 #define HOSTED_API(name) name
 #endif
+
+/*
+ * The part below this line will move to a different file
+ * hosted build will use host includes and types.
+ * baremetal builds will be platform dependant.
+ */
 
 #include <stdarg.h>
 #include <stddef.h>

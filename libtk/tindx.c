@@ -250,7 +250,7 @@ tktadjustind(TkText *tkt, int units, TkTindex *p)
 			while(p->item->next != it) {
 				p->item = p->item->next;
 				if(tktdbg && p->item == nil) {
-					print("tktadjustind: botch 1\n");
+					HOSTED_API(print)("tktadjustind: botch 1\n");
 					break;
 				}
 			}

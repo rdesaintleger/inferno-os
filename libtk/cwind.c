@@ -100,7 +100,7 @@ tkcvsforgetsub(Tk *sub, Tk *tk)
 		return;
 	w = TKobj(TkCwind, i);
 	if(w->focus == tk) {
-if(0)print("tkcsvsforget sub %p %q focus %p %q\n", sub, tkname(sub), tk, tkname(tk));
+if(0)HOSTED_API(print)("tkcsvsforget sub %p %q focus %p %q\n", sub, tkname(sub), tk, tkname(tk));
 		w->focus = nil;
 	}
 }
@@ -153,14 +153,14 @@ tkcvssubdestry(Tk *sub)
 	if(tk == nil)
 		return;
 
-if(0)print("tkcvssubdestry %p %q\n", sub, tkname(sub));
+if(0)HOSTED_API(print)("tkcvssubdestry %p %q\n", sub, tkname(sub));
 	i = tkcvsfindwin(sub);
 	if(i == nil)
 		return;
 	win = TKobj(TkCwind, i);
 	if(win->sub != sub){
 		if(win->sub != nil)
-			print("inconsistent tkcvssubdestry %p %q\n", sub, tkname(sub));
+			HOSTED_API(print)("inconsistent tkcvssubdestry %p %q\n", sub, tkname(sub));
 		return;
 	}
 

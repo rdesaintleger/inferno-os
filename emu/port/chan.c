@@ -394,7 +394,7 @@ cmount(Chan *new, Chan *old, int flag, char *spec)
 		error(Emount);
 
 if(old->umh)
-	print("cmount old extra umh\n");
+	HOSTED_API(print)("cmount old extra umh\n");
 
 	order = flag&MORDER;
 
@@ -505,7 +505,7 @@ cunmount(Chan *mnt, Chan *mounted)
 	Mount *f, **p;
 
 	if(mnt->umh)	/* should not happen */
-		print("cunmount newp extra umh %p has %p\n", mnt, mnt->umh);
+		HOSTED_API(print)("cunmount newp extra umh %p has %p\n", mnt, mnt->umh);
 
 	/*
 	 * It _can_ happen that mounted->umh is non-nil, 
@@ -598,7 +598,7 @@ findmount(Chan **cp, Mhead **mp, int type, int dev, Qid qid)
 	for(m = MOUNTH(pg, qid); m; m = m->hash){
 		rlock(&m->lock);
 if(m->from == nil){
-	print("m %p m->from 0\n", m);
+	HOSTED_API(print)("m %p m->from 0\n", m);
 	runlock(&m->lock);
 	continue;
 }
@@ -820,7 +820,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 	c = cunique(c);
 
 	if(c->umh != nil){	/* BUG */
-		print("walk umh\n");
+		HOSTED_API(print)("walk umh\n");
 		putmhead(c->umh);
 		c->umh = nil;
 	}
@@ -1083,17 +1083,17 @@ namec(char *aname, int amode, int omode, ulong perm)
 
 	if(walk(&c, e.elems, e.nelems, nomount, &npath) < 0){
 		if(npath < 0 || npath > e.nelems){
-			print("namec %s walk error npath=%d\n", aname, npath);
+			HOSTED_API(print)("namec %s walk error npath=%d\n", aname, npath);
 			nexterror();
 		}
 		strcpy(tmperrbuf, up->env->errstr);
 	NameError:
 		len = prefix+e.off[npath];
 		if(len < ERRMAX/3 || (name=kmemrchr(aname, '/', len))==nil || name==aname)
-			snprint(up->genbuf, sizeof up->genbuf, "%.*s", len, aname);
+			HOSTED_API(snprint)(up->genbuf, sizeof up->genbuf, "%.*s", len, aname);
 		else
-			snprint(up->genbuf, sizeof up->genbuf, "...%.*s", (int)(len-(name-aname)), name);
-		snprint(up->env->errstr, ERRMAX, "%#q %s", up->genbuf, tmperrbuf);
+			HOSTED_API(snprint)(up->genbuf, sizeof up->genbuf, "...%.*s", (int)(len-(name-aname)), name);
+		HOSTED_API(snprint)(up->env->errstr, ERRMAX, "%#q %s", up->genbuf, tmperrbuf);
 		nexterror();
 	}
 
@@ -1148,7 +1148,7 @@ namec(char *aname, int amode, int omode, ulong perm)
 		case Aopen:
 		case Acreate:
 if(c->umh != nil){
-	print("cunique umh\n");
+	HOSTED_API(print)("cunique umh\n");
 	putmhead(c->umh);
 	c->umh = nil;
 }
@@ -1358,7 +1358,7 @@ validname(char *aname, int slashok)
 		else{
 			if(isfrog[c])
 				if(!slashok || c!='/'){
-					snprint(up->genbuf, sizeof(up->genbuf), "%s: %q", Ebadchar, aname);
+					HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%s: %q", Ebadchar, aname);
 					error(up->genbuf);
 			}
 			name++;

@@ -47,7 +47,7 @@ varname(char **s)
 	}
 	if (b->current == b->start){
 		SYNERR(-1);
-		fprint(2, "missing variable name <%s>\n", *s);
+		HOSTED_API(fprint)(2, "missing variable name <%s>\n", *s);
 		freebuf(b);
 		return 0;
 	}
@@ -98,7 +98,7 @@ expandvar(char **s)
 	}
 	if (*cp != ':') {
 		SYNERR(-1);
-		fprint(2, "bad variable name <%s>\n", buf->start);
+		HOSTED_API(fprint)(2, "bad variable name <%s>\n", buf->start);
 		freebuf(buf);
 		return 0;
 	}
@@ -106,7 +106,7 @@ expandvar(char **s)
 	end = charin(cp , "}");
 	if(end == 0){
 		SYNERR(-1);
-		fprint(2, "missing '}': %s\n", begin);
+		HOSTED_API(fprint)(2, "missing '}': %s\n", begin);
 		Exit();
 	}
 	*end = 0;

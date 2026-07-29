@@ -51,6 +51,7 @@ y.debug
 
 # initial mk from makemk.sh
 /utils/mk/mk
+/utils/lib/yaccpar
 
 /Linux/*/bin/
 /Linux/*/lib/

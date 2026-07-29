@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 	uchar block[8], *c;
 
 	if(argc != 2){
-		fprint(2, "usage: data2s name\n");
+		HOSTED_API(fprint)(2, "usage: data2s name\n");
 		exits("usage");
 	}
 	setbinmode();

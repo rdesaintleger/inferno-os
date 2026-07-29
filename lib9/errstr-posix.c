@@ -15,7 +15,7 @@ werrstr(char *fmt, ...)
 	va_list arg;
 
 	va_start(arg, fmt);
-	vseprint(errstring, errstring+sizeof(errstring), fmt, arg);
+	HOSTED_API(vseprint)(errstring, errstring+sizeof(errstring), fmt, arg);
 	va_end(arg);
 	errno = Magic;
 }

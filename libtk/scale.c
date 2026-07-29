@@ -794,7 +794,7 @@ tkscaledrag(Tk *tk, char *arg, char **val)
 
 	if(tks->command != nil && tks->jump != BoolT) {
 		tkfprint(f, tks->value);
-		snprint(buf, sizeof(buf), "%s %s", tks->command, f);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s %s", tks->command, f);
 		e = tkexec(tk->env->top, buf, nil);
 	}
 	tk->dirty = tkrect(tk, 1);
@@ -828,7 +828,7 @@ stepscale(Tk *tk, char *pos, int *end)
 	if(tks->command != nil) {
 		/* XXX perhaps should only send command if value has actually changed */
 		tkfprint(f, tks->value);
-		snprint(buf, sizeof(buf), "%s %s", tks->command, f);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s %s", tks->command, f);
 		e = tkexec(tk->env->top, buf, nil);
 	}
 	return e;
@@ -904,7 +904,7 @@ tkscalebut1r(Tk *tk, char *arg, char **val)
 	if (tks->flag & Dragging) {
 		if (tks->command != nil && tks->jump == BoolT && (tks->flag & Dragging)) {
 			tkfprint(f, tks->value);
-			snprint(buf, sizeof(buf), "%s %s", tks->command, f);
+			HOSTED_API(snprint)(buf, sizeof(buf), "%s %s", tks->command, f);
 			e = tkexec(tk->env->top, buf, nil);
 		}
 		tks->relief = TKraised;

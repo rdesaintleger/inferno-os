@@ -23,7 +23,7 @@ dorecipe(Node *node)
 	*/
 	if(r == 0){
 		if(!(node->flags&VIRTUAL) && !(node->flags&NORECIPE)){
-			fprint(2, "mk: no recipe to make '%s'\n", node->name);
+			HOSTED_API(fprint)(2, "mk: no recipe to make '%s'\n", node->name);
 			Exit();
 		}
 		if(strchr(node->name, '(') && node->time == 0)
@@ -88,18 +88,18 @@ dorecipe(Node *node)
 				if(outofdate(n, a, 0)){
 					addw(&ln, a->n->name);
 					if(explain)
-						fprint(1, "%s(%ld) < %s(%ld)\n",
+						HOSTED_API(fprint)(1, "%s(%ld) < %s(%ld)\n",
 							n->name, n->time, a->n->name, a->n->time);
 				}
 			} else {
 				if(explain)
-					fprint(1, "%s has no prerequisites\n",
+					HOSTED_API(fprint)(1, "%s has no prerequisites\n",
 							n->name);
 			}
 		}
 		MADESET(n, BEINGMADE);
 	}
-	/*print("lt=%s ln=%s lp=%s\n",wtos(head.next, ' '),wtos(ln.next, ' '),wtos(lp.next, ' '));/**/
+	/*HOSTED_API(print)("lt=%s ln=%s lp=%s\n",wtos(head.next, ' '),wtos(ln.next, ' '),wtos(lp.next, ' '));/**/
 	run(newjob(r, node, aa->stem, aa->match, lp.next, ln.next, head.next, ahead.next));
 	return(1);
 }

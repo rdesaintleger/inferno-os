@@ -60,7 +60,7 @@ fmtstrinit(Fmt *f)
  * print into an allocated string buffer
  */
 char*
-vsmprint(char *fmt, va_list args)
+HOSTED_API(vsmprint)(char *fmt, va_list args)
 {
 	Fmt f;
 	int n;

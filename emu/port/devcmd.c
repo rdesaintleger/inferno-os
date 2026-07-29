@@ -125,7 +125,7 @@ cmdgen(Chan *c, char *name, Dirtab *d, int nd, int s, Dir *dp)
 		if(s < cmd.nc) {
 			cv = cmd.conv[s];
 			mkqid(&q, QID(s, Qconvdir), 0, QTDIR);
-			sprint(up->genbuf, "%d", s);
+			HOSTED_API(sprint)(up->genbuf, "%d", s);
 			devdir(c, q, up->genbuf, 0, cv->owner, DMDIR|0555, dp);
 			return 1;
 		}
@@ -370,14 +370,14 @@ cmdread(Chan *ch, void *a, long n, vlong offset)
 	case Qconvdir:
 		return devdirread(ch, a, n, 0, 0, cmdgen);
 	case Qctl:
-		sprint(up->genbuf, "%ld", CONV(ch->qid));
+		HOSTED_API(sprint)(up->genbuf, "%ld", CONV(ch->qid));
 		return readstr(offset, p, n, up->genbuf);
 	case Qstatus:
 		c = cmd.conv[CONV(ch->qid)];
 		cmds = "";
 		if(c->cmd != nil)
 			cmds = c->cmd->f[1];
-		snprint(up->genbuf, sizeof(up->genbuf), "cmd/%d %d %s %q %q\n",
+		HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "cmd/%d %d %s %q %q\n",
 			c->x, c->inuse, c->state, c->dir, cmds);
 		return readstr(offset, p, n, up->genbuf);
 	case Qdata:
@@ -618,10 +618,10 @@ cmdproc(void *a)
 	c = a;
 	qlock(&c->l);
 	if(Debug)
-		print("f[0]=%q f[1]=%q\n", c->cmd->f[0], c->cmd->f[1]);
+		HOSTED_API(print)("f[0]=%q f[1]=%q\n", c->cmd->f[0], c->cmd->f[1]);
 	if(waserror()){
 		if(Debug)
-			print("failed: %q\n", up->env->errstr);
+			HOSTED_API(print)("failed: %q\n", up->env->errstr);
 		kstrdup(&c->error, up->env->errstr);
 		c->state = "Done";
 		qunlock(&c->l);
@@ -636,7 +636,7 @@ cmdproc(void *a)
 	qunlock(&c->l);
 	Wakeup(&c->startr);
 	if(Debug)
-		print("started\n");
+		HOSTED_API(print)("started\n");
 	while(waserror())
 		oscmdkill(t);
 	osenter();
@@ -644,14 +644,14 @@ cmdproc(void *a)
 	osleave();
 	if(n < 0){
 		oserrstr(up->genbuf, sizeof(up->genbuf));
-		n = snprint(status, sizeof(status), "0 0 0 0 %q", up->genbuf);
+		n = HOSTED_API(snprint)(status, sizeof(status), "0 0 0 0 %q", up->genbuf);
 	}
 	qlock(&c->l);
 	c->child = nil;
 	oscmdfree(t);
 	if(Debug){
 		status[n]=0;
-		print("done %d %d %d: %q\n", c->fd[0], c->fd[1], c->fd[2], status);
+		HOSTED_API(print)("done %d %d %d: %q\n", c->fd[0], c->fd[1], c->fd[2], status);
 	}
 	if(c->inuse > 0){
 		c->state = "Done";

@@ -36,33 +36,6 @@
 
 #include "inferno/protos/lib9.h"
 
-/*
- * math module dtoa
- * #define __LITTLE_ENDIAN /usr/include/endian.h under linux
- */
-
-/*
- * most mem and string routines are declared by ANSI/POSIX files above
- */
-
-extern	ulong	msize(void*);
-extern	void*	malloctopoolblock(void*);
-
-/*
- * print routines
- */
-extern	int	print(char*, ...);
-extern	char*	seprint(char*, char*, char*, ...);
-extern	char*	vseprint(char*, char*, char*, va_list);
-extern	int	snprint(char*, int, char*, ...);
-extern	int	vsnprint(char*, int, char*, va_list);
-extern	char*	smprint(char*, ...);
-extern	char*	vsmprint(char*, va_list);
-extern	int	sprint(char*, char*, ...);
-extern	int	fprint(int, char*, ...);
-extern	int	vfprint(int, char*, va_list);
-
-
 extern	int	fmtfdinit(Fmt*, int, char*, int);
 extern	int	fmtfdflush(Fmt*);
 extern	int	fmtstrinit(Fmt*);

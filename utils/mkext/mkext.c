@@ -72,7 +72,7 @@ main(int argc, char **argv)
 		p = linebuf;
 		if(strcmp(p, "end of archive") == 0){
 			Bterm(&bout);
-			fprint(2, "done\n");
+			HOSTED_API(fprint)(2, "done\n");
 			exits(0);
 		}
 		if(getfields(p, fields, NFLDS, 0, " \t") != NFLDS){
@@ -105,7 +105,7 @@ main(int argc, char **argv)
 		else
 			extract(name, mode, mtime, uid, gid, bytes);
 	}
-	fprint(2, "premature end of archive\n");
+	HOSTED_API(fprint)(2, "premature end of archive\n");
 	exits("premature end of archive");
 }
 
@@ -210,7 +210,7 @@ extract(char *name, ulong mode, ulong mtime, char *uid, char *gid, ulong bytes)
 	ulong n, tot;
 
 	if(vflag)
-		print("x %q %lud bytes\n", name, bytes);
+		HOSTED_API(print)("x %q %lud bytes\n", name, bytes);
 
 	b = Bopen(name, OWRITE);
 	if(!b){
@@ -284,11 +284,11 @@ error(char *fmt, ...)
 	char buf[1024];
 	va_list arg;
 
-	sprint(buf, "%q: ", argv0);
+	HOSTED_API(sprint)(buf, "%q: ", argv0);
 	va_start(arg, fmt);
-	vseprint(buf+strlen(buf), buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf+strlen(buf), buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%s\n", buf);
+	HOSTED_API(fprint)(2, "%s\n", buf);
 	exits(0);
 }
 
@@ -298,17 +298,17 @@ warn(char *fmt, ...)
 	char buf[1024];
 	va_list arg;
 
-	sprint(buf, "%q: ", argv0);
+	HOSTED_API(sprint)(buf, "%q: ", argv0);
 	va_start(arg, fmt);
-	vseprint(buf+strlen(buf), buf+sizeof(buf), fmt, arg);
+	HOSTED_API(vseprint)(buf+strlen(buf), buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	fprint(2, "%s\n", buf);
+	HOSTED_API(fprint)(2, "%s\n", buf);
 }
 
 void
 usage(void)
 {
-	fprint(2, "usage: mkext [-h] [-u] [-v] [-d dest-fs] [file ...]\n");
+	HOSTED_API(fprint)(2, "usage: mkext [-h] [-u] [-v] [-d dest-fs] [file ...]\n");
 	exits("usage");
 }
 

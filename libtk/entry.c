@@ -428,7 +428,7 @@ tkentrysh(Tk *tk)
 		HOSTED_API(free)(val);
 		return TkNomem;
 	}
-	sprint(cmd, "%s %s", tke->xscroll, val);
+	HOSTED_API(sprint)(cmd, "%s %s", tke->xscroll, val);
 	e = tkexec(tk->env->top, cmd, nil);
 	HOSTED_API(free)(cmd);
 	HOSTED_API(free)(val);
@@ -442,7 +442,7 @@ tkentrygeom(Tk *tk)
 	e = tkentrysh(tk);
 	if ((e != nil) &&	/* XXX - Tad: should propagate not print */
              (tk->name != nil))
-		print("tk: xscrollcommand \"%s\": %s\n", tk->name->name, e);
+		HOSTED_API(print)("tk: xscrollcommand \"%s\": %s\n", tk->name->name, e);
 	recalcentry(tk);
 }
 
@@ -923,7 +923,7 @@ tkentrybs(Tk *tk, char *arg, char **val)
 		}
 		tke->icursor--;
 	}
-	snprint(buf, Tkmaxitem, "%d", tke->icursor);
+	HOSTED_API(snprint)(buf, Tkmaxitem, "%d", tke->icursor);
 	e = tkentrydelete(tk, buf, nil);
 	HOSTED_API(free)(buf);
 	return e;
@@ -951,7 +951,7 @@ tkentrybw(Tk *tk, char *arg, char **val)
 	while(start > 0 && tkiswordchar(text[start-1]))
 		--start;
 
-	snprint(buf, sizeof(buf), "%d %d", start, tke->icursor);
+	HOSTED_API(snprint)(buf, sizeof(buf), "%d %d", start, tke->icursor);
 	return tkentrydelete(tk, buf, nil);
 }
 
@@ -1222,7 +1222,7 @@ autoselect(Tk *tk, void *v, int cancelled)
 	if (tkvisiblerect(tk, &hitr) && ptinrect(p, hitr))
 		return;
 
-	snprint(buf, sizeof(buf), "to @%d", p.x);
+	HOSTED_API(snprint)(buf, sizeof(buf), "to @%d", p.x);
 	tkentryselect(tk, buf, nil);
 	tkdirty(tk);
 	tkupdate(tk->env->top);
@@ -1239,7 +1239,7 @@ tkentryb1p(Tk *tk, char* arg, char **ret)
 
 	x = atoi(arg);
 	p = tkscrn2local(tk, Pt(x, 0));
-	sprint(buf, "@%d", p.x);
+	HOSTED_API(sprint)(buf, "@%d", p.x);
 	e = tkentryparseindex(tk, buf, &i);
 	if (e != nil)
 		return e;
@@ -1278,7 +1278,7 @@ tkentryb1m(Tk *tk, char* arg, char **ret)
 	p.y = 0;
 	if (!tkvisiblerect(tk, &hitr) || !ptinrect(p, hitr))
 		return nil;
-	snprint(buf, sizeof(buf), "to @%d", p.x);
+	HOSTED_API(snprint)(buf, sizeof(buf), "to @%d", p.x);
 	tkentryselect(tk, buf, nil);
 	return nil;
 }

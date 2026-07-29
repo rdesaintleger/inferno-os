@@ -512,7 +512,7 @@ tktdrawline(Image *i, Tk *tk, TkTline *l, Point deltait)
 	lh = l->height;
 	p = addpt(l->orig, deltait);
 	p.y += la;
-/* if(tktdbg){print("drawline, p=(%d,%d), f->a=%d, f->h=%d\n", p.x, p.y, f->ascent, f->height); tktprintline(l);} */
+/* if(tktdbg){HOSTED_API(print)("drawline, p=(%d,%d), f->a=%d, f->h=%d\n", p.x, p.y, f->ascent, f->height); tktprintline(l);} */
 	cursorx = -1000;
 	join = 0;
 	for(it = l->items; it != nil; it = it->next) {
@@ -596,7 +596,7 @@ tktdrawline(Image *i, Tk *tk, TkTline *l, Point deltait)
 		case TkTrune:
 			q.x = p.x;
 			q.y = p.y - env->font->ascent - o;
-/*if(tktdbg)print("q=(%d,%d)\n", q.x, q.y);*/
+/*if(tktdbg)HOSTED_API(print)("q=(%d,%d)\n", q.x, q.y);*/
 			string(i, q, tkgc(et, TkCforegnd), q, env->font, it->istring);
 			if(ov == BoolT) {
 				r.min.x = q.x;
@@ -960,7 +960,7 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 	 */
 	lafter = l2->next;
 	if(tktdbg && lafter == nil) {
-		print("tktfixgeom: botch 1\n");
+		HOSTED_API(print)("tktfixgeom: botch 1\n");
 		return nil;
 	}
 	while((lafter->flags & TkTfirst) == 0 && lafter != &tkt->end)
@@ -985,7 +985,7 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 
 	for(l = l1->next; l != lafter; l = l->next) {
 		if(tktdbg && l == nil) {
-			print("tktfixgeom: botch 2\n");
+			HOSTED_API(print)("tktfixgeom: botch 2\n");
 			HOSTED_API(free)(opts);
 			HOSTED_API(free)(env);
 			return nil;
@@ -1070,7 +1070,7 @@ tktfixgeom(Tk *tk, TkTline *l1, TkTline *l2, int finalwidth)
 				/* move one item up from next line and try again */
 				it = l->next->items;
 				if(tktdbg && (it == nil || it->kind == TkTnewline || it->kind == TkTcontline)) {
-					print("tktfixgeom: botch 3\n");
+					HOSTED_API(print)("tktfixgeom: botch 3\n");
 					HOSTED_API(free)(opts);
 					HOSTED_API(free)(env);
 					return nil;
@@ -1419,7 +1419,7 @@ tktwidbetween(Tk *tk, int x, TkTindex *i1, TkTindex *i2)
 		x += d;
 		if(!tktadjustind(tkt, TkTbyitem, &ix)) {
 			if(tktdbg)
-				print("tktwidbetween botch\n");
+				HOSTED_API(print)("tktwidbetween botch\n");
 			break;
 		}
 	}
@@ -1687,7 +1687,7 @@ tktextgeom(Tk *tk)
 	 * have to save index in a reusable format, as
 	 * tktfixgeom can free everything that ix points to.
 	 */
-	snprint(buf, sizeof(buf), "%d.%d", tktlinenum(tkt, &ix), tktlinepos(tkt, &ix));
+	HOSTED_API(snprint)(buf, sizeof(buf), "%d.%d", tktlinenum(tkt, &ix), tktlinepos(tkt, &ix));
 	tktfixgeom(tk, &tkt->start, tkt->end.prev, 1);
 	p = buf;
 	tktindparse(tk, &p, &ix);		/* restore index to something close to original value */
@@ -1761,7 +1761,7 @@ tktsetscroll(Tk *tk, int orient)
 	v = tkfprint(val, top);
 	*v++ = ' ';
 	tkfprint(v, bot);
-	snprint(cmd, Tkmaxitem, "%s %s", s, val);
+	HOSTED_API(snprint)(cmd, Tkmaxitem, "%s %s", s, val);
 	e = tkexec(tk->env->top, cmd, nil);
 	HOSTED_API(free)(cmd);
 	HOSTED_API(free)(val);
@@ -2118,7 +2118,7 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 		case TkTwin:
 			sub = ix1->item->iwin->sub;
 			if(sgml &&  sub != nil && sub->name != nil) {
-				snprint(buf, 100, "<Window %s>", sub->name->name);
+				HOSTED_API(snprint)(buf, 100, "<Window %s>", sub->name->name);
 				s = buf;
 			}
 		}
@@ -2151,7 +2151,7 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 			break;
 		if(!tktadjustind(tkt, TkTbyitem, ix1)) {
 			if(tktdbg)
-				print("tktextget botch\n");
+				HOSTED_API(print)("tktextget botch\n");
 			break;
 		}
 	}
@@ -2314,7 +2314,7 @@ tktextbutton1(Tk *tk, char *arg, char **val)
 
 	mi = tktfindmark(tkt->marks, "insert");
 	if(tktdbg && !mi) {
-		print("tktextbutton1: botch\n");
+		HOSTED_API(print)("tktextbutton1: botch\n");
 		return nil;
 	}
 	tktmarkmove(tk, mi, &ix);
@@ -2517,7 +2517,7 @@ tktextdelete(Tk *tk, char *arg, char **val)
 		else {
 			if(!tktadjustind(tkt, TkTbyitem, &i1)) {
 				if(tktdbg)
-					print("tktextdelete botch\n");
+					HOSTED_API(print)("tktextdelete botch\n");
 				break;
 			}
 		}
@@ -2527,7 +2527,7 @@ tktextdelete(Tk *tk, char *arg, char **val)
 	 * guard against invalidation of index by tktfixgeom
 	 */
 	if (isee.line != nil)
-		snprint(buf, sizeof(buf), "%d.%d", tktlinenum(tkt, &isee), tktlinepos(tkt, &isee));
+		HOSTED_API(snprint)(buf, sizeof(buf), "%d.%d", tktlinenum(tkt, &isee), tktlinepos(tkt, &isee));
 
 	tktfixgeom(tk, lmin, i1.line, 0);
 	tktextsize(tk, 1);
@@ -2609,7 +2609,7 @@ tktextdelins(Tk *tk, char *arg, char **val)
 						break;
 				}
 			}
-			sprint(buf, "insert-%dc insert", n);
+			HOSTED_API(sprint)(buf, "insert-%dc insert", n);
 			tktextdelete(tk, buf, nil);
 		}
 		else if(arg[0] == '+' && arg[1] == 'l')
@@ -2874,7 +2874,7 @@ tktextinsert(Tk *tk, char *arg, char **val)
 			while(ins.item->kind == TkTmark && ins.item->imark->gravity == Tkleft)
 				if(!tktadjustind(tkt, TkTbyitem, &ins)) {
 					if(tktdbg)
-						print("tktextinsert botch\n");
+						HOSTED_API(print)("tktextinsert botch\n");
 					break;
 				}
 		}
@@ -3000,7 +3000,7 @@ tktextinserti(Tk *tk, char *arg, char **val)
 	if(*buf == '\0')
 		goto Ret;
 	if(!tktmarkind(tk, "insert", &ix)) {
-		print("tktextinserti: botch\n");
+		HOSTED_API(print)("tktextinserti: botch\n");
 		goto Ret;
 	}
 	if(tktgetsel(tk, &is1, &is2)) {
@@ -3493,7 +3493,7 @@ tktextsetcursor(Tk *tk, char *arg, char **val)
 
 	mi = tktfindmark(tkt->marks, "insert");
 	if(tktdbg && mi == nil) {
-		print("tktextsetcursor: botch\n");
+		HOSTED_API(print)("tktextsetcursor: botch\n");
 		return nil;
 	}
 	tktmarkmove(tk, mi, &ix);
@@ -3581,7 +3581,7 @@ tkadjpage(Tk *tk, int ody, int *dy)
 	if((l = ix.line) != nil && istext(l)){
 		a = l->orig.y;
 		b = a+l->height;
-/* print("AP: %d %d %d (%d+%d)\n", a, ody+y, b, ody, y); */
+/* HOSTED_API(print)("AP: %d %d %d (%d+%d)\n", a, ody+y, b, ody, y); */
 		if(a+2 < ody+y && ody+y < b-2){	/* partially obscured line */
 			if(d > 0)
 				*dy -= ody+y-a;

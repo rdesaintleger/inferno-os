@@ -96,7 +96,7 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 	if(mask == nil)
 		mask = memopaque;
 
-DBG	print("memimagedraw %p/%luX %R @ %p %p/%luX %P %p/%luX %P... ", dst, dst->chan, r, dst->data->bdata, src, src->chan, p0, mask, mask->chan, p1);
+DBG	HOSTED_API(print)("memimagedraw %p/%luX %R @ %p %p/%luX %P %p/%luX %P... ", dst, dst->chan, r, dst->data->bdata, src, src->chan, p0, mask, mask->chan, p1);
 
 	if(drawclip(dst, &r, src, &p0, mask, &p1, &par.sr, &par.mr) == 0){
 //		if(drawdebug)
@@ -150,7 +150,7 @@ DBG	print("memimagedraw %p/%luX %R @ %p %p/%luX %P %p/%luX %P... ", dst, dst->ch
 
 //	if(drawdebug)
 //		iprint("dr %R sr %R mr %R...", r, par.sr, par.mr);
-DBG print("draw dr %R sr %R mr %R %lux\n", r, par.sr, par.mr, par.state);
+DBG HOSTED_API(print)("draw dr %R sr %R mr %R %lux\n", r, par.sr, par.mr, par.state);
 
 	/*
 	 * Now that we've clipped the parameters down to be consistent, we 
@@ -164,19 +164,19 @@ DBG print("draw dr %R sr %R mr %R %lux\n", r, par.sr, par.mr, par.state);
 	 * which checks to see if there is anything it can help with.
 	 * There could be an if around this checking to see if dst is in video memory.
 	 */
-DBG print("test hwdraw\n");
+DBG HOSTED_API(print)("test hwdraw\n");
 	if(hwdraw(&par)){
 //if(drawdebug) iprint("hw handled\n");
-DBG print("hwdraw handled\n");
+DBG HOSTED_API(print)("hwdraw handled\n");
 		return;
 	}
 	/*
 	 * Optimizations using memmove and memset.
 	 */
-DBG print("test memoptdraw\n");
+DBG HOSTED_API(print)("test memoptdraw\n");
 	if(memoptdraw(&par)){
 //if(drawdebug) iprint("memopt handled\n");
-DBG print("memopt handled\n");
+DBG HOSTED_API(print)("memopt handled\n");
 		return;
 	}
 
@@ -184,20 +184,20 @@ DBG print("memopt handled\n");
 	 * Character drawing.
 	 * Solid source color being painted through a boolean mask onto a high res image.
 	 */
-DBG print("test chardraw\n");
+DBG HOSTED_API(print)("test chardraw\n");
 	if(chardraw(&par)){
 //if(drawdebug) iprint("chardraw handled\n");
-DBG print("chardraw handled\n");
+DBG HOSTED_API(print)("chardraw handled\n");
 		return;
 	}
 
 	/*
 	 * General calculation-laden case that does alpha for each pixel.
 	 */
-DBG print("do alphadraw\n");
+DBG HOSTED_API(print)("do alphadraw\n");
 	alphadraw(&par);
 //if(drawdebug) iprint("alphadraw handled\n");
-DBG print("alphadraw handled\n");
+DBG HOSTED_API(print)("alphadraw handled\n");
 }
 #undef DBG
 
@@ -550,32 +550,32 @@ dumpbuf(char *s, Buffer b, int n)
 	int i;
 	uchar *p;
 	
-	print("%s", s);
+	HOSTED_API(print)("%s", s);
 	for(i=0; i<n; i++){
-		print(" ");
+		HOSTED_API(print)(" ");
 		if(p=b.grey){
-			print(" k%.2uX", *p);
+			HOSTED_API(print)(" k%.2uX", *p);
 			b.grey += b.delta;
 		}else{	
 			if(p=b.red){
-				print(" r%.2uX", *p);
+				HOSTED_API(print)(" r%.2uX", *p);
 				b.red += b.delta;
 			}
 			if(p=b.grn){
-				print(" g%.2uX", *p);
+				HOSTED_API(print)(" g%.2uX", *p);
 				b.grn += b.delta;
 			}
 			if(p=b.blu){
-				print(" b%.2uX", *p);
+				HOSTED_API(print)(" b%.2uX", *p);
 				b.blu += b.delta;
 			}
 		}
 		if((p=b.alpha) != &ones){
-			print(" α%.2uX", *p);
+			HOSTED_API(print)(" α%.2uX", *p);
 			b.alpha += b.delta;
 		}
 	}
-	print("\n");
+	HOSTED_API(print)("\n");
 }
 
 /*
@@ -759,9 +759,9 @@ alphadraw(Memdrawparam *par)
 		clipy(mask, &masky);
 
 		bsrc = rdsrc(&z->spar, z->spar.bufbase, srcy);
-DBG print("[");
+DBG HOSTED_API(print)("[");
 		bmask = rdmask(&z->mpar, z->mpar.bufbase, masky);
-DBG print("]\n");
+DBG HOSTED_API(print)("]\n");
 		bdst = rddst(&z->dpar, z->dpar.bufbase, dsty);
 		if(op != Clear && (bsrc.delta != 4 || bdst.delta != 4 || src->chan != dst->chan))
 			bdst.rgba = nil;
@@ -1292,22 +1292,22 @@ readnbit(Param *p, uchar *buf, int y)
 		n = p->img->r.max.x - x;
 
 	r = p->bytermin + y*p->bwidth;
-DBG print("readnbit dx %d %p=%p+%d*%d, *r=%d fetch %d ", dx, r, p->bytermin, y, p->bwidth, *r, n);
+DBG HOSTED_API(print)("readnbit dx %d %p=%p+%d*%d, *r=%d fetch %d ", dx, r, p->bytermin, y, p->bwidth, *r, n);
 	bits = *r++;
 	nbits = 8;
 	if(i=x&(npack-1)){
-DBG print("throwaway %d...", i);
+DBG HOSTED_API(print)("throwaway %d...", i);
 		bits <<= depth*i;
 		nbits -= depth*i;
 	}
 	for(i=0; i<n; i++){
 		if(nbits == 0){
-DBG print("(%.2ux)...", *r);
+DBG HOSTED_API(print)("(%.2ux)...", *r);
 			bits = *r++;
 			nbits = 8;
 		}
 		*w++ = repl[bits>>sh];
-DBG print("bit %x...", repl[bits>>sh]);
+DBG HOSTED_API(print)("bit %x...", repl[bits>>sh]);
 		bits <<= depth;
 		nbits -= depth;
 	}
@@ -1324,24 +1324,24 @@ DBG print("bit %x...", repl[bits>>sh]);
 		n = p->r.min.x - x;
 
 	r = p->bytey0s + y*p->bwidth;
-DBG print("x=%d r=%p...", x, r);
+DBG HOSTED_API(print)("x=%d r=%p...", x, r);
 	bits = *r++;
 	nbits = 8;
 	if(i=x&(npack-1)){
 		bits <<= depth*i;
 		nbits -= depth*i;
 	}
-DBG print("nbits=%d...", nbits);
+DBG HOSTED_API(print)("nbits=%d...", nbits);
 	for(i=0; i<n; i++){
 		if(nbits == 0){
 			bits = *r++;
 			nbits = 8;
 		}
 		*w++ = repl[bits>>sh];
-DBG print("bit %x...", repl[bits>>sh]);
+DBG HOSTED_API(print)("bit %x...", repl[bits>>sh]);
 		bits <<= depth;
 		nbits -= depth;
-DBG print("bits %x nbits %d...", bits, nbits);
+DBG HOSTED_API(print)("bits %x nbits %d...", bits, nbits);
 	}
 	dx -= n;
 	if(dx == 0)
@@ -1380,7 +1380,7 @@ writenbit(Param *p, uchar *w, Buffer src)
 
 	for(; x<ex; x++){
 		bits <<= depth;
-DBG print(" %x", *r);
+DBG HOSTED_API(print)(" %x", *r);
 		bits |= (*r++ >> sh);
 		nbits += depth;
 		if(nbits == 8){
@@ -1395,7 +1395,7 @@ DBG print(" %x", *r);
 		bits |= *w & ((1<<sh)-1);
 		*w = bits;
 	}
-DBG print("\n");
+DBG HOSTED_API(print)("\n");
 	return;
 }
 #undef DBG
@@ -1509,7 +1509,7 @@ readbyte(Param *p, uchar *buf, int y)
 	alphaonly = p->alphaonly;
 	copyalpha = (img->flags&Falpha) ? 1 : 0;
 
-DBG print("copyalpha %d alphaonly %d convgrey %d isgrey %d\n", copyalpha, alphaonly, convgrey, isgrey);
+DBG HOSTED_API(print)("copyalpha %d alphaonly %d convgrey %d isgrey %d\n", copyalpha, alphaonly, convgrey, isgrey);
 	/* if we can, avoid processing everything */
 	if(!(img->flags&Frepl) && !convgrey && (img->flags&Fbytes)){
 		memset(&b, 0, sizeof b);
@@ -1534,7 +1534,7 @@ DBG print("copyalpha %d alphaonly %d convgrey %d isgrey %d\n", copyalpha, alphao
 		return b;
 	}
 
-DBG print("2\n");
+DBG HOSTED_API(print)("2\n");
 	rrepl = replbit[img->nbits[CRed]];
 	grepl = replbit[img->nbits[CGreen]];
 	brepl = replbit[img->nbits[CBlue]];
@@ -1545,7 +1545,7 @@ DBG print("2\n");
 		u = r[0] | (r[1]<<8) | (r[2]<<16) | (r[3]<<24);
 		if(copyalpha) {
 			*w++ = arepl[(u>>img->shift[CAlpha]) & img->mask[CAlpha]];
-DBG print("a %x\n", w[-1]);
+DBG HOSTED_API(print)("a %x\n", w[-1]);
 		}
 
 		if(isgrey)
@@ -1555,9 +1555,9 @@ DBG print("a %x\n", w[-1]);
 			ugrn = grepl[(u >> img->shift[CGreen]) & img->mask[CGreen]];
 			ublu = brepl[(u >> img->shift[CBlue]) & img->mask[CBlue]];
 			if(convgrey){
-DBG print("g %x %x %x\n", ured, ugrn, ublu);
+DBG HOSTED_API(print)("g %x %x %x\n", ured, ugrn, ublu);
 				*w++ = RGB2K(ured, ugrn, ublu);
-DBG print("%x\n", w[-1]);
+DBG HOSTED_API(print)("%x\n", w[-1]);
 			}else{
 				*w++ = ublu;
 				*w++ = ugrn;
@@ -1580,7 +1580,7 @@ DBG print("%x\n", w[-1]);
 		b.grey = buf+copyalpha;
 		b.red = b.grn = b.blu = buf+copyalpha;
 		b.delta = copyalpha+1;
-DBG print("alpha %x grey %x\n", b.alpha ? *b.alpha : 0xFF, *b.grey);
+DBG HOSTED_API(print)("alpha %x grey %x\n", b.alpha ? *b.alpha : 0xFF, *b.grey);
 	}else{
 		b.blu = buf+copyalpha;
 		b.grn = buf+copyalpha+1;
@@ -1626,12 +1626,12 @@ writebyte(Param *p, uchar *w, Buffer src)
 
 	for(i=0; i<dx; i++){
 		u = w[0] | (w[1]<<8) | (w[2]<<16) | (w[3]<<24);
-DBG print("u %.8lux...", u);
+DBG HOSTED_API(print)("u %.8lux...", u);
 		u &= mask;
-DBG print("&mask %.8lux...", u);
+DBG HOSTED_API(print)("&mask %.8lux...", u);
 		if(isgrey){
 			u |= ((*grey >> (8-img->nbits[CGrey])) & img->mask[CGrey]) << img->shift[CGrey];
-DBG print("|grey %.8lux...", u);
+DBG HOSTED_API(print)("|grey %.8lux...", u);
 			grey += delta;
 		}else{
 			u |= ((*red >> (8-img->nbits[CRed])) & img->mask[CRed]) << img->shift[CRed];
@@ -1640,13 +1640,13 @@ DBG print("|grey %.8lux...", u);
 			red += delta;
 			grn += delta;
 			blu += delta;
-DBG print("|rgb %.8lux...", u);
+DBG HOSTED_API(print)("|rgb %.8lux...", u);
 		}
 
 		if(isalpha){
 			u |= ((*alpha >> (8-img->nbits[CAlpha])) & img->mask[CAlpha]) << img->shift[CAlpha];
 			alpha += adelta;
-DBG print("|alpha %.8lux...", u);
+DBG HOSTED_API(print)("|alpha %.8lux...", u);
 		}
 
 		w[0] = u;
@@ -2059,7 +2059,7 @@ rgbatoimg(Memimage *img, ulong rgba)
 		}
 		d += nb;
 	}
-//	print("rgba2img %.8lux = %.*lux\n", rgba, 2*d/8, v);
+//	HOSTED_API(print)("rgba2img %.8lux = %.*lux\n", rgba, 2*d/8, v);
 	return v;
 }
 
@@ -2078,7 +2078,7 @@ memoptdraw(Memdrawparam *par)
 	dst = par->dst;
 	op = par->op;
 
-DBG print("state %lux mval %lux dd %d\n", par->state, par->mval, dst->depth);
+DBG HOSTED_API(print)("state %lux mval %lux dd %d\n", par->state, par->mval, dst->depth);
 	/*
 	 * If we have an opaque mask and source is one opaque pixel we can convert to the
 	 * destination format and just replicate with memset.
@@ -2089,11 +2089,11 @@ DBG print("state %lux mval %lux dd %d\n", par->state, par->mval, dst->depth);
 		int d, dwid, ppb, np, nb;
 		uchar lm, rm;
 
-DBG print("memopt, dst %p, dst->data->bdata %p\n", dst, dst->data->bdata);
+DBG HOSTED_API(print)("memopt, dst %p, dst->data->bdata %p\n", dst, dst->data->bdata);
 		dwid = dst->width*sizeof(ulong);
 		dp = byteaddr(dst, par->r.min);
 		v = par->sdval;
-DBG print("sdval %lud, depth %d\n", v, dst->depth);
+DBG HOSTED_API(print)("sdval %lud, depth %d\n", v, dst->depth);
 		switch(dst->depth){
 		case 1:
 		case 2:
@@ -2107,16 +2107,16 @@ DBG print("sdval %lud, depth %d\n", v, dst->depth);
 			dx -= (ppb-np);
 			nb = 8 - np * dst->depth;		/* no. bits used on right side of word */
 			lm = (1<<nb)-1;
-DBG print("np %d x %d nb %d lm %ux ppb %d m %ux\n", np, par->r.min.x, nb, lm, ppb, m);	
+DBG HOSTED_API(print)("np %d x %d nb %d lm %ux ppb %d m %ux\n", np, par->r.min.x, nb, lm, ppb, m);	
 
 			/* right edge */
 			np = par->r.max.x&m;	/* no. pixels used on left side of word */
 			dx -= np;
 			nb = 8 - np * dst->depth;		/* no. bits unused on right side of word */
 			rm = ~((1<<nb)-1);
-DBG print("np %d x %d nb %d rm %ux ppb %d m %ux\n", np, par->r.max.x, nb, rm, ppb, m);	
+DBG HOSTED_API(print)("np %d x %d nb %d rm %ux ppb %d m %ux\n", np, par->r.max.x, nb, rm, ppb, m);	
 
-DBG print("dx %d Dx %d\n", dx, Dx(par->r));
+DBG HOSTED_API(print)("dx %d Dx %d\n", dx, Dx(par->r));
 			/* lm, rm are masks that are 1 where we should touch the bits */
 			if(dx < 0){	/* just one byte */
 				lm &= rm;
@@ -2128,7 +2128,7 @@ DBG print("dx %d Dx %d\n", dx, Dx(par->r));
 
 				for(y=0; y<dy; y++, dp+=dwid){
 					if(lm){
-DBG print("dp %p v %lux lm %ux (v ^ *dp) & lm %lux\n", dp, v, lm, (v^*dp)&lm);
+DBG HOSTED_API(print)("dp %p v %lux lm %ux (v ^ *dp) & lm %lux\n", dp, v, lm, (v^*dp)&lm);
 						*dp ^= (v ^ *dp) & lm;
 						dp++;
 					}
@@ -2159,7 +2159,7 @@ DBG print("dp %p v %lux lm %ux (v ^ *dp) & lm %lux\n", dp, v, lm, (v^*dp)&lm);
 			p[0] = v;		/* make little endian */
 			p[1] = v>>8;
 			v = *(ushort*)p;
-DBG print("dp=%p; dx=%d; for(y=0; y<%d; y++, dp+=%d)\nmemsets(dp, v, dx);\n",
+DBG HOSTED_API(print)("dp=%p; dx=%d; for(y=0; y<%d; y++, dp+=%d)\nmemsets(dp, v, dx);\n",
 	dp, dx, dy, dwid);
 			for(y=0; y<dy; y++, dp+=dwid)
 				memsets(dp, v, dx);
@@ -2358,7 +2358,7 @@ if(0) if(drawdebug) iprint("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d 
 
 	wp = byteaddr(dst, r.min);
 	dstwid = dst->width*sizeof(ulong);
-DBG print("bsh %d\n", bsh);
+DBG HOSTED_API(print)("bsh %d\n", bsh);
 	dy = Dy(r);
 	dx = Dx(r);
 
@@ -2384,7 +2384,7 @@ DBG print("bsh %d\n", bsh);
 	sp[2] = v>>16;
 	sp[3] = v>>24;
 
-//print("sp %x %x %x %x\n", sp[0], sp[1], sp[2], sp[3]);
+//HOSTED_API(print)("sp %x %x %x %x\n", sp[0], sp[1], sp[2], sp[3]);
 	for(y=0; y<dy; y++, rp+=maskwid, wp+=dstwid){
 		q = rp;
 		if(bsh)
@@ -2397,7 +2397,7 @@ DBG print("bsh %d\n", bsh);
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-DBG print("bits %lux sh %d...", bits, i);
+DBG HOSTED_API(print)("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1)
 					*wc = v;
 			}
@@ -2409,7 +2409,7 @@ DBG print("bits %lux sh %d...", bits, i);
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-DBG print("bits %lux sh %d...", bits, i);
+DBG HOSTED_API(print)("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1)
 					*ws = v;
 			}
@@ -2420,7 +2420,7 @@ DBG print("bits %lux sh %d...", bits, i);
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-DBG print("bits %lux sh %d...", bits, i);
+DBG HOSTED_API(print)("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1){
 					wc[0] = sp[0];
 					wc[1] = sp[1];
@@ -2443,7 +2443,7 @@ DBG iprint("bits %lux sh %d...", bits, i);
 		}
 	}
 
-DBG print("\n");	
+DBG HOSTED_API(print)("\n");	
 	return 1;	
 }
 #undef DBG

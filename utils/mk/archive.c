@@ -32,9 +32,9 @@ atimeof(int force, char *name)
 	}
 		/* truncate long member name to sizeof of name field in archive header */
 	if(dolong)
-		snprint(buf, sizeof(buf), "%s(%s)", archive, member);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s(%s)", archive, member);
 	else
-		snprint(buf, sizeof(buf), "%s(%.*s)", archive, SARNAME, member);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%s(%.*s)", archive, SARNAME, member);
 	sym = symlook(buf, S_TIME, 0);
 	if (sym)
 		return (long)sym->value;	/* uggh */
@@ -72,7 +72,7 @@ atouch(char *name)
 			if(strcmp(member, h.name) == 0){
 				t = SARNAME-sizeof(h);	/* ughgghh */
 				LSEEK(fd, t, 1);
-				fprint(fd, "%-12ld", time(0));
+				HOSTED_API(fprint)(fd, "%-12ld", time(0));
 				break;
 			}
 			t = atol(h.size);
@@ -115,7 +115,7 @@ atimes(char *ar)
 			dolong = 1;
 			continue;
 		}
-		sprint(buf, "%s(%s)", ar, n);
+		HOSTED_API(sprint)(buf, "%s(%s)", ar, n);
 		symlook(HOSTED_API(strdup)(buf), S_TIME, (void *)t)->value = (void *)t;
 		t = atol(h.size);
 		if(t&01) t++;
@@ -163,7 +163,7 @@ split(char *name, char **member)
 		if(type(p))
 			return p;
 		HOSTED_API(free)(p);
-		fprint(2, "mk: '%s' is not an archive\n", name);
+		HOSTED_API(fprint)(2, "mk: '%s' is not an archive\n", name);
 	}
 	return 0;
 }

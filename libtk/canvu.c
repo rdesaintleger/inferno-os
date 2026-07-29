@@ -206,7 +206,7 @@ tkcaddtag(Tk *tk, TkCitem *i, int new)
 	c = TKobj(TkCanvas, tk);
 	if(new != 0) {
 		i->id = ++c->id;
-		snprint(buf, sizeof(buf), "%d", i->id);
+		HOSTED_API(snprint)(buf, sizeof(buf), "%d", i->id);
 		n = tkmkname(buf);
 		if(n == nil)
 			return TkNomem;
@@ -425,7 +425,7 @@ tkcvsdeliver(Tk *tk, TkCitem *i, int event, void *data)
 			ftk = tkcvsmouseinsub(w, *(TkMouse*)data);
 			if(ftk != w->focus) {
 				tkdeliver(w->focus, TkLeave, data);
-if(0)print("focus %p %q %p %q\n", w->sub, tkname(w->sub), ftk, tkname(ftk));
+if(0)HOSTED_API(print)("focus %p %q %p %q\n", w->sub, tkname(w->sub), ftk, tkname(ftk));
 				tkdeliver(ftk, TkEnter, data);
 				w->focus = ftk;
 			}

@@ -31,7 +31,7 @@ _fmtFdFlush(Fmt *f)
 }
 
 int
-vfprint(int fd, char *fmt, va_list args)
+HOSTED_API(vfprint)(int fd, char *fmt, va_list args)
 {
 	Fmt f;
 	char buf[256];

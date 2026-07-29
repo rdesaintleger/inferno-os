@@ -81,11 +81,11 @@ dsa_sk2str(void *veg, char *buf, int len)
 	ep = buf + len - 1;
 	cp = buf;
 
-	cp += snprint(cp, ep - cp, "%U\n", dsa->pub.p);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->pub.q);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->pub.alpha);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->pub.key);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->secret);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->pub.p);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->pub.q);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->pub.alpha);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->pub.key);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->secret);
 	*cp = 0;
 
 	return cp - buf;
@@ -101,10 +101,10 @@ dsa_pk2str(void *veg, char *buf, int len)
 	ep = buf + len - 1;
 	cp = buf;
 
-	cp += snprint(cp, ep - cp, "%U\n", dsa->p);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->q);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->alpha);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->key);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->p);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->q);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->alpha);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->key);
 	*cp = 0;
 
 	return cp - buf;
@@ -120,8 +120,8 @@ dsa_sig2str(void *veg, char *buf, int len)
 	ep = buf + len - 1;
 	cp = buf;
 
-	cp += snprint(cp, ep - cp, "%U\n", dsa->r);
-	cp += snprint(cp, ep - cp, "%U\n", dsa->s);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->r);
+	cp += HOSTED_API(snprint)(cp, ep - cp, "%U\n", dsa->s);
 	*cp = 0;
 
 	return cp - buf;

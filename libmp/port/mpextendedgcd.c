@@ -53,7 +53,7 @@ mpextendedgcd(mpint *a, mpint *b, mpint *v, mpint *x, mpint *y)
 	D = mpcopy(mpone);
 
 	for(;;) {
-//		print("%B %B %B %B %B %B\n", u, v, A, B, C, D);
+//		HOSTED_API(print)("%B %B %B %B %B %B\n", u, v, A, B, C, D);
 		while(iseven(u)){
 			mpright(u, 1, u);
 			if(!iseven(A) || !iseven(B)) {
@@ -64,7 +64,7 @@ mpextendedgcd(mpint *a, mpint *b, mpint *v, mpint *x, mpint *y)
 			mpright(B, 1, B);
 		}
 	
-//		print("%B %B %B %B %B %B\n", u, v, A, B, C, D);
+//		HOSTED_API(print)("%B %B %B %B %B %B\n", u, v, A, B, C, D);
 		while(iseven(v)){
 			mpright(v, 1, v);
 			if(!iseven(C) || !iseven(D)) {
@@ -75,7 +75,7 @@ mpextendedgcd(mpint *a, mpint *b, mpint *v, mpint *x, mpint *y)
 			mpright(D, 1, D);
 		}
 	
-//		print("%B %B %B %B %B %B\n", u, v, A, B, C, D);
+//		HOSTED_API(print)("%B %B %B %B %B %B\n", u, v, A, B, C, D);
 		if(mpcmp(u, v) >= 0){
 			mpsub(u, v, u);
 			mpsub(A, C, A);

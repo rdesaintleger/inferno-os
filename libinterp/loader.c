@@ -331,7 +331,7 @@ Loader_tnew(void *a)
 		return;
 
 	mem = (m->ntype+1)*sizeof(Type*);
-	if(msize(m->type) > mem) {
+	if(HOSTED_API(msize)(m->type) > mem) {
 		*f->ret = m->ntype;
 		m->type[m->ntype++] = t;
 		return;

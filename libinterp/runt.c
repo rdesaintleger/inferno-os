@@ -53,7 +53,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 				if(c < Runeself)
 					*b++ = c;
 				else
-					b += snprint(b, eb-b, "%C", c);
+					b += HOSTED_API(snprint)(b, eb-b, "%C", c);
 			}
 			continue;
 		}
@@ -71,7 +71,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 			case '*':
 				i = *(WORD*)va;
 				f--;
-				f += snprint(f, sizeof(fmt)-(f-fmt), "%d", i);
+				f += HOSTED_API(snprint)(f, sizeof(fmt)-(f-fmt), "%d", i);
 				va += IBY2WD;
 				continue;
 			case 'b':
@@ -100,7 +100,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 					ss->Sascii[ss->len] = '\0';
 					p = ss->Sascii;
 				}
-				b += snprint(b, eb-b, fmt, p);
+				b += HOSTED_API(snprint)(b, eb-b, fmt, p);
 				break;
 			case 'E':
 				f--;
@@ -115,7 +115,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 				while((va - fp) & (sizeof(REAL)-1))
 					va++;
 				d = *(REAL*)va;
-				b += snprint(b, eb-b, fmt, d);
+				b += HOSTED_API(snprint)(b, eb-b, fmt, d);
 				va += sizeof(REAL);
 				break;
 			case 'd':
@@ -127,7 +127,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 					while((va - fp) & (IBY2LG-1))
 						va++;
 					bg = *(LONG*)va;
-					b += snprint(b, eb-b, fmt, bg);
+					b += HOSTED_API(snprint)(b, eb-b, fmt, bg);
 					va += IBY2LG;
 				}
 				else {
@@ -135,7 +135,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 					/* always a unicode character */
 					if(c == 'c')
 						f[-1] = 'C';
-					b += snprint(b, eb-b, fmt, i);
+					b += HOSTED_API(snprint)(b, eb-b, fmt, i);
 					va += IBY2WD;
 				}
 				break;
@@ -151,7 +151,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 					c = D2H(ptr)->ref;
 					t = D2H(ptr)->t;
 				}
-				b += snprint(b, eb-b, "%d.%.8lux", c, (ulong)t);
+				b += HOSTED_API(snprint)(b, eb-b, "%d.%.8lux", c, (ulong)t);
 				va += IBY2WD;
 				break;
 			}

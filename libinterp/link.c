@@ -43,11 +43,11 @@ linkm(Module *m, Modlink *ml, int i, Import *ldt)
 			break;
 
 	if(l == nil) {
-		snprint(e, sizeof(e), "link failed fn %s->%s() not implemented", m->name, ldt->name);
+		HOSTED_API(snprint)(e, sizeof(e), "link failed fn %s->%s() not implemented", m->name, ldt->name);
 		goto bad;
 	}
 	if(l->sig != sig) {
-		snprint(e, sizeof(e), "link typecheck %s->%s() %ux/%ux",
+		HOSTED_API(snprint)(e, sizeof(e), "link typecheck %s->%s() %ux/%ux",
 							m->name, ldt->name, l->sig, sig);
 		goto bad;
 	}
@@ -57,7 +57,7 @@ linkm(Module *m, Modlink *ml, int i, Import *ldt)
 	return 0;
 bad:
 	kwerrstr(e);
-	print("%s\n", e);
+	HOSTED_API(print)("%s\n", e);
 	return -1;
 }
 

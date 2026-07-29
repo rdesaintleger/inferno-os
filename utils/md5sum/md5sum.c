@@ -12,7 +12,7 @@ digestfmt(Fmt *fmt)
 
 	p = va_arg(fmt->args, uchar*);
 	for(i=0; i<MD5dlen; i++)
-		sprint(buf+2*i, "%.2ux", p[i]);
+		HOSTED_API(sprint)(buf+2*i, "%.2ux", p[i]);
 	return fmtstrcpy(fmt, buf);
 }
 
@@ -28,9 +28,9 @@ sum(int fd, char *name)
 		md5(buf, n, nil, s);
 	md5(nil, 0, digest, s);
 	if(name == nil)
-		print("%M\n", digest);
+		HOSTED_API(print)("%M\n", digest);
 	else
-		print("%M\t%s\n", digest, name);
+		HOSTED_API(print)("%M\t%s\n", digest, name);
 }
 
 void
@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 
 	ARGBEGIN{
 	default:
-		fprint(2, "usage: md5sum [file...]\n");
+		HOSTED_API(fprint)(2, "usage: md5sum [file...]\n");
 		exits("usage");
 	}ARGEND
 
@@ -51,7 +51,7 @@ main(int argc, char *argv[])
 	else for(i = 0; i < argc; i++){
 		fd = open(argv[i], OREAD);
 		if(fd < 0){
-			fprint(2, "md5sum: can't open %s: %r\n", argv[i]);
+			HOSTED_API(fprint)(2, "md5sum: can't open %s: %r\n", argv[i]);
 			continue;
 		}
 		sum(fd, argv[i]);

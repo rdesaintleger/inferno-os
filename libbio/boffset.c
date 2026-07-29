@@ -8,7 +8,7 @@ Boffset(Biobuf *bp)
 
 	switch(bp->state) {
 	default:
-		fprint(2, "Boffset: unknown state %d\n", bp->state);
+		HOSTED_API(fprint)(2, "Boffset: unknown state %d\n", bp->state);
 		n = Beof;
 		break;
 

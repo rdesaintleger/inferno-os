@@ -35,12 +35,12 @@ main(int ac, char **av)
 
 
 	for(tp = t; tp->re; tp++){
-		print("%s VIA %s", av[1], tp->re);
+		HOSTED_API(print)("%s VIA %s", av[1], tp->re);
 		if(regexec(tp->p, av[1], rs, 10)){
 			regsub(tp->s, dst, rs, 10);
-			print(" sub %s -> %s", tp->s, dst);
+			HOSTED_API(print)(" sub %s -> %s", tp->s, dst);
 		}
-		print("\n");
+		HOSTED_API(print)("\n");
 	}
 	exits(0);
 }

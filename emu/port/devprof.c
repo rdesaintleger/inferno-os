@@ -212,7 +212,7 @@ profgen(Chan *c, char *name, Dirtab *d, int nd, int s, Dir *dp)
 			release();
 			return -1;
 		}
-		sprint(up->genbuf, "%.8lux", (ulong)r->id);
+		HOSTED_API(sprint)(up->genbuf, "%.8lux", (ulong)r->id);
 		mkqid(&qid, (r->id<<QSHIFT), r->id, QTDIR);
 		devdir(c, qid, up->genbuf, 0, eve, DMDIR|0555, dp);
 		release();
@@ -357,7 +357,7 @@ profread(Chan *c, void *va, long n, vlong offset)
 		c->aux = (void*)(i+1);
 		if(n < 20)
 			error(Etoosmall);
-		return sprint(a, "%d %lud", i, r->bucket[i]);
+		return HOSTED_API(sprint)(a, "%d %lud", i, r->bucket[i]);
 	case Qctl:
 		error(Eperm);
 	}
@@ -483,7 +483,7 @@ newmodule(Module *m, int vm, int scale, int origin)
 	if(m->compiled)
 		dsize = m->nprog * sizeof(r->bucket[0]);
 	else
-		dsize = (msize(m->prog)/sizeof(Inst)) * sizeof(r->bucket[0]);
+		dsize = (HOSTED_API(msize)(m->prog)/sizeof(Inst)) * sizeof(r->bucket[0]);
 	dsize *= scale;
 	dsize += origin;
 	r = HOSTED_API(malloc)(sizeof(Record)+dsize);
@@ -701,7 +701,7 @@ memprof(int c, void *v, ulong n)
 			j = hmsize(h)-sizeof(Heap);
 		}
 		else if(c == Mmalloc){
-			j = msize(v);
+			j = HOSTED_API(msize)(v);
 		}
 		else{
 			((ulong*)v)[1] = k;
@@ -721,7 +721,7 @@ memprof(int c, void *v, ulong n)
 		}
 		i = k&0xffffff;
 		if(c == Mmfree)
-			j = msize(v);
+			j = HOSTED_API(msize)(v);
 		else if(c == Mifree)
 			j = poolmsize(imagmem, v)-sizeof(ulong);
 		else
@@ -787,7 +787,7 @@ memprofmi(int c, ulong pc, ulong v, ulong n)
 		c = Mifree;
 		break;
 	default:
-		print("bad profile code %d\n", c);
+		HOSTED_API(print)("bad profile code %d\n", c);
 	}
 	memprof(c, (void*)v, n);
 }

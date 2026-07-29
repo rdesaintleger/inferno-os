@@ -63,7 +63,7 @@ Binits(Biobuf *bp, int f, int mode, uchar *p, int size)
 
 	switch(mode&~(OCEXEC|ORCLOSE|OTRUNC)) {
 	default:
-		fprint(2, "Bopen: unknown mode %d\n", mode);
+		HOSTED_API(fprint)(2, "Bopen: unknown mode %d\n", mode);
 		return Beof;
 
 	case OREAD:
@@ -105,7 +105,7 @@ Bopen(char *name, int mode)
 
 	switch(mode&~(OCEXEC|ORCLOSE|OTRUNC)) {
 	default:
-		fprint(2, "Bopen: unknown mode %d\n", mode);
+		HOSTED_API(fprint)(2, "Bopen: unknown mode %d\n", mode);
 		return 0;
 
 	case OREAD:

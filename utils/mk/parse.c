@@ -35,12 +35,12 @@ parse(char *f, int fd, int varoverride)
 			p = wtos(tail, ' ');
 			if(*p == 0){
 				SYNERR(-1);
-				fprint(2, "missing include file name\n");
+				HOSTED_API(fprint)(2, "missing include file name\n");
 				Exit();
 			}
 			newfd = open(p, OREAD);
 			if(newfd < 0){
-				fprint(2, "warning: skipping missing include file: ");
+				HOSTED_API(fprint)(2, "warning: skipping missing include file: ");
 				perror(p);
 			} else
 				parse(p, newfd, 0);
@@ -49,20 +49,20 @@ parse(char *f, int fd, int varoverride)
 			p = wtos(tail, ' ');
 			if(*p == 0){
 				SYNERR(-1);
-				fprint(2, "missing include program name\n");
+				HOSTED_API(fprint)(2, "missing include program name\n");
 				Exit();
 			}
 			execinit();
 			pid=pipecmd(p, envy, &newfd);
 			if(newfd < 0){
-				fprint(2, "warning: skipping missing program file: ");
+				HOSTED_API(fprint)(2, "warning: skipping missing program file: ");
 				perror(p);
 			} else
 				parse(p, newfd, 0);
 			while(waitup(-3, &pid) >= 0)
 				;
 			if(pid != 0){
-				fprint(2, "bad include program status\n");
+				HOSTED_API(fprint)(2, "bad include program status\n");
 				Exit();
 			}
 			break;
@@ -73,7 +73,7 @@ parse(char *f, int fd, int varoverride)
 		case '=':
 			if(head->next){
 				SYNERR(-1);
-				fprint(2, "multiple vars on left side of assignment\n");
+				HOSTED_API(fprint)(2, "multiple vars on left side of assignment\n");
 				Exit();
 			}
 			if(symlook(head->s, S_OVERRIDE, 0)){
@@ -87,7 +87,7 @@ parse(char *f, int fd, int varoverride)
 /*
 char *cp;
 dumpw("tail", tail);
-cp = wtos(tail, ' '); print("assign %s to %s\n", head->s, cp); HOSTED_API(free)(cp);
+cp = wtos(tail, ' '); HOSTED_API(print)("assign %s to %s\n", head->s, cp); HOSTED_API(free)(cp);
 */
 				setvar(head->s, (void *) tail);
 				symlook(head->s, S_WESET, (void *)"");
@@ -97,7 +97,7 @@ cp = wtos(tail, ' '); print("assign %s to %s\n", head->s, cp); HOSTED_API(free)(
 			break;
 		default:
 			SYNERR(hline);
-			fprint(2, "expected one of :<=\n");
+			HOSTED_API(fprint)(2, "expected one of :<=\n");
 			Exit();
 			break;
 		}
@@ -155,7 +155,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 				{
 				default:
 					SYNERR(-1);
-					fprint(2, "unknown attribute '%c'\n",*p);
+					HOSTED_API(fprint)(2, "unknown attribute '%c'\n",*p);
 					Exit();
 				case 'U':
 					*attr = 1;
@@ -176,7 +176,7 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 			{
 			default:
 				SYNERR(-1);
-				fprint(2, "unknown attribute '%c'\n", p[-1]);
+				HOSTED_API(fprint)(2, "unknown attribute '%c'\n", p[-1]);
 				Exit();
 			case 'D':
 				*attr |= DEL;
@@ -216,14 +216,14 @@ rhead(char *line, Word **h, Word **t, int *attr, char **prog)
 		if (*p++ != ':') {
 	eos:
 			SYNERR(-1);
-			fprint(2, "missing trailing :\n");
+			HOSTED_API(fprint)(2, "missing trailing :\n");
 			Exit();
 		}
 	}
 	*h = w = stow(line);
 	if(*w->s == 0 && sep != '<' && sep != '|') {
 		SYNERR(mkinline-1);
-		fprint(2, "no var on left side of assignment/rule\n");
+		HOSTED_API(fprint)(2, "no var on left side of assignment/rule\n");
 		Exit();
 	}
 	*t = stow(p);

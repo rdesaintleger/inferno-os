@@ -28,7 +28,7 @@ squote(char *cp, int c)
 		cp += n;
 	}
 	SYNERR(-1);		/* should never occur */
-	fprint(2, "missing closing '\n");
+	HOSTED_API(fprint)(2, "missing closing '\n");
 	return 0;
 }
 /*
@@ -73,7 +73,7 @@ charin(char *cp, char *pat)
 	}
 	if(vargen){
 		SYNERR(-1);
-		fprint(2, "missing closing } in pattern generator\n");
+		HOSTED_API(fprint)(2, "missing closing } in pattern generator\n");
 	}
 	return 0;
 }
@@ -144,7 +144,7 @@ escapetoken(Biobuf *bp, Bufblock *buf, int preserve, int esc)
 		}
 		rinsert(buf, c);
 	}
-	SYNERR(line); fprint(2, "missing closing %c\n", esc);
+	SYNERR(line); HOSTED_API(fprint)(2, "missing closing %c\n", esc);
 	return 0;
 }
 

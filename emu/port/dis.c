@@ -287,7 +287,7 @@ swiprog(Prog *p)
 		}
 	}
 	unlock(&procs.l);
-	/*print("didn't find\n");*/
+	/*HOSTED_API(print)("didn't find\n");*/
 }
 
 static Prog*
@@ -434,7 +434,7 @@ killprog(Prog *p, char *cause)
 
 	propex(p, "killed");
 
-	snprint(msg, sizeof(msg), "%d \"%s\":%s", p->pid, p->R.M->m->name, cause);
+	HOSTED_API(snprint)(msg, sizeof(msg), "%d \"%s\":%s", p->pid, p->R.M->m->name, cause);
 
 	p->state = Pexiting;
 	gclock();
@@ -540,13 +540,13 @@ printgrp(Prog *p, char *v)
 	Prog *q;
 
 	g = p->group;
-	print("%s pid %d grp %d pgrp %d: [pid", v, p->pid, g->id, g->parent!=nil?g->parent->id:0);
+	HOSTED_API(print)("%s pid %d grp %d pgrp %d: [pid", v, p->pid, g->id, g->parent!=nil?g->parent->id:0);
 	for(q = g->head; q != nil; q = q->grpnext)
-		print(" %d", q->pid);
-	print(" subgrp");
+		HOSTED_API(print)(" %d", q->pid);
+	HOSTED_API(print)(" subgrp");
 	for(g = g->child; g != nil; g = g->sib)
-		print(" %d", g->id);
-	print("]\n");
+		HOSTED_API(print)(" %d", g->id);
+	HOSTED_API(print)("]\n");
 }
 
 int
@@ -890,7 +890,7 @@ iyield(void)
 	if(up->type != Interp){
 		static int once;
 		if(!once++)
-			print("tell charles: #%p->type==%d\n", up, up->type);
+			HOSTED_API(print)("tell charles: #%p->type==%d\n", up, up->type);
 	}
 	up->qnext = isched.idlevmq;
 	isched.idlevmq = up;
@@ -953,10 +953,10 @@ progexit(void)
 			if(pc != nil)
 				R.PC = r->R.PC = (Inst*)strtol(pc+3, nil, 0);	/* for debugging */
 		}
-		print("[%s] Broken: \"%s\"\n", m->name, estr);
+		HOSTED_API(print)("[%s] Broken: \"%s\"\n", m->name, estr);
 	}
 
-	snprint(msg, sizeof(msg), "%d \"%s\":%s", r->pid, m->name, estr);
+	HOSTED_API(snprint)(msg, sizeof(msg), "%d \"%s\":%s", r->pid, m->name, estr);
 
 	if(up->env->debug != nil) {
 		dbgexit(r, broken, estr);
@@ -992,11 +992,11 @@ disfault(void *reg, char *msg)
 		exits(0);
 
 	if(up == nil) {
-		print("EMU: faults: %s\n", msg);
+		HOSTED_API(print)("EMU: faults: %s\n", msg);
 		cleanexit(0);
 	}
 	if(up->type != Interp) {
-		print("SYS: process %s faults: %s\n", up->text, msg);
+		HOSTED_API(print)("SYS: process %s faults: %s\n", up->text, msg);
 		cleanexit(0);
 	}
 
@@ -1091,7 +1091,7 @@ disinit(void *a)
 		panic("disinit error: %r");
 
 	if(vflag)
-		print("Initial Dis: \"%s\"\n", initmod);
+		HOSTED_API(print)("Initial Dis: \"%s\"\n", initmod);
 
 	fmtinstall('D', Dconv);
 

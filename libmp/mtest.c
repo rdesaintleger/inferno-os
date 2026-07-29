@@ -36,15 +36,15 @@ testshift(char *str)
 
 	b1 = strtomp(str, nil, 16, nil);
 	malloccheck();
-fprint(2, "A");
+HOSTED_API(fprint)(2, "A");
 	b2 = mpnew(0);
-fprint(2, "B");
+HOSTED_API(fprint)(2, "B");
 	malloccheck();
 	mpleft(b1, 20, b2);
-fprint(2, "C");
+HOSTED_API(fprint)(2, "C");
 	malloccheck();
 	mpfree(b1);
-fprint(2, "D");
+HOSTED_API(fprint)(2, "D");
 	malloccheck();
 	mpfree(b2);
 }

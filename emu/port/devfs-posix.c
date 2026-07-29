@@ -187,7 +187,7 @@ fswalk(Chan *c, Chan *nc, char **name, int nname)
 			next = current;
 			incref(&next->r);
 			next = addelem(current, n);
-			//print("** ufs walk '%s' -> %s [%s]\n", current->s, n, next->s);
+			//HOSTED_API(print)("** ufs walk '%s' -> %s [%s]\n", current->s, n, next->s);
 			if(xstat(next->s, &st) < 0){
 				cnameclose(next);
 				if(j == 0)
@@ -658,7 +658,7 @@ fsqid(struct stat *st)
 		static int aware = 1;
 		if(aware==0){
 			aware = 1;
-			fprint(2, "fs: fsqid: top-bit dev: %#4.4ux\n", dev);
+			HOSTED_API(fprint)(2, "fs: fsqid: top-bit dev: %#4.4ux\n", dev);
 		}
 		dev ^= 0x8080;
 	}
@@ -684,7 +684,7 @@ fspath(Cname *c, char *name, char *path)
 	strcpy(path+n, name);
 	if(isdotdot(name))
 		HOSTED_API(cleanname)(path);
-/*print("->%s\n", path);*/
+/*HOSTED_API(print)("->%s\n", path);*/
 }
 
 static Cname *
@@ -716,7 +716,7 @@ fsperm(Chan *c, int mask)
 
 	m = FS(c)->mode;
 /*
-	print("fsperm: %o %o uuid %d ugid %d cuid %d cgid %d\n",
+	HOSTED_API(print)("fsperm: %o %o uuid %d ugid %d cuid %d cgid %d\n",
 		m, mask, up->env->uid, up->env->gid, FS(c)->uid, FS(c)->gid);
 */
 	if(FS(c)->uid == up->env->uid)
@@ -747,13 +747,13 @@ fsdirconv(Chan *c, char *path, char *name, struct stat *s, uchar *va, int nb, in
 	d.name = name;
 	u = id2user(uidmap, s->st_uid, newuid);
 	if(u == nil){
-		snprint(uidbuf, sizeof(uidbuf), "#%lud", (long)s->st_uid);
+		HOSTED_API(snprint)(uidbuf, sizeof(uidbuf), "#%lud", (long)s->st_uid);
 		d.uid = uidbuf;
 	}else
 		d.uid = u->name;
 	u = id2user(gidmap, s->st_gid, newgid);
 	if(u == nil){
-		snprint(gidbuf, sizeof(gidbuf), "#%lud", (long)s->st_gid);
+		HOSTED_API(snprint)(gidbuf, sizeof(gidbuf), "#%lud", (long)s->st_gid);
 		d.gid = gidbuf;
 	}else
 		d.gid = u->name;
@@ -808,7 +808,7 @@ fsdirread(Chan *c, uchar *va, int count, vlong offset)
 				continue;
 			HOSTED_API(strecpy)(ep, path+sizeof(path), de->d_name);
 			if(xstat(path, &st) < 0) {
-				fprint(2, "dir: bad path %s\n", path);
+				HOSTED_API(fprint)(2, "dir: bad path %s\n", path);
 				continue;
 			}
 			qlock(&idl);
@@ -852,7 +852,7 @@ fsdirread(Chan *c, uchar *va, int count, vlong offset)
 
 		HOSTED_API(strecpy)(ep, path+sizeof(path), de->d_name);
 		if(xstat(path, &st) < 0) {
-			fprint(2, "dir: bad path %s\n", path);
+			HOSTED_API(fprint)(2, "dir: bad path %s\n", path);
 			continue;
 		}
 		r = fsdirconv(c, path, de->d_name, &st, va+i, count-i, 1);

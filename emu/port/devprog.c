@@ -189,7 +189,7 @@ proggen(Chan *c, char *name, Dirtab *tab, int ntab, int s, Dir *dp)
 			pid = p->pid;
 		}
 		o = p->osenv;
-		sprint(up->genbuf, "%lud", pid);
+		HOSTED_API(sprint)(up->genbuf, "%lud", pid);
 		if(name != nil && strcmp(name, up->genbuf) != 0){
 			release();
 			return -1;
@@ -432,7 +432,7 @@ progsize(Prog *p)
 	if(m->MP != H)
 		size += hmsize(D2H(m->MP));
 	if(m->prog != nil)
-		size += msize(m->prog);
+		size += HOSTED_API(msize)(m->prog);
 
 	fp = p->R.FP;
 	while(fp != nil) {
@@ -442,10 +442,10 @@ progsize(Prog *p)
 			if(f->mr->MP != H)
 				size += hmsize(D2H(f->mr->MP));
 			if(f->mr->prog != nil)
-				size += msize(f->mr->prog);
+				size += HOSTED_API(msize)(f->mr->prog);
 		}
 		if(f->t == nil)
-			size += msize(SEXTYPE(f));
+			size += HOSTED_API(msize)(SEXTYPE(f));
 	}
 	return size/1024;
 }
@@ -470,7 +470,7 @@ progqidwidth(Chan *c)
 {
 	char buf[32];
 
-	return sprint(buf, "%lud", c->qid.vers);
+	return HOSTED_API(sprint)(buf, "%lud", c->qid.vers);
 }
 
 int
@@ -480,7 +480,7 @@ progfdprint(Chan *c, int fd, int w, char *s, int ns)
 
 	if(w == 0)
 		w = progqidwidth(c);
-	n = snprint(s, ns, "%3d %.2s %C %4ld (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
+	n = HOSTED_API(snprint)(s, ns, "%3d %.2s %C %4ld (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
 		fd,
 		&"r w rw"[(c->mode&3)<<1],
 		devtab[c->type]->dc, c->dev,
@@ -498,7 +498,7 @@ progfds(Osenv *o, char *va, int count, long offset)
 
 	f = o->fgrp;	/* f is not locked because we've acquired */
 	n = readstr(0, va, count, o->pgrp->dot->name->s);
-	n += snprint(va+n, count-n, "\n");
+	n += HOSTED_API(snprint)(va+n, count-n, "\n");
 	offset = progoffset(offset, va, &n);
 	/* compute width of qid.path */
 	w = 0;
@@ -568,7 +568,7 @@ progstack(REG *reg, int state, char *va, int count, long offset)
 
 	while(fp != nil) {
 		f = (Frame*)fp;
-		n += snprint(va+n, count-n, "%.8lux %.8lux %.8lux %.8lux %d %s\n",
+		n += HOSTED_API(snprint)(va+n, count-n, "%.8lux %.8lux %.8lux %.8lux %d %s\n",
 				(ulong)f,		/* FP */
 				(ulong)(pc - m->prog),	/* PC in dis instructions */
 				(ulong)m->MP,		/* MP */
@@ -636,11 +636,11 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 		case 'W':
 			if(addr & 3)
 				return -1;
-			n += snprint(va+n, count-n, "%d\n", *(WORD*)addr);
+			n += HOSTED_API(snprint)(va+n, count-n, "%d\n", *(WORD*)addr);
 			s = sizeof(WORD);
 			break;
 		case 'B':
-			n += snprint(va+n, count-n, "%d\n", *(BYTE*)addr);
+			n += HOSTED_API(snprint)(va+n, count-n, "%d\n", *(BYTE*)addr);
 			s = sizeof(BYTE);
 			break;
 		case 'V':
@@ -649,7 +649,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			w = (WORD*)addr;
 			rock.w[0] = w[0];
 			rock.w[1] = w[1];
-			n += snprint(va+n, count-n, "%lld\n", rock.l);
+			n += HOSTED_API(snprint)(va+n, count-n, "%lld\n", rock.l);
 			s = sizeof(LONG);
 			break;
 		case 'R':
@@ -658,7 +658,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			w = (WORD*)addr;
 			rock.w[0] = w[0];
 			rock.w[1] = w[1];
-			n += snprint(va+n, count-n, "%g\n", rock.r);
+			n += HOSTED_API(snprint)(va+n, count-n, "%g\n", rock.r);
 			s = sizeof(REAL);
 			break;
 		case 'I':
@@ -670,7 +670,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			if(m == nil)
 				error(Ebadctl);
 			addr = (ulong)(m->prog+addr);
-			n += snprint(va+n, count-n, "%D\n", (Inst*)addr);
+			n += HOSTED_API(snprint)(va+n, count-n, "%D\n", (Inst*)addr);
 			s = sizeof(Inst);
 			break;
 		case 'P':
@@ -680,7 +680,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			fmt = "nil\n";
 			if(p != H)
 				fmt = "%lux\n";
-			n += snprint(va+n, count-n, fmt, p);
+			n += HOSTED_API(snprint)(va+n, count-n, fmt, p);
 			s = sizeof(WORD);
 			break;
 		case 'L':
@@ -689,7 +689,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			hd = *(List**)addr;
 			if(hd == H || D2H(hd)->t != &Tlist)
 				return -1;
-			n += snprint(va+n, count-n, "%lux.%lux\n", (ulong)&hd->tail, (ulong)hd->data);
+			n += HOSTED_API(snprint)(va+n, count-n, "%lux.%lux\n", (ulong)&hd->tail, (ulong)hd->data);
 			s = sizeof(WORD);
 			break;
 		case 'A':
@@ -697,11 +697,11 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 				return -1;
 			a = *(Array**)addr;
 			if(a == H)
-				n += snprint(va+n, count-n, "nil\n");
+				n += HOSTED_API(snprint)(va+n, count-n, "nil\n");
 			else {
 				if(D2H(a)->t != &Tarray)
 					return -1;
-				n += snprint(va+n, count-n, "%d.%lux\n", a->len, (ulong)a->data);
+				n += HOSTED_API(snprint)(va+n, count-n, "%d.%lux\n", a->len, (ulong)a->data);
 			}
 			s = sizeof(WORD);
 			break;
@@ -714,7 +714,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			else
 			if(D2H(ss)->t != &Tstring)
 				return -1;
-			n += snprint(va+n, count-n, "%d.", abs(ss->len));
+			n += HOSTED_API(snprint)(va+n, count-n, "%d.", abs(ss->len));
 			str = string2c(ss);
 			len = strlen(str);
 			if(count-n < len)
@@ -729,7 +729,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 				return -1;
 			ml = *(Modlink**)addr;
 			fmt = ml == H ? "nil\n" : "%lux\n";
-			n += snprint(va+n, count-n, fmt, ml->MP);
+			n += HOSTED_API(snprint)(va+n, count-n, fmt, ml->MP);
 			s = sizeof(WORD);
 			break;
 		case 'c':
@@ -737,15 +737,15 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 				return -1;
 			c = *(Channel**)addr;
 			if(c == H)
-				n += snprint(va+n, count-n, "nil\n");
+				n += HOSTED_API(snprint)(va+n, count-n, "nil\n");
 			else{
 				t = D2H(c)->t;
 				if(t != &Tchannel && t != Trdchan && t != Twrchan)
 					return -1;
 				if(c->buf == H)
-					n += snprint(va+n, count-n, "0.%lux\n", (ulong)c);
+					n += HOSTED_API(snprint)(va+n, count-n, "0.%lux\n", (ulong)c);
 				else
-					n += snprint(va+n, count-n, "%d.%lux.%d.%d\n", c->buf->len, (ulong)c->buf->data, c->front, c->size);
+					n += HOSTED_API(snprint)(va+n, count-n, "%d.%lux.%d.%d\n", c->buf->len, (ulong)c->buf->data, c->front, c->size);
 			}
 			break;
 			
@@ -772,7 +772,7 @@ modstatus(REG *r, char *ptr, int len)
 
 	if(r->M->m->name[0] == '$') {
 		f = (Frame*)r->FP;
-		snprint(ptr, len, "%s[%s]", f->mr->m->name, r->M->m->name);
+		HOSTED_API(snprint)(ptr, len, "%s[%s]", f->mr->m->name, r->M->m->name);
 		if(f->mr->compiled)
 			return (WORD)f->lr;
 		return f->lr - f->mr->prog;
@@ -813,7 +813,7 @@ progtime(ulong msec, char *buf, char *ebuf)
 
 	tenths = msec/100;
 	sec = tenths/10;
-	seprint(buf, ebuf, "%4d:%2.2d.%d", sec/60, sec%60, tenths%10);
+	HOSTED_API(seprint)(buf, ebuf, "%4d:%2.2d.%d", sec/60, sec%60, tenths%10);
 	return buf;
 }
 
@@ -842,7 +842,7 @@ progread(Chan *c, void *va, long n, vlong offset)
 		p = progpid(PID(c->qid));
 		if(p == nil || p->state == Pexiting || p->R.M == H) {
 			release();
-			snprint(up->genbuf, sizeof(up->genbuf), "%8lud %8d %10s %s %10s %5dK %s",
+			HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%8lud %8d %10s %s %10s %5dK %s",
 				PID(c->qid),
 				0,
 				eve,
@@ -854,7 +854,7 @@ progread(Chan *c, void *va, long n, vlong offset)
 		}
 		modstatus(&p->R, mbuf, sizeof(mbuf));
 		o = p->osenv;
-		snprint(up->genbuf, sizeof(up->genbuf), "%8d %8d %10s %s %10s %5dK %s",
+		HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%8d %8d %10s %s %10s %5dK %s",
 			p->pid,
 			p->group!=nil? p->group->id: 0,
 			o->user,
@@ -885,18 +885,18 @@ progread(Chan *c, void *va, long n, vlong offset)
 		mntscan(mw, o->pgrp);
 		if(mw->mh == 0) {
 			mw->cddone = 1;
-			i = snprint(a, n, "cd %s\n", o->pgrp->dot->name->s);
+			i = HOSTED_API(snprint)(a, n, "cd %s\n", o->pgrp->dot->name->s);
 			poperror();
 			release();
 			return i;
 		}
 		int2flag(mw->cm->mflag, flag);
 		if(strcmp(mw->cm->to->name->s, "#M") == 0){
-			i = snprint(a, n, "mount %s %s %s %s\n", flag,
+			i = HOSTED_API(snprint)(a, n, "mount %s %s %s %s\n", flag,
 				mw->cm->to->mchan->name->s,
 				mw->mh->from->name->s, mw->cm->spec? mw->cm->spec : "");
 		}else
-			i = snprint(a, n, "bind %s %s %s\n", flag,
+			i = HOSTED_API(snprint)(a, n, "bind %s %s %s\n", flag,
 				mw->cm->to->name->s, mw->mh->from->name->s);
 		poperror();
 		release();
@@ -971,7 +971,7 @@ progread(Chan *c, void *va, long n, vlong offset)
 		if(p->exstr == nil)
 			up->genbuf[0] = 0;
 		else
-			snprint(up->genbuf, sizeof(up->genbuf), p->exstr);
+			HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), p->exstr);
 		release();
 		return readstr(offset, va, n, up->genbuf);
 	}
@@ -1158,7 +1158,7 @@ progwrite(Chan *c, void *va, long n, vlong offset)
 		hq->count = strtoul(b, nil, 0);
 		break;
 	default:
-		print("unknown qid in procwrite\n");
+		HOSTED_API(print)("unknown qid in procwrite\n");
 		error(Egreg);
 	}
 	poperror();
@@ -1312,9 +1312,9 @@ dbgexit(Prog *kid, int broken, char *estr)
 	kid->xec = xec;
 
 	if(broken)
-		n = snprint(buf, sizeof(buf), "broken: %s", estr);
+		n = HOSTED_API(snprint)(buf, sizeof(buf), "broken: %s", estr);
 	else
-		n = snprint(buf, sizeof(buf), "exited");
+		n = HOSTED_API(snprint)(buf, sizeof(buf), "exited");
 	if(ctl->debugger)
 		telldbg(ctl, buf);
 	qproduce(ctl->q, buf, n);
@@ -1407,7 +1407,7 @@ dbgxec(Prog *p)
 
 	while(R.IC != 0) {
 		if(0)
-			print("step: %lux: %s %4ld %D\n",
+			HOSTED_API(print)("step: %lux: %s %4ld %D\n",
 				(ulong)p, R.M->m->name, R.PC-R.M->prog, R.PC);
 
 		dec[R.PC->add]();
@@ -1421,12 +1421,12 @@ dbgxec(Prog *p)
 		if(op == ISPAWN || op == IMSPAWN) {
 			/* pick up the kid from the end of the run queue */
 			kid = delruntail(Pdebug);
-			n = snprint(buf, sizeof buf, "new %d", kid->pid);
+			n = HOSTED_API(snprint)(buf, sizeof buf, "new %d", kid->pid);
 			qproduce(ctl->q, buf, n);
 			buf[0] = '\0';
 		}
 		if(op == ILOAD) {
-			n = snprint(buf, sizeof buf, "load %s", string2c(*(String**)R.s));
+			n = HOSTED_API(snprint)(buf, sizeof buf, "load %s", string2c(*(String**)R.s));
 			qproduce(ctl->q, buf, n);
 			buf[0] = '\0';
 		}

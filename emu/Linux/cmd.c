@@ -39,7 +39,7 @@ childproc(Targ *t)
 	int i, nfd;
 
 	if(Debug)
-		print("devcmd: '%s'", t->args[0]);
+		HOSTED_API(print)("devcmd: '%s'", t->args[0]);
 
 	nfd = getdtablesize();
 	for(i = 0; i < nfd; i++)
@@ -56,20 +56,20 @@ childproc(Targ *t)
 	/* should have an auth file to do host-specific authorisation? */
 	if(t->gid != -1){
 		if(setgid(t->gid) < 0 && getegid() == 0){
-			fprint(t->wfd, "can't set gid %d: %s", t->gid, strerror(errno));
+			HOSTED_API(fprint)(t->wfd, "can't set gid %d: %s", t->gid, strerror(errno));
 			_exit(1);
 		}
 	}
 
 	if(t->uid != -1){
 		if(setuid(t->uid) < 0 && geteuid() == 0){
-			fprint(t->wfd, "can't set uid %d: %s", t->uid, strerror(errno));
+			HOSTED_API(fprint)(t->wfd, "can't set uid %d: %s", t->uid, strerror(errno));
 			_exit(1);
 		}
 	}
 
 	if(t->dir != nil && chdir(t->dir) < 0){
-		fprint(t->wfd, "can't chdir to %s: %s", t->dir, strerror(errno));
+		HOSTED_API(fprint)(t->wfd, "can't chdir to %s: %s", t->dir, strerror(errno));
 		_exit(1);
 	}
 
@@ -77,8 +77,8 @@ childproc(Targ *t)
 
 	execvp(t->args[0], t->args);
 	if(Debug)
-		print("execvp: %s\n",strerror(errno));
-	fprint(t->wfd, "exec failed: %s", strerror(errno));
+		HOSTED_API(print)("execvp: %s\n",strerror(errno));
+	HOSTED_API(fprint)(t->wfd, "exec failed: %s", strerror(errno));
 
 	_exit(1);
 }
@@ -128,7 +128,7 @@ oscmd(char **args, int nice, char *dir, int *fd)
 	default:
 		t->pid = pid;
 		if(Debug)
-			print("cmd pid %d\n", t->pid);
+			HOSTED_API(print)("cmd pid %d\n", t->pid);
 		break;
 	}
 
@@ -146,7 +146,7 @@ oscmd(char **args, int nice, char *dir, int *fd)
 		HOSTED_API(free)(t);
 		up->genbuf[n] = 0;
 		if(Debug)
-			print("oscmd: bad exec: %q\n", up->genbuf);
+			HOSTED_API(print)("oscmd: bad exec: %q\n", up->genbuf);
 		error(up->genbuf);
 		return nil;
 	}
@@ -159,7 +159,7 @@ oscmd(char **args, int nice, char *dir, int *fd)
 Error:
 	r = errno;
 	if(Debug)
-		print("oscmd: %q\n",strerror(r));
+		HOSTED_API(print)("oscmd: %q\n",strerror(r));
 	close(fd0[0]);
 	close(fd0[1]);
 	close(fd1[0]);
@@ -178,7 +178,7 @@ oscmdkill(void *a)
 	Targ *t = a;
 
 	if(Debug)
-		print("kill: %d\n", t->pid);
+		HOSTED_API(print)("kill: %d\n", t->pid);
 	return kill(-t->pid, SIGTERM);
 }
 
@@ -190,20 +190,20 @@ oscmdwait(void *a, char *buf, int n)
 
 	if(waitpid(t->pid, &s, 0) == -1){
 		if(Debug)
-			print("wait error: %d [in %d] %q\n", t->pid, getpid(), strerror(errno));
+			HOSTED_API(print)("wait error: %d [in %d] %q\n", t->pid, getpid(), strerror(errno));
 		return -1;
 	}
 	if(WIFEXITED(s)){
 		if(WEXITSTATUS(s) == 0)
-			return snprint(buf, n, "%d 0 0 0 ''", t->pid);
-		return snprint(buf, n, "%d 0 0 0 'exit: %d'", t->pid, WEXITSTATUS(s));
+			return HOSTED_API(snprint)(buf, n, "%d 0 0 0 ''", t->pid);
+		return HOSTED_API(snprint)(buf, n, "%d 0 0 0 'exit: %d'", t->pid, WEXITSTATUS(s));
 	}
 	if(WIFSIGNALED(s)){
 		if(WTERMSIG(s) == SIGTERM || WTERMSIG(s) == SIGKILL)
-			return snprint(buf, n, "%d 0 0 0 killed", t->pid);
-		return snprint(buf, n, "%d 0 0 0 'signal: %d'", t->pid, WTERMSIG(s));
+			return HOSTED_API(snprint)(buf, n, "%d 0 0 0 killed", t->pid);
+		return HOSTED_API(snprint)(buf, n, "%d 0 0 0 'signal: %d'", t->pid, WTERMSIG(s));
 	}
-	return snprint(buf, n, "%d 0 0 0 'odd status: 0x%x'", t->pid, s);
+	return HOSTED_API(snprint)(buf, n, "%d 0 0 0 'odd status: 0x%x'", t->pid, s);
 }
 
 void

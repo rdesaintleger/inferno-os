@@ -22,11 +22,11 @@ printmp(mpint *b, char *tag)
 	int n;
 	char *p;
 
-	print("%s (%d) ", tag, b->top);
+	HOSTED_API(print)("%s (%d) ", tag, b->top);
 	p = mptoa(b, 10, nil, 0);
 	write(1, p, strlen(p));
 	HOSTED_API(free)(p);
-	print("\n");
+	HOSTED_API(print)("\n");
 }
 
 int
@@ -75,10 +75,10 @@ main(int argc, char **argv)
 	mpadd(k, mpone, p);
 
 //	if(!probably_prime(p, 18)){
-//		print("not a prime\n");
+//		HOSTED_API(print)("not a prime\n");
 //		exits(0);
 //	}
-//	print("probably prime\n");
+//	HOSTED_API(print)("probably prime\n");
 
 	mpright(k, 10, k);
 	printmp(k, "k =");
@@ -86,7 +86,7 @@ main(int argc, char **argv)
 expdebug = 1;
 	mpexp(b, k, p, x);
 	printmp(x, "x =");
-	print("timing %d\n", timing());
+	HOSTED_API(print)("timing %d\n", timing());
 
 	for(i = 0; i < nelem(sfactors); i++){
 		d = strtomp(sfactors[i], nil, 10, nil);
@@ -97,6 +97,6 @@ expdebug = 1;
 		// x = b^e mod p
 		mpexp(b, e, p, x);
 		printmp(x, "x =");
-		print("timing %d\n", timing());
+		HOSTED_API(print)("timing %d\n", timing());
 	}
 }
