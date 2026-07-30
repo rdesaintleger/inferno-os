@@ -541,7 +541,7 @@ fswstat(Chan *c, uchar *buf, int nb)
 	if(d == nil)
 		error(Enomem);
 	if(waserror()){
-		free(d);
+		HOSTED_API(free)(d);
 		nexterror();
 	}
 	tsync = 1;

@@ -1349,7 +1349,7 @@ tkmenupost(Tk *tk, char *arg, char **val)
 	t = tk->env->top;
 	arg = tkword(t, arg, buf, buf+Tkmaxitem, nil);
 	if(buf[0] == '\0') {
-		free(buf);
+		HOSTED_API(free)(buf);
 		return TkBadvl;
 	}
 	x = atoi(buf);

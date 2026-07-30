@@ -297,13 +297,10 @@ osmillisleep(ulong milsec)
     req.tv_sec  = milsec / 1000;
     req.tv_nsec = (milsec % 1000) * 1000000;
 
-    while(nanosleep(&req, &rem) < 0){
-        if(errno != EINTR)
-            return -1;
-
-        req.tv_sec = rem.tv_sec;
-        req.tv_nsec = rem.tv_nsec;
-    }
+	/*
+	 * this call can be interrupted by SIGUSR1
+	 */
+    nanosleep(&req, &rem);
 
     return 0;
 }

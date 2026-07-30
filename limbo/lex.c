@@ -1446,7 +1446,7 @@ reallocmem(void *p, ulong n)
 	if(p == nil)
 		p = HOSTED_API(malloc)(n);
 	else
-		p = realloc(p, n);
+		p = HOSTED_API(realloc)(p, n);
 	if(p == nil)
 		fatal("out of memory");
 	return p;

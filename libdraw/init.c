@@ -223,20 +223,20 @@ closedisplay(Display *disp)
 		}
 	}
 
-	free(disp->devdir);
-	free(disp->windir);
+	HOSTED_API(free)(disp->devdir);
+	HOSTED_API(free)(disp->windir);
 	freeimage(disp->white);
 	freeimage(disp->black);
 	freeimage(disp->opaque);
 	freeimage(disp->transparent);
-	free(disp->image);
+	HOSTED_API(free)(disp->image);
 	libchanclose(disp->datachan);
 	libchanclose(disp->refchan);
 	libchanclose(disp->ctlchan);
 	/* should cause refresh slave to shut down */
 	libqunlock(disp->qlock);
 	libqlfree(disp->qlock);
-	free(disp);
+	HOSTED_API(free)(disp);
 }
 
 int

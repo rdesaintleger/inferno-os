@@ -2010,3 +2010,7 @@ void HOSTED_API(free)(void *ptr) {
 void *HOSTED_API(calloc)(size_t n, size_t szelem) {
     return calloc(n, szelem);
 }
+
+void *HOSTED_API(realloc)(void *v, size_t size) {
+    return realloc(v, size);
+}

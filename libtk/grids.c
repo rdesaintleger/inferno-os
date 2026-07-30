@@ -144,7 +144,7 @@ ensuregridsize(TkGrid *grid, Point dim)
 			cells[i] = HOSTED_API(malloc)(sizeof(TkGridcell)*dim.x);
 			if(cells[i] == nil){
 				while(--i >= olddim.y)
-					free(cells[i]);
+					HOSTED_API(free)(cells[i]);
 				return TkNomem;
 			}
 		}
@@ -185,7 +185,7 @@ delbeams(TkGridbeam *beam, int nb, int x0, int x1)
 	int i;
 	TkGridbeam *b;
 	for(i = x0; i < x1; i++)
-		free(beam[i].name);
+		HOSTED_API(free)(beam[i].name);
 	memmove(&beam[x0], &beam[x1], sizeof(TkGridbeam) * (nb-x1));
 	b = HOSTED_API(realloc)(beam, sizeof(TkGridbeam) * (nb-(x1-x0)));
 	return b ? b : beam;

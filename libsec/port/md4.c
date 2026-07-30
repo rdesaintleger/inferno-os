@@ -233,7 +233,7 @@ md4(uchar *p, ulong len, uchar *digest, MD4state *s)
 	/* return result and free state */
 	encode(digest, s->state, MD4dlen);
 	if(s->malloced == 1)
-		free(s);
+		HOSTED_API(free)(s);
 	return nil;
 }
 
