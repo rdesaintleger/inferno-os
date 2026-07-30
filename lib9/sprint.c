@@ -22,11 +22,14 @@ HOSTED_API(sprint)(char *buf, char *fmt, ...)
 
 	len = 1<<30;  /* big number, but sprint is deprecated anyway */
 	/*
-	 * the stack might be near the top of memory, so
+	 * on PowerPC, the stack is near the top of memory, so
 	 * we must be sure not to overflow a 32-bit pointer.
+	 *
+	 * careful!  gcc-4.2 assumes buf+len < buf can never be true and
+	 * optimizes the test away.  casting to uintptr works around this bug.
 	 */
 	if((uintptr)buf+len < (uintptr)buf)
-		len = -(uint)buf-1;
+		len = -(uintptr)buf-1;
 
 	va_start(args, fmt);
 	n = HOSTED_API(vsnprint)(buf, len, fmt, args);
