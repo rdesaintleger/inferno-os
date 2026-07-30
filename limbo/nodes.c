@@ -1261,9 +1261,9 @@ opconv(Fmt *f)
 	op = va_arg(f->args, int);
 	if(op < 0 || op > Oend) {
 		HOSTED_API(seprint)(buf, buf+sizeof(buf), "op %d", op);
-		return fmtstrcpy(f, buf);
+		return HOSTED_API(fmtstrcpy)(f, buf);
 	}
-	return fmtstrcpy(f, opname[op]);
+	return HOSTED_API(fmtstrcpy)(f, opname[op]);
 }
 
 int
@@ -1277,7 +1277,7 @@ etconv(Fmt *f)
 		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%V", n);
 	else
 		HOSTED_API(seprint)(buf, buf+sizeof(buf), "%V of type %T", n, n->ty);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 int
@@ -1295,7 +1295,7 @@ expconv(Fmt *f)
 	if(f->r == 'V')
 		*p++ = '\'';
 	*p = 0;
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*
@@ -1497,7 +1497,7 @@ nodeconv(Fmt *f)
 	n = va_arg(f->args, Node*);
 	buf[0] = 0;
 	nprint(buf, buf+sizeof(buf), n, 0);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*

@@ -180,12 +180,12 @@ eipfmt(Fmt *f)
 	switch(f->r) {
 	case 'E':		/* Ethernet address */
 		p = va_arg(f->args, uchar*);
-		return fmtprint(f, efmt, p[0], p[1], p[2], p[3], p[4], p[5]);
+		return HOSTED_API(fmtprint)(f, efmt, p[0], p[1], p[2], p[3], p[4], p[5]);
 	case 'I':		/* Ip address */
 		p = va_arg(f->args, uchar*);
 common:
 		if(memcmp(p, v4prefix, 12) == 0)
-			return fmtprint(f, ifmt, p[12], p[13], p[14], p[15]);
+			return HOSTED_API(fmtprint)(f, ifmt, p[12], p[13], p[14], p[15]);
 
 		/* find longest elision */
 		eln = eli = -1;
@@ -212,7 +212,7 @@ common:
 			s = (p[i]<<8) + p[i+1];
 			n += HOSTED_API(sprint)(buf+n, "%ux", s);
 		}
-		return fmtstrcpy(f, buf);
+		return HOSTED_API(fmtstrcpy)(f, buf);
 
 	case 'i':		/* v6 address as 4 longs */
 		lp = va_arg(f->args, ulong*);
@@ -223,7 +223,7 @@ common:
 
 	case 'V':		/* v4 ip address */
 		p = va_arg(f->args, uchar*);
-		return fmtprint(f, ifmt, p[0], p[1], p[2], p[3]);
+		return HOSTED_API(fmtprint)(f, ifmt, p[0], p[1], p[2], p[3]);
 
 	case 'M':		/* ip mask */
 		p = va_arg(f->args, uchar*);
@@ -249,10 +249,10 @@ common:
 		}
 
 		/* got one, use /xx format */
-		return fmtprint(f, "/%d", n);
+		return HOSTED_API(fmtprint)(f, "/%d", n);
 
 	}
-	return fmtstrcpy(f, "(eipfmt)");
+	return HOSTED_API(fmtstrcpy)(f, "(eipfmt)");
 }
 
 #define CLASS(p) ((*(uchar*)(p))>>6)

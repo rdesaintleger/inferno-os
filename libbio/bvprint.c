@@ -34,7 +34,7 @@ Bvprint(Biobuf *bp, char *fmt, va_list arg)
 #else
 	f.args = arg;
 #endif
-	n = dofmt(&f, fmt);
+	n = HOSTED_API(dofmt)(&f, fmt);
 #ifdef va_copy
 	va_end(f.args);
 #endif

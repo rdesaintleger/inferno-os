@@ -155,7 +155,7 @@ fcallfmt(Fmt *fmt)
 	default:
 		HOSTED_API(seprint)(buf, e,  "unknown type %d", type);
 	}
-	return fmtstrcpy(fmt, buf);
+	return HOSTED_API(fmtstrcpy)(fmt, buf);
 }
 
 static char*

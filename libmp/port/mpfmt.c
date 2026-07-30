@@ -132,15 +132,15 @@ mpfmt(Fmt *fmt)
 
 	b = va_arg(fmt->args, mpint*);
 	if(b == nil)
-		return fmtstrcpy(fmt, "*");
+		return HOSTED_API(fmtstrcpy)(fmt, "*");
 	
 	p = mptoa(b, fmt->prec, nil, 0);
 	fmt->flags &= ~FmtPrec;
 
 	if(p == nil)
-		return fmtstrcpy(fmt, "*");
+		return HOSTED_API(fmtstrcpy)(fmt, "*");
 	else{
-		fmtstrcpy(fmt, p);
+		HOSTED_API(fmtstrcpy)(fmt, p);
 		HOSTED_API(free)(p);
 		return 0;
 	}

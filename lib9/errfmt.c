@@ -15,7 +15,7 @@
 #include "fmtdef.h"
 
 int
-errfmt(Fmt *f)
+HOSTED_API(errfmt)(Fmt *f)
 {
 	char buf[ERRMAX];
 

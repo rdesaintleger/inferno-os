@@ -51,7 +51,7 @@ static Convfmt knownfmt[] = {
 	'n',	_countfmt,
 	'o',	_ifmt,
 	'p',	_ifmt,
-	'r',	errfmt,
+	'r',	HOSTED_API(errfmt),
 	's',	_strfmt,
 	'u',	_flagfmt,
 	'x',	_ifmt,
@@ -74,7 +74,7 @@ fmtfmt(int c)
 	for(p=knownfmt; p->c; p++)
 		if(p->c == c){
 			/* no need to lock; fmtinstall is idempotent */
-			fmtinstall(p->c, p->fmt);
+			HOSTED_API(fmtinstall)(p->c, p->fmt);
 			while(p->fmt == nil)	/* loop until value is updated */
 				;
 			return p->fmt;
@@ -84,7 +84,7 @@ fmtfmt(int c)
 }
 
 int
-fmtinstall(int c, Fmts f)
+HOSTED_API(fmtinstall)(int c, Fmts f)
 {
 	Convfmt *p, *ep;
 

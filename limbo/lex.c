@@ -467,7 +467,7 @@ lineconv(Fmt *f)
 	line = va_arg(f->args, Line);
 
 	if(line.line < 0)
-		return fmtstrcpy(f, "<noline>");
+		return HOSTED_API(fmtstrcpy)(f, "<noline>");
 	fl = fline(line.line);
 	file = fl.file;
 
@@ -479,7 +479,7 @@ lineconv(Fmt *f)
 		inl.pos = 0;
 		HOSTED_API(seprint)(s, buf+sizeof(buf), ": %L", inl);
 	}
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 static char*
@@ -505,7 +505,7 @@ srcconv(Fmt *f)
 	s = secpy(s, buf+sizeof(buf), ",");
 	posconv(s, buf+sizeof(buf), src.stop);
 
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 int
@@ -1393,7 +1393,7 @@ gfltconv(Fmt *f)
 
 	d = va_arg(f->args, double);
 	g_fmt(buf, d, 'e');
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*

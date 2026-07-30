@@ -981,7 +981,7 @@ instconv(Fmt *f)
 		op = "??";
 	buf[0] = '\0';
 	if(in->op == INOP)
-		return fmtstrcpy(f, "\tnop");
+		return HOSTED_API(fmtstrcpy)(f, "\tnop");
 	p = HOSTED_API(seprint)(buf, buf + sizeof(buf), "\t%s\t", op);
 	comma = "";
 	if(in->sm != Anone){
@@ -1007,7 +1007,7 @@ instconv(Fmt *f)
 	if(asmsym)
 		p = HOSTED_API(seprint)(p, buf+sizeof(buf), "	#%U", in->src);
 	USED(p);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*

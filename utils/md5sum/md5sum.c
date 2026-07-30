@@ -13,7 +13,7 @@ digestfmt(Fmt *fmt)
 	p = va_arg(fmt->args, uchar*);
 	for(i=0; i<MD5dlen; i++)
 		HOSTED_API(sprint)(buf+2*i, "%.2ux", p[i]);
-	return fmtstrcpy(fmt, buf);
+	return HOSTED_API(fmtstrcpy)(fmt, buf);
 }
 
 static void
@@ -44,7 +44,7 @@ main(int argc, char *argv[])
 		exits("usage");
 	}ARGEND
 
-	fmtinstall('M', digestfmt);
+	HOSTED_API(fmtinstall)('M', digestfmt);
 
 	if(argc == 0)
 		sum(0, nil);

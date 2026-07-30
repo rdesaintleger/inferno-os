@@ -218,10 +218,10 @@ putenvqv(char *name, char **v, int n, int conf)
 	int i;
 	char *val;
 
-	fmtstrinit(&f);
+	HOSTED_API(fmtstrinit)(&f);
 	for(i=0; i<n; i++)
-		fmtprint(&f, "%s%q", i?" ":"", v[i]);
-	val = fmtstrflush(&f);
+		HOSTED_API(fmtprint)(&f, "%s%q", i?" ":"", v[i]);
+	val = HOSTED_API(fmtstrflush)(&f);
 	ksetenv(name, val, conf);
 	HOSTED_API(free)(val);
 }
@@ -240,7 +240,7 @@ main(int argc, char *argv[])
 
 	if(coherence == nil)
 		coherence = nofence;
-	quotefmtinstall();
+	HOSTED_API(quotefmtinstall)();
 	savestartup(argc, argv);
 	/* set default root now, so either $EMU or -r can override it later */
 	if((p = getenv("INFERNO")) != nil || (p = getenv("ROOT")) != nil)

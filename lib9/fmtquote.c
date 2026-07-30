@@ -218,20 +218,20 @@ _quotestrfmt(int runesin, Fmt *f)
 }
 
 int
-quotestrfmt(Fmt *f)
+HOSTED_API(quotestrfmt)(Fmt *f)
 {
 	return _quotestrfmt(0, f);
 }
 
 int
-quoterunestrfmt(Fmt *f)
+HOSTED_API(quoterunestrfmt)(Fmt *f)
 {
 	return _quotestrfmt(1, f);
 }
 
 void
-quotefmtinstall(void)
+HOSTED_API(quotefmtinstall)(void)
 {
-	fmtinstall('q', quotestrfmt);
-	fmtinstall('Q', quoterunestrfmt);
+	HOSTED_API(fmtinstall)('q', HOSTED_API(quotestrfmt));
+	HOSTED_API(fmtinstall)('Q', HOSTED_API(quoterunestrfmt));
 }

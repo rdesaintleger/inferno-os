@@ -138,7 +138,7 @@ big64conv(Fmt *f)
 	n = ((n+3)/3)*4 + 1;
 	buf = HOSTED_API(malloc)(n);
 	bigtobase64(b, buf, n);
-	n = fmtstrcpy(f, buf);
+	n = HOSTED_API(fmtstrcpy)(f, buf);
 	HOSTED_API(free)(buf);
 	return  n;
 }
@@ -408,10 +408,10 @@ bigs2attr(Fmt *f, char *bigs, char **names)
 		if(nd < 0)
 			break;
 		enc16(b16, 2*MaxBigBytes+1, data, nd);
-		fmtprint(f, " %s=%s", names[i], b16);
+		HOSTED_API(fmtprint)(f, " %s=%s", names[i], b16);
 	}
 	HOSTED_API(free)(b16);
-	return fmtstrflush(f);
+	return HOSTED_API(fmtstrflush)(f);
 }
 
 void
@@ -432,11 +432,11 @@ Keyring_sktoattr(void *fp)
 		return;
 	}
 	(*sa->vec->sk2str)(sk->key, buf, Maxbuf);
-	fmtstrinit(&o);
-	fmtprint(&o, "alg=%q", string2c(sa->x.name));
+	HOSTED_API(fmtstrinit)(&o);
+	HOSTED_API(fmtprint)(&o, "alg=%q", string2c(sa->x.name));
 	owner = string2c(sk->x.owner);
 	if(*owner)
-		fmtprint(&o, " owner=%q", owner);
+		HOSTED_API(fmtprint)(&o, " owner=%q", owner);
 	val = bigs2attr(&o, buf, sa->vec->skattr);
 	HOSTED_API(free)(buf);
 	retstr(val, f->ret);
@@ -646,11 +646,11 @@ Keyring_pktoattr(void *fp)
 		return;
 	}
 	(*sa->vec->pk2str)(pk->key, buf, Maxbuf);
-	fmtstrinit(&o);
-	fmtprint(&o, "alg=%q", string2c(sa->x.name));
+	HOSTED_API(fmtstrinit)(&o);
+	HOSTED_API(fmtprint)(&o, "alg=%q", string2c(sa->x.name));
 	owner = string2c(pk->x.owner);
 	if(*owner)
-		fmtprint(&o, " owner=%q", owner);
+		HOSTED_API(fmtprint)(&o, " owner=%q", owner);
 	val = bigs2attr(&o, buf, sa->vec->pkattr);
 	HOSTED_API(free)(buf);
 	retstr(val, f->ret);
@@ -823,8 +823,8 @@ Keyring_certtoattr(void *fp)
 	ha = string2c(c->x.ha);
 	if(strcmp(ha, "sha") == 0)
 		ha = "sha1";	/* normalise */
-	fmtstrinit(&o);
-	fmtprint(&o, "sigalg=%q-%q signer=%q expires=%ud", string2c(sa->x.name), ha,
+	HOSTED_API(fmtstrinit)(&o);
+	HOSTED_API(fmtprint)(&o, "sigalg=%q-%q signer=%q expires=%ud", string2c(sa->x.name), ha,
 		string2c(c->x.signer), c->x.exp);
 	val = bigs2attr(&o, buf, sa->vec->sigattr);
 	HOSTED_API(free)(buf);
@@ -2126,7 +2126,7 @@ keyringmodinit(void)
 	if((sav = dsainit()) != nil)
 		algs[nalg++] = sav;
 
-	fmtinstall('U', big64conv);
+	HOSTED_API(fmtinstall)('U', big64conv);
 	builtinmod("$Keyring", Keyringmodtab, Keyringmodlen);
 }
 

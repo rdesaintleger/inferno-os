@@ -16,7 +16,7 @@
 
 /* format the output into f->to and return the number of characters fmted  */
 int
-dofmt(Fmt *f, char *fmt)
+HOSTED_API(dofmt)(Fmt *f, char *fmt)
 {
 	Rune rune, *rt, *rs;
 	int r;
@@ -248,7 +248,7 @@ _runefmt(Fmt *f)
 
 /* public helper routine: fmt out a null terminated string already in hand */
 int
-fmtstrcpy(Fmt *f, char *s)
+HOSTED_API(fmtstrcpy)(Fmt *f, char *s)
 {
 	int p, i;
 	if(!s)
@@ -272,12 +272,12 @@ _strfmt(Fmt *f)
 	char *s;
 
 	s = va_arg(f->args, char *);
-	return fmtstrcpy(f, s);
+	return HOSTED_API(fmtstrcpy)(f, s);
 }
 
 /* public helper routine: fmt out a null terminated rune string already in hand */
 int
-fmtrunestrcpy(Fmt *f, Rune *s)
+HOSTED_API(fmtrunestrcpy)(Fmt *f, Rune *s)
 {
 	Rune *e;
 	int n, p;
@@ -305,7 +305,7 @@ _runesfmt(Fmt *f)
 	Rune *s;
 
 	s = va_arg(f->args, Rune *);
-	return fmtrunestrcpy(f, s);
+	return HOSTED_API(fmtrunestrcpy)(f, s);
 }
 
 /* fmt a % */

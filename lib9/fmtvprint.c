@@ -21,7 +21,7 @@
  * but ignore any width flags
  */
 int
-fmtvprint(Fmt *f, char *fmt, va_list args)
+HOSTED_API(fmtvprint)(Fmt *f, char *fmt, va_list args)
 {
 	va_list va;
 	int n;
@@ -32,7 +32,7 @@ fmtvprint(Fmt *f, char *fmt, va_list args)
 	va_copy(va, f->args);
 	va_end(f->args);
 	va_copy(f->args, args);
-	n = dofmt(f, fmt);
+	n = HOSTED_API(dofmt)(f, fmt);
 	f->flags = 0;
 	f->width = 0;
 	f->prec = 0;

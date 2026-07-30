@@ -36,33 +36,6 @@
 
 #include "inferno/protos/lib9.h"
 
-extern	int	fmtfdinit(Fmt*, int, char*, int);
-extern	int	fmtfdflush(Fmt*);
-extern	int	fmtstrinit(Fmt*);
-extern	char*	fmtstrflush(Fmt*);
-extern	int	runefmtstrinit(Fmt*);
-extern	Rune*	runefmtstrflush(Fmt*);
-
-extern	int	fmtinstall(int, int (*)(Fmt*));
-extern	int	dofmt(Fmt*, char*);
-extern	int	fmtprint(Fmt*, char*, ...);
-extern	int	fmtvprint(Fmt*, char*, va_list);
-extern	int	fmtstrcpy(Fmt*, char*);
-extern	int	fmtrunestrcpy(Fmt*, Rune*);
-/*
- * error string for %r
- * supplied on per os basis, not part of fmt library
- */
-extern	int	errfmt(Fmt *f);
-
-/*
- * quoted strings
- */
-extern	char	*unquotestrdup(char*);
-extern	char	*quotestrdup(char*);
-extern	int	quotestrfmt(Fmt*);
-extern	int	quoterunestrfmt(Fmt*);
-extern	void	quotefmtinstall(void);
 extern	int	(*doquote)(int);
 
 /*

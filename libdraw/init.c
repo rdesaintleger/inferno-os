@@ -67,8 +67,8 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	void *q;
 	ulong chan;
 
-	fmtinstall('P', Pfmt);
-	fmtinstall('R', Rfmt);
+	HOSTED_API(fmtinstall)('P', Pfmt);
+	HOSTED_API(fmtinstall)('R', Rfmt);
 	if(dev == 0)
 		dev = "/dev";
 	if(win == 0)

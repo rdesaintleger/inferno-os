@@ -39,7 +39,7 @@ fmtStrFlush(Fmt *f)
 }
 
 int
-fmtstrinit(Fmt *f)
+HOSTED_API(fmtstrinit)(Fmt *f)
 {
 	int n;
 
@@ -65,15 +65,15 @@ HOSTED_API(vsmprint)(char *fmt, va_list args)
 	Fmt f;
 	int n;
 
-	if(fmtstrinit(&f) < 0)
+	if(HOSTED_API(fmtstrinit)(&f) < 0)
 		return nil;
 	va_copy(f.args, args);
-	n = dofmt(&f, fmt);
+	n = HOSTED_API(dofmt)(&f, fmt);
 	va_end(f.args);
 	if(n < 0){
 		HOSTED_API(free)(f.start);
 		f.start = nil;
 		return nil;
 	}
-	return fmtstrflush(&f);
+	return HOSTED_API(fmtstrflush)(&f);
 }

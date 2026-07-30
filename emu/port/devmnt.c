@@ -82,9 +82,9 @@ mntinit(void)
 	mntalloc.id = 1;
 	mntalloc.tagmask[0] = 1;			/* don't allow 0 as a tag */
 	mntalloc.tagmask[NMASK-1] = 0x80000000UL;	/* don't allow NOTAG */
-	fmtinstall('F', fcallfmt);
-/*	fmtinstall('D', dirfmt); */
-/*	fmtinstall('M', dirmodefmt);  */
+	HOSTED_API(fmtinstall)('F', fcallfmt);
+/*	HOSTED_API(fmtinstall)('D', dirfmt); */
+/*	HOSTED_API(fmtinstall)('M', dirmodefmt);  */
 
 	cinit();
 }

@@ -1390,15 +1390,15 @@ tkvalue(char **val, char *fmt, ...)
 	if(val == nil)
 		return nil;
 
-	fmtstrinit(&fmtx);
+	HOSTED_API(fmtstrinit)(&fmtx);
 	if(*val != nil)
-		if(fmtprint(&fmtx, "%s", *val) < 0)
+		if(HOSTED_API(fmtprint)(&fmtx, "%s", *val) < 0)
 			return TkNomem;
 	va_start(arg, fmt);
-	fmtvprint(&fmtx, fmt, arg);
+	HOSTED_API(fmtvprint)(&fmtx, fmt, arg);
 	va_end(arg);
 	HOSTED_API(free)(*val);
-	*val = fmtstrflush(&fmtx);
+	*val = HOSTED_API(fmtstrflush)(&fmtx);
 	if(*val == nil)
 		return TkNomem;
 	return nil;
@@ -1711,7 +1711,7 @@ tkeventfmt(Fmt *f)
 
 	if ((f->flags & FmtSharp) && e == TkMotion)
 		return 0;
-	fmtprint(f, "<");
+	HOSTED_API(fmtprint)(f, "<");
 	k = -1;
 	if (e & TkKey) {
 		k = e & 0xffff;
@@ -1721,15 +1721,15 @@ tkeventfmt(Fmt *f)
 	for (i = 0; events[i].name; i++) {
 		if (e & events[i].mask) {
 			if (d++)
-				fmtprint(f, "|");
-			fmtprint(f, "%s", events[i].name);
+				HOSTED_API(fmtprint)(f, "|");
+			HOSTED_API(fmtprint)(f, "%s", events[i].name);
 		}
 	}
 	if (k != -1) {
-		fmtprint(f, "[%c]", k);
+		HOSTED_API(fmtprint)(f, "[%c]", k);
 	} else if (e == 0)
-		fmtprint(f, "Noevent");
-	fmtprint(f, ">");
+		HOSTED_API(fmtprint)(f, "Noevent");
+	HOSTED_API(fmtprint)(f, ">");
 	return 0;
 }
 

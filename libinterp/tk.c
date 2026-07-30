@@ -69,7 +69,7 @@ void
 tkmodinit(void)
 {
 	builtinmod("$Tk", Tkmodtab, Tkmodlen);
-	fmtinstall('v', tkeventfmt);			/* XXX */
+	HOSTED_API(fmtinstall)('v', tkeventfmt);			/* XXX */
 
 	fakeTkTop = dtype(tkfreetop, sizeof(TkTop), TktypeMap, sizeof(TktypeMap));
 	fakeTkTop->mark = tkmarktop;

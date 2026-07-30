@@ -19,7 +19,7 @@
  * to a file descriptor; returns total char count.
  */
 int
-fmtfdflush(Fmt *f)
+HOSTED_API(fmtfdflush)(Fmt *f)
 {
 	if(_fmtFdFlush(f) <= 0)
 		return -1;
@@ -30,7 +30,7 @@ fmtfdflush(Fmt *f)
  * initialize an output buffer for buffered printing
  */
 int
-fmtfdinit(Fmt *f, int fd, char *buf, int size)
+HOSTED_API(fmtfdinit)(Fmt *f, int fd, char *buf, int size)
 {
 	f->runes = 0;
 	f->start = buf;

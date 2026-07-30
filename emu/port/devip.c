@@ -337,11 +337,11 @@ ipinit(void)
 	newproto("udp", S_UDP, 64);
 	newproto("tcp", S_TCP, 2048);
 
-	fmtinstall('i', eipfmt);
-	fmtinstall('I', eipfmt);
-	fmtinstall('E', eipfmt);
-	fmtinstall('V', eipfmt);
-	fmtinstall('M', eipfmt);
+	HOSTED_API(fmtinstall)('i', eipfmt);
+	HOSTED_API(fmtinstall)('I', eipfmt);
+	HOSTED_API(fmtinstall)('E', eipfmt);
+	HOSTED_API(fmtinstall)('V', eipfmt);
+	HOSTED_API(fmtinstall)('M', eipfmt);
 }
 
 Chan *

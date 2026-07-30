@@ -2011,7 +2011,7 @@ tktsgmltags(TkText *tkt, Fmt *fmt, TkTitem *iprev, TkTitem *i, TkTindex *ix, int
 		}
 		for(k = *pnstack - 1; k >= ii; k--) {
 			m = stack[k];
-			r = fmtprint(fmt, "</%s>", tkttagname(tkt, m));
+			r = HOSTED_API(fmtprint)(fmt, "</%s>", tkttagname(tkt, m));
 			if(r < 0)
 				return r;
 			/* add m back to starting tags if m didn't actually end here */
@@ -2038,7 +2038,7 @@ tktsgmltags(TkText *tkt, Fmt *fmt, TkTitem *iprev, TkTitem *i, TkTindex *ix, int
 			}
 		}
 		for(j = onstack; j < k; j++) {
-			r = fmtprint(fmt, "<%s>", tkttagname(tkt, stack[j]));
+			r = HOSTED_API(fmtprint)(fmt, "<%s>", tkttagname(tkt, stack[j]));
 			if(r < 0)
 				return r;
 		}
@@ -2071,7 +2071,7 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 	tmpstack = nil;
 
 	iprev = nil;
-	fmtstrinit(&fmt);
+	HOSTED_API(fmtstrinit)(&fmt);
 	buf = HOSTED_API(mallocz)(100, 0);
 	if(buf == nil)
 		return TkNomem;
@@ -2130,19 +2130,19 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 			}
 			if(bychar) {
 				if (ix1->item->kind == TkTrune)
-					n = fmtprint(&fmt, "%.*s", m, s);
+					n = HOSTED_API(fmtprint)(&fmt, "%.*s", m, s);
 				else {
 					n = 0;
 					for(i = 0; i < m && n >= 0; i++) {
 						if(s[i] == '<')
-							n = fmtprint(&fmt, "&lt;");
+							n = HOSTED_API(fmtprint)(&fmt, "&lt;");
 						else
-							n = fmtprint(&fmt, "%c", s[i]);
+							n = HOSTED_API(fmtprint)(&fmt, "%c", s[i]);
 					}
 				}
 			}
 			else
-				n = fmtprint(&fmt, "%s", s);
+				n = HOSTED_API(fmtprint)(&fmt, "%s", s);
 			if(n < 0)
 				goto nomemret;
 			iprev = ix1->item;
@@ -2161,7 +2161,7 @@ tktget(TkText *tkt, TkTindex *ix1, TkTindex *ix2, int sgml, char **val)
 			goto nomemret;
 	}
 
-	*val = fmtstrflush(&fmt);
+	*val = HOSTED_API(fmtstrflush)(&fmt);
 	HOSTED_API(free)(buf);
 	return nil;
 
@@ -2705,16 +2705,16 @@ tktextdump(Tk *tk, char *arg, char **val)
 		return TkBadix;
 	
 	if(tkdump.metrics != 0) {
-		fmtstrinit(&fmt);
-		if(fmtprint(&fmt, "%%Fonts\n") < 0)
+		HOSTED_API(fmtstrinit)(&fmt);
+		if(HOSTED_API(fmtprint)(&fmt, "%%Fonts\n") < 0)
 			return TkNomem;
 		for(ti=tkt->tags; ti != nil; ti=ti->next) {
 			if(ti->env == nil || ti->env->font == nil)
 				continue;
-			if(fmtprint(&fmt, "%d::%s\n", ti->id,ti->env->font->name) < 0)
+			if(HOSTED_API(fmtprint)(&fmt, "%d::%s\n", ti->id,ti->env->font->name) < 0)
 				return TkNomem;
 		}
-		if(fmtprint(&fmt, "-1::%s\n%%Colors\n", tk->env->font->name) < 0)
+		if(HOSTED_API(fmtprint)(&fmt, "-1::%s\n%%Colors\n", tk->env->font->name) < 0)
 			return TkNomem;
 		for(ti=tkt->tags; ti != nil; ti=ti->next) {
 			if(ti->env == nil)
@@ -2724,14 +2724,14 @@ tktextdump(Tk *tk, char *arg, char **val)
 			if(bg == tk->env->colors[TkCbackgnd] &&
 			   fg == ti->env->colors[TkCforegnd])
 				continue;
-			r = fmtprint(&fmt,"%d::#%.8lux\n", ti->id, bg);
+			r = HOSTED_API(fmtprint)(&fmt,"%d::#%.8lux\n", ti->id, bg);
 			if(r < 0)
 				return TkNomem;
-			r = fmtprint(&fmt,"%d::#%.8lux\n", ti->id, fg);
+			r = HOSTED_API(fmtprint)(&fmt,"%d::#%.8lux\n", ti->id, fg);
 			if(r < 0)
 				return TkNomem;
 		}
-		if(fmtprint(&fmt, "%%Lines\n") < 0)
+		if(HOSTED_API(fmtprint)(&fmt, "%%Lines\n") < 0)
 			return TkNomem;
 
 		/*
@@ -2753,7 +2753,7 @@ tktextdump(Tk *tk, char *arg, char **val)
 				if(i->kind != TkTmark)
 					numitems++;
 			}
-			r = fmtprint(&fmt, "%d %d %d %d %d %d ",
+			r = HOSTED_API(fmtprint)(&fmt, "%d %d %d %d %d %d ",
 				l->orig.x, l->orig.y, l->width, l->height, l->ascent,numitems);
 			if(r < 0)
 				return TkNomem;
@@ -2762,44 +2762,44 @@ tktextdump(Tk *tk, char *arg, char **val)
 				case TkTascii:
 				case TkTrune:
 					r = i->kind == TkTascii ? 'A' : 'R';
-					if(fmtprint(&fmt,"[%c%d{", r, i->width) < 0)
+					if(HOSTED_API(fmtprint)(&fmt,"[%c%d{", r, i->width) < 0)
 						return TkNomem;
 					if(i->tags !=0 || i->tagextra !=0) {
-						if(fmtprint(&fmt,"%lux", i->tags[0]) < 0)
+						if(HOSTED_API(fmtprint)(&fmt,"%lux", i->tags[0]) < 0)
 							return TkNomem;
 						for(j=0; j < i->tagextra; j++)
-							if(fmtprint(&fmt,"::%lux", i->tags[j+1]) < 0)
+							if(HOSTED_API(fmtprint)(&fmt,"::%lux", i->tags[j+1]) < 0)
 								return TkNomem;
 					}
 					/* XXX string should be quoted to avoid embedded ']'s */
-					if(fmtprint(&fmt,"}%s]", i->istring) < 0)
+					if(HOSTED_API(fmtprint)(&fmt,"}%s]", i->istring) < 0)
 						return TkNomem;
 					break;
 				case TkTnewline:
 				case TkTcontline:
 					r = i->kind == TkTnewline ? 'N' : 'C';
-					if(fmtprint(&fmt, "[%c]", r) < 0)
+					if(HOSTED_API(fmtprint)(&fmt, "[%c]", r) < 0)
 						return TkNomem;
 					break;
 				case TkTtab:
-					if(fmtprint(&fmt,"[T%d]",i->width) < 0)
+					if(HOSTED_API(fmtprint)(&fmt,"[T%d]",i->width) < 0)
 						return TkNomem;
 					break;
 				case TkTwin:
 					win = "<null>";
 					if(i->iwin->sub != nil)
 						win = i->iwin->sub->name->name;
-					if(fmtprint(&fmt,"[W%d %s]",i->width, win) < 0)
+					if(HOSTED_API(fmtprint)(&fmt,"[W%d %s]",i->width, win) < 0)
 						return TkNomem;
 					break;
 				}
-				if(fmtprint(&fmt, " ") < 0)
+				if(HOSTED_API(fmtprint)(&fmt, " ") < 0)
 					return TkNomem;
 	
 			}
-			if(fmtprint(&fmt, "\n") < 0)
+			if(HOSTED_API(fmtprint)(&fmt, "\n") < 0)
 				return TkNomem;
-			*val = fmtstrflush(&fmt);
+			*val = HOSTED_API(fmtstrflush)(&fmt);
 			if(*val == nil)
 				return TkNomem;
 		}

@@ -35,7 +35,7 @@ aconv(Fmt *f)
 
 	a = va_arg(f->args, Addr*);
 	if(a == nil)
-		return fmtstrcpy(f, "AZ");
+		return HOSTED_API(fmtstrcpy)(f, "AZ");
 	switch(a->mode & AMASK) {
 	case AFP:	HOSTED_API(sprint)(buf, "%d(fp)", a->a.ind);	break;
 	case AMP:	HOSTED_API(sprint)(buf, "%d(mp)", a->a.ind);	break;
@@ -43,7 +43,7 @@ aconv(Fmt *f)
 	case AIND|AFP:	HOSTED_API(sprint)(buf, "%d(%d(fp))", a->a.i.s, a->a.i.f); break;
 	case AIND|AMP:	HOSTED_API(sprint)(buf, "%d(%d(mp))", a->a.i.s, a->a.i.f); break;
 	}
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 int
@@ -59,13 +59,13 @@ Dconv(Fmt *f)
 		for(j = 0; keywds[j].name != nil; j++)
 			opnam[keywds[j].op] = keywds[j].name;
 
-		fmtinstall('a', aconv);
+		HOSTED_API(fmtinstall)('a', aconv);
 		init = 1;
 	}
 
 	i = va_arg(f->args, Inst*);
 	if(i == nil)
-		return fmtstrcpy(f, "IZ");
+		return HOSTED_API(fmtstrcpy)(f, "IZ");
 
 	switch(keywds[i->op].terminal) {
 	case TOKI0:
@@ -105,6 +105,6 @@ Dconv(Fmt *f)
 		break;
 	}
 
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 

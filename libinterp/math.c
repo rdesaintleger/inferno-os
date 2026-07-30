@@ -21,12 +21,12 @@ void
 mathmodinit(void)
 {
 	builtinmod("$Math", Mathmodtab, Mathmodlen);
-	fmtinstall('g', gfltconv);
-	fmtinstall('G', gfltconv);
-	fmtinstall('e', gfltconv);
-	/* fmtinstall('E', gfltconv); */	/* avoid clash with ether address */
-	fmtinstall(0x00c9, gfltconv);	/* L'É' */
-	fmtinstall('f', gfltconv);
+	HOSTED_API(fmtinstall)('g', gfltconv);
+	HOSTED_API(fmtinstall)('G', gfltconv);
+	HOSTED_API(fmtinstall)('e', gfltconv);
+	/* HOSTED_API(fmtinstall)('E', gfltconv); */	/* avoid clash with ether address */
+	HOSTED_API(fmtinstall)(0x00c9, gfltconv);	/* L'É' */
+	HOSTED_API(fmtinstall)('f', gfltconv);
 }
 
 void

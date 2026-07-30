@@ -1093,7 +1093,7 @@ disinit(void *a)
 	if(vflag)
 		HOSTED_API(print)("Initial Dis: \"%s\"\n", initmod);
 
-	fmtinstall('D', Dconv);
+	HOSTED_API(fmtinstall)('D', Dconv);
 
 	FPinit();
 	FPsave(&up->env->fpu);

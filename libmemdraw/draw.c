@@ -60,9 +60,9 @@ memimageinit(void)
 	mktables();
 	_memmkcmap();
 
-	fmtinstall('R', Rfmt); 
-	fmtinstall('P', Pfmt);
-	fmtinstall('b', _ifmt);
+	HOSTED_API(fmtinstall)('R', Rfmt); 
+	HOSTED_API(fmtinstall)('P', Pfmt);
+	HOSTED_API(fmtinstall)('b', _ifmt);
 
 	memones = allocmemimage(Rect(0,0,1,1), GREY1);
 	memones->flags |= Frepl;
@@ -343,8 +343,8 @@ mktables(void)
 	if(tablesbuilt)
 		return;
 
-	fmtinstall('R', Rfmt);
-	fmtinstall('P', Pfmt);
+	HOSTED_API(fmtinstall)('R', Rfmt);
+	HOSTED_API(fmtinstall)('P', Pfmt);
 	tablesbuilt = 1;
 
 	/* bit replication up to 8 bits */

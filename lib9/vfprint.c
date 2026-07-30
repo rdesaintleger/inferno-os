@@ -37,9 +37,9 @@ HOSTED_API(vfprint)(int fd, char *fmt, va_list args)
 	char buf[256];
 	int n;
 
-	fmtfdinit(&f, fd, buf, sizeof(buf));
+	HOSTED_API(fmtfdinit)(&f, fd, buf, sizeof(buf));
 	va_copy(f.args, args);
-	n = dofmt(&f, fmt);
+	n = HOSTED_API(dofmt)(&f, fmt);
 	va_end(f.args);
 	if(n > 0 && _fmtFdFlush(&f) == 0)
 		return -1;

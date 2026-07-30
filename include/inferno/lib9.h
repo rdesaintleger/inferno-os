@@ -3,6 +3,9 @@
 
 #include "inferno/hosted.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #define	USED(x)		if(x){}else{}
 #define	SET(x)
 
@@ -235,4 +238,7 @@ struct Waitmsg
 #define	FPAZDIV	FPZDIV
 #define	FPAINVAL	FPINVAL
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* _LIB9_H_ */

@@ -103,7 +103,7 @@ main(int argc, char *argv[])
 		exits("usage");
 	}
 
-	fmtinstall('b', numbconv);	/* binary! */
+	HOSTED_API(fmtinstall)('b', numbconv);	/* binary! */
 
 	HOSTED_API(fprint)(2, "%s -x %d -y %d -s 0x%x %s %s %s\n", argv0, Xrange, Yrange, seed, dchan, schan, mchan);
 	srand(seed);

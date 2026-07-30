@@ -46,4 +46,28 @@ extern	int	HOSTED_API(sprint)(char*, char*, ...);
 extern	int	HOSTED_API(fprint)(int, char*, ...);
 extern	int	HOSTED_API(vfprint)(int, char*, va_list);
 
+extern	int	HOSTED_API(fmtfdinit)(Fmt*, int, char*, int);
+extern	int	HOSTED_API(fmtfdflush)(Fmt*);
+extern	int	HOSTED_API(fmtstrinit)(Fmt*);
+extern	char*	HOSTED_API(fmtstrflush)(Fmt*);
+
+extern	int	HOSTED_API(fmtinstall)(int, int (*)(Fmt*));
+extern	int	HOSTED_API(dofmt)(Fmt*, char*);
+extern	int	HOSTED_API(fmtprint)(Fmt*, char*, ...);
+extern	int	HOSTED_API(fmtvprint)(Fmt*, char*, va_list);
+extern	int	HOSTED_API(fmtstrcpy)(Fmt*, char*);
+extern	int	HOSTED_API(fmtrunestrcpy)(Fmt*, Rune*);
+/*
+ * error string for %r
+ * supplied on per os basis, not part of fmt library
+ */
+extern	int	HOSTED_API(errfmt)(Fmt *f);
+
+/*
+ * quoted strings
+ */
+extern	int	HOSTED_API(quotestrfmt)(Fmt*);
+extern	int	HOSTED_API(quoterunestrfmt)(Fmt*);
+extern	void	HOSTED_API(quotefmtinstall)(void);
+
 #endif /* _LIB9_PROTOS_H_ */

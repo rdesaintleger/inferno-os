@@ -412,7 +412,7 @@ mapconv(Fmt *f)
 	if(i == 0)
 		s = HOSTED_API(seprint)(s, e, "0");
 	HOSTED_API(seprint)(s, e, "}");
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*

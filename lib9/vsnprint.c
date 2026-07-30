@@ -29,7 +29,7 @@ HOSTED_API(vsnprint)(char *buf, int len, char *fmt, va_list args)
 	f.farg = nil;
 	f.nfmt = 0;
 	va_copy(f.args, args);
-	dofmt(&f, fmt);
+	HOSTED_API(dofmt)(&f, fmt);
 	va_end(f.args);
 	*(char*)f.to = '\0';
 	return (char*)f.to - buf;

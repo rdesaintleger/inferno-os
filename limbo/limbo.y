@@ -1646,23 +1646,23 @@ main(int argc, char *argv[])
 	FPcontrol(0, INVAL|ZDIV|OVFL|UNFL|INEX);
 	canonnan = canontod(canonnanbits);
 
-	fmtinstall('D', dotconv);
-	fmtinstall('I', instconv);
-	fmtinstall('K', declconv);
-	fmtinstall('k', storeconv);
-	fmtinstall('L', lineconv);
-	fmtinstall('M', mapconv);
-	fmtinstall('n', nodeconv);		/* exp structure */
-	fmtinstall('O', opconv);
-	fmtinstall('g', gfltconv);
-	fmtinstall('Q', etconv);		/* src expression with type */
-	fmtinstall('R', ctypeconv);		/* c equivalent type */
-	fmtinstall('P', ctypeconv);		/* c equivalent type - pointer type */
-	fmtinstall('T', typeconv);		/* source style types */
-	fmtinstall('t', stypeconv);		/* structurally descriptive type */
-	fmtinstall('U', srcconv);
-	fmtinstall('v', expconv);		/* src expression */
-	fmtinstall('V', expconv);		/* src expression in '' */
+	HOSTED_API(fmtinstall)('D', dotconv);
+	HOSTED_API(fmtinstall)('I', instconv);
+	HOSTED_API(fmtinstall)('K', declconv);
+	HOSTED_API(fmtinstall)('k', storeconv);
+	HOSTED_API(fmtinstall)('L', lineconv);
+	HOSTED_API(fmtinstall)('M', mapconv);
+	HOSTED_API(fmtinstall)('n', nodeconv);		/* exp structure */
+	HOSTED_API(fmtinstall)('O', opconv);
+	HOSTED_API(fmtinstall)('g', gfltconv);
+	HOSTED_API(fmtinstall)('Q', etconv);		/* src expression with type */
+	HOSTED_API(fmtinstall)('R', ctypeconv);		/* c equivalent type */
+	HOSTED_API(fmtinstall)('P', ctypeconv);		/* c equivalent type - pointer type */
+	HOSTED_API(fmtinstall)('T', typeconv);		/* source style types */
+	HOSTED_API(fmtinstall)('t', stypeconv);		/* structurally descriptive type */
+	HOSTED_API(fmtinstall)('U', srcconv);
+	HOSTED_API(fmtinstall)('v', expconv);		/* src expression */
+	HOSTED_API(fmtinstall)('V', expconv);		/* src expression in '' */
 	lexinit();
 	typeinit();
 	optabinit();

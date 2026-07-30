@@ -14,7 +14,7 @@
 #include "lib9.h"
 
 char*
-fmtstrflush(Fmt *f)
+HOSTED_API(fmtstrflush)(Fmt *f)
 {
 	if(f->start == nil)
 		return nil;

@@ -936,7 +936,7 @@ declconv(Fmt *f)
 	else
 		s = d->sym->name;
 	HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s %s", storename[d->store], s);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 int
@@ -947,7 +947,7 @@ storeconv(Fmt *f)
 
 	d = va_arg(f->args, Decl*);
 	HOSTED_API(seprint)(buf, buf+sizeof(buf), "%s%s", storeart[d->store], storename[d->store]);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 int
@@ -966,7 +966,7 @@ dotconv(Fmt *f)
 		p = HOSTED_API(seprint)(buf, buf+sizeof(buf), "%D%s", d->dot, s);
 	}
 	HOSTED_API(seprint)(p, buf+sizeof(buf), "%s", d->sym->name);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 /*

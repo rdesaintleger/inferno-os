@@ -37,7 +37,7 @@ main(int argc, char **argv)
 	ulong mode, bytes, mtime;
 
 	setbinmode();
-	quotefmtinstall();
+	HOSTED_API(quotefmtinstall)();
 	namep = name;
 	ARGBEGIN{
 	case 'd':

@@ -3927,7 +3927,7 @@ typeconv(Fmt *f)
 		buf[0] = 0;
 		tprint(buf, buf+sizeof(buf), t);
 	}
-	return fmtstrcpy(f, p);
+	return HOSTED_API(fmtstrcpy)(f, p);
 }
 
 int
@@ -3944,7 +3944,7 @@ stypeconv(Fmt *f)
 		buf[0] = 0;
 		stprint(buf, buf+sizeof(buf), t);
 	}
-	return fmtstrcpy(f, p);
+	return HOSTED_API(fmtstrcpy)(f, p);
 }
 
 int
@@ -3956,7 +3956,7 @@ ctypeconv(Fmt *f)
 	t = va_arg(f->args, Type*);
 	buf[0] = 0;
 	ctprint(buf, buf+sizeof(buf), t);
-	return fmtstrcpy(f, buf);
+	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 
 char*
