@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "gdb",
+            "request": "launch",
+            "name": "Inferno WM",
+            "program": "/home/project/inferno-os/Linux/386/bin/emu",
+            "cwd": "/home/project/inferno-os",
+            "arguments": "-c0 -g1024x768 wm/wm",
+            "environment": {
+                "DISPLAY": ":0"
+            }
+        }
+    ]
+}

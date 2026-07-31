@@ -36,7 +36,7 @@ run --mount=type=tmpfs,target=/tmp \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/cache/apt,target=/var/cache/apt \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/lib/apt,target=/var/lib/apt \
     --mount=target=/tmp/export,type=bind \
-    apt-get install -y build-essential make gcc
+    apt-get install -y build-essential make gcc jq
 
 env HOME=/home/theia
 user theia
@@ -47,6 +47,12 @@ run cd $HOME && \
     git remote add origin https://github.com/eclipse-theia/theia-blueprint.git && \
     git fetch origin a1d84dd993b785678118afb90a3057b350d5a831 && \
     git reset --hard FETCH_HEAD
+
+run jq '.theiaPlugins |= del(."vscjava.vscode-java-pack", ."vscjava.vscode-java-dependency")' package.json > tmp.json && mv tmp.json package.json && \
+    jq '.theiaPlugins["vscode-builtin-cpp"] = "https://open-vsx.org/api/vscode/cpp/1.45.1/file/vscode.cpp-1.45.1.vsix"' package.json > tmp.json && mv tmp.json package.json && \
+    jq '.theiaPlugins["vscode-builtin-json"] = "https://open-vsx.org/api/vscode/json/1.46.1/file/vscode.json-1.46.1.vsix"' package.json > tmp.json && mv tmp.json package.json && \
+    jq '.theiaPlugins["vscode-builtin-markdown"] = "https://open-vsx.org/api/vscode/markdown/1.45.1/file/vscode.markdown-1.45.1.vsix"' package.json > tmp.json && mv tmp.json package.json && \
+    jq '.theiaPlugins["cdt-gdb-vscode"] = "https://open-vsx.org/api/eclipse-cdt/cdt-gdb-vscode/2.8.0/file/eclipse-cdt.cdt-gdb-vscode-2.8.0.vsix"' package.json > tmp.json && mv tmp.json package.json
 
 run yarn --pure-lockfile && \
     yarn build:extensions
@@ -71,7 +77,7 @@ run --mount=type=tmpfs,target=/tmp \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/lib/apt,target=/var/lib/apt \
     dpkg --add-architecture i386 && \
     apt-get update && \
-    apt-get install -y libc6-dev-i386 libx11-6:i386 libxext-dev:i386 gcc-multilib
+    apt-get install -y libc6-dev-i386 libx11-6:i386 libxext-dev:i386 gcc-multilib gdb
 
 from multilib_image as build_inferno_stage
 
@@ -97,7 +103,9 @@ run --mount=type=tmpfs,target=/tmp \
     mkconfig && \
     /home/project/inferno-os/makemk.sh && \
     mk nuke && \
-    mk install
+    mk install && \
+    mkdir -p /home/project/.theia && \
+    cp /tmp/export/playground/launch.json /home/project/.theia
 
 from multilib_image
 
@@ -125,7 +133,7 @@ run --mount=type=tmpfs,target=/tmp \
 
 
 copy --from=build_theia_stage --chown=theia:theia /home/theia /home/theia
-copy --from=build_inferno_stage --chown=inferno:inferno /home/project/inferno-os /home/project/inferno-os
+copy --from=build_inferno_stage --chown=inferno:inferno /home/project /home/project
 
 # expose theia port and noVNC port
 expose 3000
