@@ -22,6 +22,33 @@ Type Treal = { 1, 0, 0, sizeof(REAL) };
 extern	Pool*	heapmem;
 extern	int	mutator;
 
+static void
+heapfree(Heap *h) {
+	void *d = D2P(H2D(void*, h));
+
+	poolfree(heapmem, d);
+	HOSTED_API(free)(h);
+}
+
+static Heap*
+heapalloc(int n) {
+	Heap *h;
+	Heap **d;
+
+	h = HOSTED_API(malloc)(sizeof(Heap));
+	if(h == nil)
+		error(exHeap);
+	d = poolalloc(heapmem, sizeof(uvlong)+n);
+	if(d == nil) {
+		HOSTED_API(free)(h);
+		error(exHeap);
+	}
+	h->data = P2D(d); /* set pointer to actual data */
+	*d = h; /* set back pointer to Heap structure */
+
+	return h;
+}
+
 void	(*heapmonitor)(int, void*, ulong);
 
 #define	BIT(bt, nb)	(bt & (1<<nb))
@@ -174,7 +201,7 @@ freelist(Heap *h, int swept)
 		l = l->tail;
 		if(heapmonitor != nil)
 			heapmonitor(1, th, 0);
-		poolfree(heapmem, th);
+		heapfree(th);
 	}
 }
 
@@ -212,7 +239,7 @@ destroy(void *v)
 		return;
 
 	h = D2H(v);
-	{ Bhdr *b; D2B(b, h); }		/* consistency check */
+	{ Bhdr *b; D2B(b, D2P(v)); }		/* consistency check */
 
 	if(--h->ref > 0 || gchalt > 64) 	/* Protect 'C' thread stack */
 		return;
@@ -226,7 +253,7 @@ destroy(void *v)
 		gcunlock();
 		freetype(t);
 	}
-	poolfree(heapmem, h);
+	heapfree(h);
 }
 
 Type*
@@ -330,11 +357,7 @@ initmem(Type *t, void *vw)
 Heap*
 nheap(int n)
 {
-	Heap *h;
-
-	h = poolalloc(heapmem, sizeof(Heap)+n);
-	if(h == nil)
-		error(exHeap);
+	Heap *h = heapalloc(n);
 
 	h->t = nil;
 	h->ref = 1;
@@ -348,11 +371,7 @@ nheap(int n)
 Heap*
 heapz(Type *t)
 {
-	Heap *h;
-
-	h = poolalloc(heapmem, sizeof(Heap)+t->size);
-	if(h == nil)
-		error(exHeap);
+	Heap *h = heapalloc(t->size);
 
 	h->t = t;
 	t->ref++;
@@ -369,11 +388,7 @@ heapz(Type *t)
 Heap*
 heap(Type *t)
 {
-	Heap *h;
-
-	h = poolalloc(heapmem, sizeof(Heap)+t->size);
-	if(h == nil)
-		error(exHeap);
+	Heap *h = heapalloc(t->size);
 
 	h->t = t;
 	t->ref++;
@@ -405,9 +420,11 @@ heaparray(Type *t, int sz)
 }
 
 int
-hmsize(void *v)
+hmsize(Heap *v)
 {
-	return poolmsize(heapmem, v);
+	void *d = D2P(H2D(void*, v));
+
+	return poolmsize(heapmem, d);
 }
 
 void

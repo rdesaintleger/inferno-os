@@ -393,7 +393,7 @@ acheck(int tsz, int sz)
 	if(sz < 0)
 		error(exNegsize);
 	/* test for overflow; assumes sz >>> tsz */
-	if((int)(sizeof(Array) + sizeof(Heap) + tsz*sz) < sz && tsz != 0)
+	if((int)(sizeof(Array) + sizeof(uvlong) + tsz*sz) < sz && tsz != 0)
 		error(exHeap);
 }
 OP(newa)

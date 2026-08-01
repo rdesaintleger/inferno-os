@@ -2,6 +2,7 @@
 
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
+    gdb
     xorg.libX11
     xorg.libXext
     xorg.libXpm

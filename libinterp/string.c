@@ -474,7 +474,7 @@ newstring(int nb)
 	s = H2D(String*, h);
 	s->tmp = nil;
 	s->len = nb;
-	s->max = hmsize(h) - (sizeof(String)+sizeof(Heap));
+	s->max = hmsize(h) - (sizeof(String)+sizeof(uvlong));
 	return s;
 }
 
@@ -494,7 +494,7 @@ newrunes(int nr)
 	s = H2D(String*, h);
 	s->tmp = nil;
 	s->len = -nr;
-	s->max = (hmsize(h) - (sizeof(String)+sizeof(Heap)))/sizeof(Rune);
+	s->max = (hmsize(h) - (sizeof(String)+sizeof(uvlong)))/sizeof(Rune);
 	return s;
 }
 

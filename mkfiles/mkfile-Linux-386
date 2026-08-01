@@ -12,7 +12,8 @@ AS=		cc -c -m32
 ASFLAGS=
 
 CC=		cc -c -m32
-CFLAGS=		-g\
+CFLAGS=\
+		-g\
 		-O\
 		-fno-strict-aliasing\
 		-fno-aggressive-loop-optimizations\

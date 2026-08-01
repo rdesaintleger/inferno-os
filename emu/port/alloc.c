@@ -122,6 +122,8 @@ poolsetsize(char *s, int size)
 	return 0;
 }
 
+/* TODO: reorganise includes to have Heap** as parameter */
+
 void
 poolimmutable(void *v)
 {
@@ -134,11 +136,12 @@ poolimmutable(void *v)
 void
 poolmutable(void *v)
 {
+	Heap *h = *((Heap**)v);
 	Bhdr *b;
 
 	D2B(b, v);
 	b->magic = MAGIC_A;
-	((Heap*)v)->color = mutator;
+	h->color = mutator;
 }
 
 char*

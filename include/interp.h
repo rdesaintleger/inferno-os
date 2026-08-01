@@ -310,13 +310,14 @@ struct Modlink
 	Modl	links[1];
 };
 
-/* must be a multiple of 8 bytes */
 struct Heap
 {
 	int	color;		/* Allocation color */
 	ulong	ref;
 	Type*	t;
 	ulong	hprof;	/* heap profiling */
+
+	void *data;
 };
 
 struct	Atidle
@@ -348,8 +349,14 @@ struct Handler
 	Except*	etab;
 };
 
-#define H2D(t, x)	((t)(((uchar*)(x))+sizeof(Heap)))
-#define D2H(x)		((Heap*)(((uchar*)(x))-sizeof(Heap)))
+// convert from/to heap structure
+#define H2D(t, x)	((t)((struct Heap*)(x))->data)
+#define D2H(x)		(*D2P(x))
+
+// additional macro which return the raw allocated pointer given the data pointer
+#define D2P(x)		((Heap**)(((uchar*)(x))-sizeof(uvlong)))
+#define P2D(x)      ((void*)(((uchar*)(x))+sizeof(uvlong)))
+
 #define H		((void*)(-1))
 #define SEXTYPE(f)	((Stkext*)((uchar*)(f)-OA(Stkext, reg.tos.fu)))
 #define Setmark(h)	if((h)->color!=mutator) { (h)->color = propagator; nprop=1; }
@@ -435,7 +442,7 @@ extern	Heap*	heap(Type*);
 extern	Heap*	heaparray(Type*, int);
 extern	void		(*heapmonitor)(int, void*, ulong);
 extern	Heap*		heapz(Type*);
-extern	int		hmsize(void*);
+extern	int		hmsize(Heap *);
 extern	void		incmem(void*, Type*);
 extern	void		initarray(Type*, Array*);
 extern	void		initmem(Type*, void*);

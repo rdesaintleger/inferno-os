@@ -44,7 +44,7 @@ void
 excinit(void)
 {
 	exstr = newstring(ERRMAX);
-	poolimmutable(D2H(exstr));
+	poolimmutable(D2P(exstr));
 }
 
 static String*
