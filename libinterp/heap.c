@@ -38,7 +38,7 @@ heapalloc(int n) {
 	h = HOSTED_API(malloc)(sizeof(Heap));
 	if(h == nil)
 		error(exHeap);
-	d = poolalloc(heapmem, sizeof(uvlong)+n);
+	d = poolalloc(heapmem, sizeof(HeapAlign)+n);
 	if(d == nil) {
 		HOSTED_API(free)(h);
 		error(exHeap);

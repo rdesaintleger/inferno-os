@@ -56,6 +56,7 @@ typedef struct Type	Type;
 typedef struct Prog	Prog;
 typedef struct Progs	Progs;
 typedef struct Heap	Heap;
+typedef union HeapAlign HeapAlign;
 typedef struct Link	Link;
 typedef struct List	List;
 typedef struct Array	Array;
@@ -317,7 +318,14 @@ struct Heap
 	Type*	t;
 	ulong	hprof;	/* heap profiling */
 
-	void *data;
+	void *data; /* pointer to allocated data */
+};
+
+union HeapAlign {
+	uintptr_t p;
+
+	double d;
+	uint64_t l;
 };
 
 struct	Atidle
@@ -354,8 +362,8 @@ struct Handler
 #define D2H(x)		(*D2P(x))
 
 // additional macro which return the raw allocated pointer given the data pointer
-#define D2P(x)		((Heap**)(((uchar*)(x))-sizeof(uvlong)))
-#define P2D(x)      ((void*)(((uchar*)(x))+sizeof(uvlong)))
+#define D2P(x)		((Heap**)(((uchar*)(x))-sizeof(HeapAlign)))
+#define P2D(x)      ((void*)(((uchar*)(x))+sizeof(HeapAlign)))
 
 #define H		((void*)(-1))
 #define SEXTYPE(f)	((Stkext*)((uchar*)(f)-OA(Stkext, reg.tos.fu)))

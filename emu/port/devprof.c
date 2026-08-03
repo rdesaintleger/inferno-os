@@ -698,7 +698,7 @@ memprof(int c, void *v, ulong n)
 		k = (r->id<<24) | i;
 		if(c == Mhalloc){
 			h->hprof = k;
-			j = hmsize(h)-sizeof(uvlong);
+			j = hmsize(h)-sizeof(HeapAlign);
 		}
 		else if(c == Mmalloc){
 			j = HOSTED_API(msize)(v);
@@ -725,7 +725,7 @@ memprof(int c, void *v, ulong n)
 		else if(c == Mifree)
 			j = poolmsize(imagmem, v)-sizeof(ulong);
 		else
-			j = hmsize(h)-sizeof(uvlong);
+			j = hmsize(h)-sizeof(HeapAlign);
 		j = -j;
 	}
 	i = 2*(i+1);
