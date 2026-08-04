@@ -118,6 +118,8 @@ $ROOT/libinterp/runt.h:
 INTERP=$ROOT/include/interp.h
 RUNT=$ROOT/libinterp/runt.h		# for culling dependencies
 
+pool.$O: ../../include/pool.h\
+		$INTERP
 alloc.$O: ../../include/pool.h\
 		$INTERP
 devcons.$O:	$ROOT/include/version.h

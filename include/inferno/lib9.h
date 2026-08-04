@@ -3,16 +3,11 @@
 
 #include "inferno/hosted.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 #define	USED(x)		if(x){}else{}
 #define	SET(x)
 
 #undef nelem
 #define	nelem(x)	(sizeof(x)/sizeof((x)[0]))
-#undef offsetof
-#define	offsetof(s, m)	(ulong)(&(((s*)0)->m))
 #undef assert
 #define	assert(x)	if(x){}else _assert("x")
 
@@ -238,7 +233,4 @@ struct Waitmsg
 #define	FPAZDIV	FPZDIV
 #define	FPAINVAL	FPINVAL
 
-#if defined(__cplusplus)
-}
-#endif
 #endif /* _LIB9_H_ */
