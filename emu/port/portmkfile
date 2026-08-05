@@ -126,7 +126,6 @@ devcons.$O:	$ROOT/include/version.h
 devdraw.$O:	$ROOT/include/draw.h\
 		$ROOT/include/memdraw.h\
 		$ROOT/include/memlayer.h
-devmem.$O:	$INTERP
 devpipe.$O:	$INTERP
 devprof.$O:	$INTERP
 devprog.$O:	$ROOT/libinterp/runt.h\

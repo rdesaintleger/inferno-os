@@ -19,7 +19,6 @@ dev
 	ip	ipif6-posix ipaux
 	eia
 #	audio	audio
-	mem
 
 lib
 	interp

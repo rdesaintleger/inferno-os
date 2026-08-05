@@ -6,11 +6,11 @@
 #include	"runt.h"
 
 extern	Pool*	imagmem;
-extern void	(*memmonitor)(int, ulong, ulong, ulong);
+extern void	(*memmonitor)(int, ulong, ulong);
 
 static void	cpxec(Prog *);
 static void memprof(int, void*, ulong);
-static void memprofmi(int, ulong, ulong, ulong);
+static void memprofmi(int, ulong, ulong);
 
 extern	Inst*	pc2dispc(Inst*, Module*);
 
@@ -761,10 +761,8 @@ memprof(int c, void *v, ulong n)
 
 /* main and image memory */
 static void
-memprofmi(int c, ulong pc, ulong v, ulong n)
+memprofmi(int c, ulong v, ulong n)
 {
-	USED(pc);
-
 	if(c&2){
 		if(!(mprofiler&Mimage))
 			return;

@@ -22,7 +22,6 @@ dev
 	ip	ipif6-posix ipaux
 	eia
 #	audio	audio-oss
-	mem
 
 lib
 	interp
