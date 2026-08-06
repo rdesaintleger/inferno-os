@@ -1,3 +1,5 @@
+#include <inferno/memprof.h>
+
 #include "dat.h"
 #include "fns.h"
 #include "interp.h"
@@ -25,13 +27,6 @@ enum {
 	MallocOffset = 0,
 	ReallocOffset = 1
 };
-
-enum {
-	Monitor = 1
-};
-
-extern void	(*memmonitor)(int, ulong, ulong);
-#define	MM(v,base,size)	if(!Monitor || memmonitor==nil){} else memmonitor((v),(base),(size))
 
 /* TODO: reorganise includes to have Heap** as parameter */
 
@@ -220,7 +215,7 @@ dopoolalloc(Pool *p, ulong asize)
 				p->hw = p->cursize;
 			unlock(&p->l);
 			if(p->monitor)
-				MM(p->pnum, (ulong)B2D(t), size);
+				memprof_notify(p->pnum, B2D(t), size);
 			return B2D(t);
 		}
 		if(size < t->size) {
@@ -240,7 +235,7 @@ dopoolalloc(Pool *p, ulong asize)
 				p->hw = p->cursize;
 			unlock(&p->l);
 			if(p->monitor)
-				MM(p->pnum, (ulong)B2D(q), size);
+				memprof_notify(p->pnum, B2D(q), size);
 			return B2D(q);
 		}
 		/* Split */
@@ -256,7 +251,7 @@ dopoolalloc(Pool *p, ulong asize)
 			p->hw = p->cursize;
 		unlock(&p->l);
 		if(p->monitor)
-			MM(p->pnum, (ulong)B2D(q), size);
+			memprof_notify(p->pnum, B2D(q), size);
 		return B2D(q);
 	}
 
@@ -352,7 +347,7 @@ dopoolalloc(Pool *p, ulong asize)
 		p->hw = p->cursize;
 	unlock(&p->l);
 	if(p->monitor)
-		MM(p->pnum, (ulong)B2D(t), size);
+		memprof_notify(p->pnum, B2D(t), size);
 	return B2D(t);
 }
 
@@ -374,7 +369,7 @@ poolfree(Pool *p, void *v)
 
 	D2B(b, v);
 	if(p->monitor)
-		MM(p->pnum|(1<<8), (ulong)v, b->size);
+		memprof_notify(p->pnum|(1<<8), v, b->size);
 
 	lock(&p->l);
 	p->nfree++;

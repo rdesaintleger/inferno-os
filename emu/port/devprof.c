@@ -1,3 +1,5 @@
+#include <inferno/memprof.h>
+
 #include	"dat.h"
 #include	"fns.h"
 #include	"error.h"
@@ -6,11 +8,31 @@
 #include	"runt.h"
 
 extern	Pool*	imagmem;
-extern void	(*memmonitor)(int, ulong, ulong);
 
 static void	cpxec(Prog *);
 static void memprof(int, void*, ulong);
-static void memprofmi(int, ulong, ulong);
+static void memprofmi(int, void*, size_t);
+
+static void enter_monitor(void *ctx, void *data) {
+	MemProfEvent *event = (MemProfEvent *) data;
+
+	memprofmi(event->v, event->base, event->size);
+}
+
+static CallbackEntry memprof_entry = {
+	.ctx = NULL,
+	.next = NULL,
+	.callback = enter_monitor,
+	.state = 0
+};
+
+static void start_monitor() {
+	memprof_register(&memprof_entry);
+}
+
+static void stop_monitor() {
+	memprof_unregister(&memprof_entry);
+}
 
 extern	Inst*	pc2dispc(Inst*, Module*);
 
@@ -386,12 +408,11 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 		buf[n] = 0;
 		i = getfields(buf, fields, nelem(fields), 1, " \t\n");
 		if(i > 0 && strcmp(fields[0], "module") == 0){
-			f = memmonitor;
-			memmonitor = nil;
+			disable_callback(&memprof_entry);
 			freepmods();
 			while(--i > 0)
 				addpmod(fields[i]);
-			memmonitor = f;
+			enable_callback(&memprof_entry);
 			return n;
 		}
 		if(i == 1){
@@ -409,7 +430,7 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 					profiler = Pmem;
 					for(a = &fields[0][7]; *a != '\0'; a++){
 						if(*a == '1'){
-							memmonitor = memprofmi;
+							start_monitor();
 							mprofiler |= Mmain;
 						}
 						else if(*a == '2'){
@@ -417,7 +438,7 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 							mprofiler |= Mheap;
 						}
 						else if(*a == '3'){
-							memmonitor = memprofmi;
+							start_monitor();
 							mprofiler |= Mimage;
 						}
 					};
@@ -430,7 +451,7 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 			else if(strcmp(fields[0], "end") == 0){
 				profiler = Pnil;
 				mprofiler = Mnone;
-				memmonitor = nil;
+				stop_monitor();
 				freeprof();
 				interval = 100;
 			}
@@ -557,10 +578,9 @@ mlook(Module *m, int limbo, int vm, int scale, int origin)
 		}
 	}
 	if(pmods == nil || inpmods(m->name) || inpmods(m->path)){
-		f = memmonitor;
-		memmonitor = nil;	/* prevent monitoring of our memory usage */
+		disable_callback(&memprof_entry); /* prevent monitoring of our memory usage */
 		r = newmodule(m, vm, scale, origin);
-		memmonitor = f;
+		enable_callback(&memprof_entry);
 		return r;
 	}
 	return nil;
@@ -675,7 +695,7 @@ memprof(int c, void *v, ulong n)
 	USED(v);
 	USED(n);
 	if(profiler != Pmem){
-		memmonitor = nil;
+		stop_monitor();
 		heapmonitor = nil;
 		return;
 	}
@@ -761,7 +781,7 @@ memprof(int c, void *v, ulong n)
 
 /* main and image memory */
 static void
-memprofmi(int c, ulong v, ulong n)
+memprofmi(int c, void *v, size_t n)
 {
 	if(c&2){
 		if(!(mprofiler&Mimage))

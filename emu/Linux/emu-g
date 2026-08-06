@@ -21,6 +21,7 @@ dev
 #	audio	audio
 
 lib
+	kern
 	interp
 	math
 	keyring

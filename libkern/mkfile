@@ -1,0 +1,14 @@
+<../mkconfig
+
+LIB=libkern.a
+
+OFILES=\
+	callback.$O\
+	memprof.$O\
+
+HFILES=\
+	$ROOT/include/inferno/callback.h\
+	$ROOT/include/inferno/memprof.h\
+
+<$ROOT/mkfiles/mksyslib-$SHELLTYPE
+

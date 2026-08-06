@@ -1,3 +1,5 @@
+#include <inferno/memprof.h>
+
 #include "dat.h"
 #include "fns.h"
 #include "interp.h"
@@ -55,13 +57,6 @@ enum {
 	MallocOffset = 0,
 	ReallocOffset = 1
 };
-
-enum {
-	Monitor = 1
-};
-
-void	(*memmonitor)(int, ulong, ulong) = nil;
-#define	MM(v,base,size)	if(!Monitor || memmonitor==nil){} else memmonitor((v),(base),(size))
 
 #define CKLEAK	0
 int	ckleak;
@@ -172,7 +167,7 @@ kmalloc(size_t size)
 			v = (ulong*)v+Npadlong;
 		}
 		memset(v, 0, size);
-		MM(0, (ulong)v, size);
+		memprof_notify(0, v, size);
 	}
 	return v;
 }
@@ -191,7 +186,7 @@ HOSTED_API(malloc)(size_t size)
 			v = (ulong*)v+Npadlong;
 		}
 		memset(v, 0, size);
-		MM(0, (ulong)v, size);
+		memprof_notify(0, v, size);
 	} else 
 		HOSTED_API(print)("malloc failed\n");
 	return v;
@@ -210,7 +205,7 @@ HOSTED_API(mallocz)(ulong size, int clr)
 		}
 		if(clr)
 			memset(v, 0, size);
-		MM(0, (ulong)v, size);
+		memprof_notify(0, v, size);
 	} else 
 		HOSTED_API(print)("mallocz failed\n");
 	return v;
@@ -226,7 +221,7 @@ HOSTED_API(free)(void *v)
 			v = (ulong*)v-Npadlong;
 		D2B(b, v);
 		ML(v, 0);
-		MM(1<<8|0, (ulong)((ulong*)v+Npadlong), b->size);
+		memprof_notify(1<<8|0, (ulong*)v+Npadlong, b->size);
 		poolfree(mainmem, v);
 	}
 }

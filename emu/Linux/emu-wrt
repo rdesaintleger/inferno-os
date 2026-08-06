@@ -23,6 +23,7 @@ dev
 #	audio	audio
 
 lib
+	kern
 	interp
 #	tk
 #	freetype
