@@ -1,5 +1,5 @@
-#ifndef _CALLBACK_H_
-#define _CALLBACK_H_
+#ifndef _INFERNO_CALLBACK_H_
+#define _INFERNO_CALLBACK_H_
 
 typedef struct CallbackEntry CallbackEntry;
 
@@ -20,4 +20,4 @@ extern void callback_notify(CallbackEntry* head, void* data);
 extern void disable_callback(CallbackEntry* s);
 extern void enable_callback(CallbackEntry* s);
 
-#endif /* _CALLBACK_H_ */
+#endif /* _INFERNO_CALLBACK_H_ */

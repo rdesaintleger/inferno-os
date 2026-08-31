@@ -46,7 +46,7 @@ void callback_notify(CallbackEntry* head, void* data) {
 void disable_callback(CallbackEntry* s) {
     unsigned int cnt = s->state >> 1;
 
-    if (cnt < 0x7ffffff) {
+    if (cnt < 0x7fffffff) {
         cnt += 1;
     }
 

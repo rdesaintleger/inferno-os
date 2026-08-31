@@ -5,12 +5,6 @@
 #include "interp.h"
 #include "error.h"
 
-#define left	u.s.bhl
-#define right	u.s.bhr
-#define fwd	u.s.bhf
-#define prev	u.s.bhv
-#define parent	u.s.bhp
-
 /*	non tracing
  *
 enum {
@@ -36,7 +30,7 @@ poolimmutable(void *v)
 	Bhdr *b;
 
 	D2B(b, v);
-	b->magic = MAGIC_I;
+	b->bh_magic = MAGIC_I;
 }
 
 void
@@ -46,7 +40,7 @@ poolmutable(void *v)
 	Bhdr *b;
 
 	D2B(b, v);
-	b->magic = MAGIC_A;
+	b->bh_magic = MAGIC_A;
 	h->color = mutator;
 }
 
@@ -67,79 +61,79 @@ pooldel(Pool *p, Bhdr *t)
 {
 	Bhdr *s, *f, *rp, *q;
 
-	if(t->parent == nil && p->root != t) {
-		t->prev->fwd = t->fwd;
-		t->fwd->prev = t->prev;
+	if(t->bh_parent == nil && p->root != t) {
+		t->bh_prev->bh_fwd = t->bh_fwd;
+		t->bh_fwd->bh_prev = t->bh_prev;
 		return;
 	}
 
-	if(t->fwd != t) {
-		f = t->fwd;
-		s = t->parent;
-		f->parent = s;
+	if(t->bh_fwd != t) {
+		f = t->bh_fwd;
+		s = t->bh_parent;
+		f->bh_parent = s;
 		if(s == nil)
 			p->root = f;
 		else {
-			if(s->left == t)
-				s->left = f;
+			if(s->bh_left == t)
+				s->bh_left = f;
 			else
-				s->right = f;
+				s->bh_right = f;
 		}
 
-		rp = t->left;
-		f->left = rp;
+		rp = t->bh_left;
+		f->bh_left = rp;
 		if(rp != nil)
-			rp->parent = f;
-		rp = t->right;
-		f->right = rp;
+			rp->bh_parent = f;
+		rp = t->bh_right;
+		f->bh_right = rp;
 		if(rp != nil)
-			rp->parent = f;
+			rp->bh_parent = f;
 
-		t->prev->fwd = t->fwd;
-		t->fwd->prev = t->prev;
+		t->bh_prev->bh_fwd = t->bh_fwd;
+		t->bh_fwd->bh_prev = t->bh_prev;
 		return;
 	}
 
-	if(t->left == nil)
-		rp = t->right;
+	if(t->bh_left == nil)
+		rp = t->bh_right;
 	else {
-		if(t->right == nil)
-			rp = t->left;
+		if(t->bh_right == nil)
+			rp = t->bh_left;
 		else {
 			f = t;
-			rp = t->right;
-			s = rp->left;
+			rp = t->bh_right;
+			s = rp->bh_left;
 			while(s != nil) {
 				f = rp;
 				rp = s;
-				s = rp->left;
+				s = rp->bh_left;
 			}
 			if(f != t) {
-				s = rp->right;
-				f->left = s;
+				s = rp->bh_right;
+				f->bh_left = s;
 				if(s != nil)
-					s->parent = f;
-				s = t->right;
-				rp->right = s;
+					s->bh_parent = f;
+				s = t->bh_right;
+				rp->bh_right = s;
 				if(s != nil)
-					s->parent = rp;
+					s->bh_parent = rp;
 			}
-			s = t->left;
-			rp->left = s;
-			s->parent = rp;
+			s = t->bh_left;
+			rp->bh_left = s;
+			s->bh_parent = rp;
 		}
 	}
-	q = t->parent;
+	q = t->bh_parent;
 	if(q == nil)
 		p->root = rp;
 	else {
-		if(t == q->left)
-			q->left = rp;
+		if(t == q->bh_left)
+			q->bh_left = rp;
 		else
-			q->right = rp;
+			q->bh_right = rp;
 	}
 	if(rp != nil)
-		rp->parent = q;
+		rp->bh_parent = q;
 }
 
 void
@@ -148,13 +142,13 @@ pooladd(Pool *p, Bhdr *q)
 	int size;
 	Bhdr *tp, *t;
 
-	q->magic = MAGIC_F;
+	q->bh_magic = MAGIC_F;
 
-	q->left = nil;
-	q->right = nil;
-	q->parent = nil;
-	q->fwd = q;
-	q->prev = q;
+	q->bh_left = nil;
+	q->bh_right = nil;
+	q->bh_parent = nil;
+	q->bh_fwd = q;
+	q->bh_prev = q;
 
 	t = p->root;
 	if(t == nil) {
@@ -162,29 +156,29 @@ pooladd(Pool *p, Bhdr *q)
 		return;
 	}
 
-	size = q->size;
+	size = q->bh_size;
 
 	tp = nil;
 	while(t != nil) {
-		if(size == t->size) {
-			q->prev = t->prev;
-			q->prev->fwd = q;
-			q->fwd = t;
-			t->prev = q;
+		if(size == t->bh_size) {
+			q->bh_prev = t->bh_prev;
+			q->bh_prev->bh_fwd = q;
+			q->bh_fwd = t;
+			t->bh_prev = q;
 			return;
 		}
 		tp = t;
-		if(size < t->size)
-			t = t->left;
+		if(size < t->bh_size)
+			t = t->bh_left;
 		else
-			t = t->right;
+			t = t->bh_right;
 	}
 
-	q->parent = tp;
-	if(size < tp->size)
-		tp->left = q;
+	q->bh_parent = tp;
+	if(size < tp->bh_size)
+		tp->bh_left = q;
 	else
-		tp->right = q;
+		tp->bh_right = q;
 }
 
 void*
@@ -206,11 +200,11 @@ dopoolalloc(Pool *p, ulong asize)
 	t = p->root;
 	q = nil;
 	while(t) {
-		if(t->size == size) {
-			t = t->fwd;
+		if(t->bh_size == size) {
+			t = t->bh_fwd;
 			pooldel(p, t);
-			t->magic = MAGIC_A;
-			p->cursize += t->size;
+			t->bh_magic = MAGIC_A;
+			p->cursize += t->bh_size;
 			if(p->cursize > p->hw)
 				p->hw = p->cursize;
 			unlock(&p->l);
@@ -218,19 +212,19 @@ dopoolalloc(Pool *p, ulong asize)
 				memprof_notify(p->pnum, B2D(t), size);
 			return B2D(t);
 		}
-		if(size < t->size) {
+		if(size < t->bh_size) {
 			q = t;
-			t = t->left;
+			t = t->bh_left;
 		}
 		else
-			t = t->right;
+			t = t->bh_right;
 	}
 	if(q != nil) {
 		pooldel(p, q);
-		q->magic = MAGIC_A;
-		frag = q->size - size;
+		q->bh_magic = MAGIC_A;
+		frag = q->bh_size - size;
 		if(frag < (size>>2) && frag < 0x8000) {
-			p->cursize += q->size;
+			p->cursize += q->bh_size;
 			if(p->cursize > p->hw)
 				p->hw = p->cursize;
 			unlock(&p->l);
@@ -239,14 +233,14 @@ dopoolalloc(Pool *p, ulong asize)
 			return B2D(q);
 		}
 		/* Split */
-		ns = q->size - size;
-		q->size = size;
+		ns = q->bh_size - size;
+		q->bh_size = size;
 		B2T(q)->hdr = q;
 		t = B2NB(q);
-		t->size = ns;
+		t->bh_size = ns;
 		B2T(t)->hdr = t;
 		pooladd(p, t);
-		p->cursize += q->size;
+		p->cursize += q->bh_size;
 		if(p->cursize > p->hw)
 			p->hw = p->cursize;
 		unlock(&p->l);
@@ -282,7 +276,7 @@ dopoolalloc(Pool *p, ulong asize)
 	}
 
 	p->nbrk++;
-	t = (Bhdr *)sbrk(alloc);
+	t = (Bhdr *) malloc(alloc); // XXX to be changed with host malloc later
 	if(t == (void*)-1) {
 		p->nbrk--;
 		unlock(&p->l);
@@ -308,41 +302,41 @@ dopoolalloc(Pool *p, ulong asize)
 		/* can merge chains */
 		if(0)HOSTED_API(print)("merging chains %p and %p in %s\n", p->chain, t, p->name);
 		q = B2LIMIT(p->chain);
-		q->magic = MAGIC_A;
-		q->size = alloc;
+		q->bh_magic = MAGIC_A;
+		q->bh_size = alloc;
 		B2T(q)->hdr = q;
 		t = B2NB(q);
-		t->magic = MAGIC_E;
-		p->chain->csize += alloc;
+		t->bh_magic = MAGIC_E;
+		p->chain->bh_limit += alloc;
 		p->cursize += alloc;
 		unlock(&p->l);
 		poolfree(p, B2D(q));		/* for backward merge */
 		return poolalloc(p, osize);
 	}
 	
-	t->magic = MAGIC_E;		/* Make a leader */
-	t->size = ldr;
-	t->csize = ns+ldr;
-	t->clink = p->chain;
+	t->bh_magic = MAGIC_E;		/* Make a leader */
+	t->bh_size = ldr;
+	t->bh_limit = ns+ldr;
+	t->bh_link = p->chain;
 	p->chain = t;
 	B2T(t)->hdr = t;
 	t = B2NB(t);
 
-	t->magic = MAGIC_A;		/* Make the block we are going to return */
-	t->size = size;
+	t->bh_magic = MAGIC_A;		/* Make the block we are going to return */
+	t->bh_size = size;
 	B2T(t)->hdr = t;
 	q = t;
 
 	ns -= size;			/* Free the rest */
 	if(ns > 0) {
 		q = B2NB(t);
-		q->size = ns;
+		q->bh_size = ns;
 		B2T(q)->hdr = q;
 		pooladd(p, q);
 	}
-	B2NB(q)->magic = MAGIC_E;	/* Mark the end of the chunk */
+	B2NB(q)->bh_magic = MAGIC_E;	/* Mark the end of the chunk */
 
-	p->cursize += t->size;
+	p->cursize += t->bh_size;
 	if(p->cursize > p->hw)
 		p->hw = p->cursize;
 	unlock(&p->l);
@@ -369,28 +363,28 @@ poolfree(Pool *p, void *v)
 
 	D2B(b, v);
 	if(p->monitor)
-		memprof_notify(p->pnum|(1<<8), v, b->size);
+		memprof_notify(p->pnum|(1<<8), v, b->bh_size);
 
 	lock(&p->l);
 	p->nfree++;
-	p->cursize -= b->size;
+	p->cursize -= b->bh_size;
 	c = B2NB(b);
-	if(c->magic == MAGIC_F) {	/* Join forward */
+	if(c->bh_magic == MAGIC_F) {	/* Join forward */
 		if(c == ptr)
 			ptr = b;
 		pooldel(p, c);
-		c->magic = 0;
-		b->size += c->size;
+		c->bh_magic = 0;
+		b->bh_size += c->bh_size;
 		B2T(b)->hdr = b;
 	}
 
 	c = B2PT(b)->hdr;
-	if(c->magic == MAGIC_F) {	/* Join backward */
+	if(c->bh_magic == MAGIC_F) {	/* Join backward */
 		if(b == ptr)
 			ptr = c;
 		pooldel(p, c);
-		b->magic = 0;
-		c->size += b->size;
+		b->bh_magic = 0;
+		c->bh_size += b->bh_size;
 		b = c;
 		B2T(b)->hdr = b;
 	}
@@ -415,7 +409,7 @@ poolrealloc(Pool *p, void *v, ulong size)
 	if(v != nil){
 		lock(&p->l);
 		D2B(b, v);
-		osize = b->size - BHDRSIZE;
+		osize = b->bh_size - BHDRSIZE;
 		unlock(&p->l);
 		if(osize >= size)
 			return v;
@@ -438,7 +432,7 @@ poolmsize(Pool *p, void *v)
 		return 0;
 	lock(&p->l);
 	D2B(b, v);
-	size = b->size - BHDRSIZE;
+	size = b->bh_size - BHDRSIZE;
 	unlock(&p->l);
 	return size;
 }
@@ -453,10 +447,10 @@ poolmax(Pool *p)
 	size = p->maxsize - p->cursize;
 	t = p->root;
 	if(t != nil) {
-		while(t->right != nil)
-			t = t->right;
-		if(size < t->size)
-			size = t->size;
+		while(t->bh_right != nil)
+			t = t->bh_right;
+		if(size < t->bh_size)
+			size = t->bh_size;
 	}
 	if(size >= BHDRSIZE)
 		size -= BHDRSIZE;
@@ -479,17 +473,17 @@ pooldump(Pool *p)
 
 	while(base != nil) {
 		HOSTED_API(print)("\tbase #%.8lux ptr #%.8lux", base, ptr);
-		if(ptr->magic == MAGIC_A || ptr->magic == MAGIC_I)
-			HOSTED_API(print)("\tA%.5d\n", ptr->size);
-		else if(ptr->magic == MAGIC_E)
-			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", ptr->clink, ptr->csize);
+		if(ptr->bh_magic == MAGIC_A || ptr->bh_magic == MAGIC_I)
+			HOSTED_API(print)("\tA%.5d\n", ptr->bh_size);
+		else if(ptr->bh_magic == MAGIC_E)
+			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", ptr->bh_link, ptr->bh_limit);
 		else
 			HOSTED_API(print)("\tF%.5d\tL#%.8lux\tR#%.8lux\tF#%.8lux\tP#%.8lux\tT#%.8lux\n",
-				ptr->size, ptr->left, ptr->right, ptr->fwd, ptr->prev, ptr->parent);
+				ptr->bh_size, ptr->bh_left, ptr->bh_right, ptr->bh_fwd, ptr->bh_prev, ptr->bh_parent);
 		ptr = B2NB(ptr);
 		if(ptr >= limit) {
-			HOSTED_API(print)("link to #%.8lux\n", base->clink);
-			base = base->clink;
+			HOSTED_API(print)("link to #%.8lux\n", base->bh_link);
+			base = base->bh_link;
 			if(base == nil)
 				break;
 			ptr = base;
@@ -517,7 +511,7 @@ poolcompact(Pool *pool)
 	pool->lastfree = pool->nfree;
 
 	base = pool->chain;
-	ptr = B2NB(base);	/* First Block in arena has clink */
+	ptr = B2NB(base);	/* First Block in arena has bh_link */
 	limit = B2LIMIT(base);
 	compacted = 0;
 
@@ -525,9 +519,9 @@ poolcompact(Pool *pool)
 	end = ptr;
 	while(base != nil) {
 		next = B2NB(ptr);
-		if(ptr->magic == MAGIC_A || ptr->magic == MAGIC_I) {
+		if(ptr->bh_magic == MAGIC_A || ptr->bh_magic == MAGIC_I) {
 			if(ptr != end) {
-				memmove(end, ptr, ptr->size);
+				memmove(end, ptr, ptr->bh_size);
 				pool->move(B2D(ptr), B2D(end));
 				compacted = 1;
 			}
@@ -540,11 +534,11 @@ poolcompact(Pool *pool)
 					HOSTED_API(print)("poolcompact: leftover too small\n");
 					abort();
 				}
-				end->size = nb;
+				end->bh_size = nb;
 				B2T(end)->hdr = end;
 				pooladd(pool, end);
 			}
-			base = base->clink;
+			base = base->bh_link;
 			if(base == nil)
 				break;
 			ptr = B2NB(base);

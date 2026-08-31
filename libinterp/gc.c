@@ -266,7 +266,7 @@ okbhdr(Bhdr *b)
 {
 	if(b == nil)
 		return 0;
-	switch(b->magic) {
+	switch(b->bh_magic) {
 	case MAGIC_A:
 	case MAGIC_F:
 	case MAGIC_E:
@@ -324,7 +324,7 @@ rungc(Prog *p)
 	}
 
 	for(visit = quanta; visit > 0; ) {
-		if(ptr->magic == MAGIC_A) {
+		if(ptr->bh_magic == MAGIC_A) {
 			visit--;
 			gct++;
 			gcinspects++;
@@ -355,7 +355,7 @@ rungc(Prog *p)
 		}
 		ptr = B2NB(ptr);
 		if(ptr >= limit) {
-			base = base->clink;
+			base = base->bh_link;
 			if(base == nil)
 				break;
 			ptr = base;

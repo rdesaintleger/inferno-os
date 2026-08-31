@@ -10,12 +10,6 @@ enum
 	MAXPOOL		= 4
 };
 
-#define left	u.s.bhl
-#define right	u.s.bhr
-#define fwd	u.s.bhf
-#define prev	u.s.bhv
-#define parent	u.s.bhp
-
 #define RESERVED	512*1024
 
 struct
@@ -57,10 +51,6 @@ enum {
 	MallocOffset = 0,
 	ReallocOffset = 1
 };
-
-#define CKLEAK	0
-int	ckleak;
-#define	ML(v, sz)	if(CKLEAK && ckleak && v){ if(sz) HOSTED_API(fprint)(2, "%lux %lux\n", (ulong)v, (ulong)sz); else HOSTED_API(fprint)(2, "%lux\n", (ulong)v); }
 
 int
 memusehigh(void)
@@ -162,7 +152,6 @@ kmalloc(size_t size)
 
 	v = dopoolalloc(mainmem, size+Npadlong*sizeof(ulong));
 	if(v != nil){
-		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
 		}
@@ -181,7 +170,6 @@ HOSTED_API(malloc)(size_t size)
 
 	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong));
 	if(v != nil){
-		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
 		}
@@ -199,7 +187,6 @@ HOSTED_API(mallocz)(ulong size, int clr)
 
 	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong));
 	if(v != nil){
-		ML(v, size);
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
 		}
@@ -220,8 +207,7 @@ HOSTED_API(free)(void *v)
 		if(Npadlong)
 			v = (ulong*)v-Npadlong;
 		D2B(b, v);
-		ML(v, 0);
-		memprof_notify(1<<8|0, (ulong*)v+Npadlong, b->size);
+		memprof_notify(1<<8|0, (ulong*)v+Npadlong, b->bh_size);
 		poolfree(mainmem, v);
 	}
 }
@@ -238,8 +224,6 @@ HOSTED_API(realloc)(void *v, size_t size)
 	if(Npadlong!=0 && size!=0)
 		size += Npadlong*sizeof(ulong);
 	nv = poolrealloc(mainmem, v, size);
-	ML(v, 0);
-	ML(nv, size);
 	if(nv != nil) {
 		nv = (ulong*)nv+Npadlong;
 	} else 
@@ -288,7 +272,7 @@ static void
 corrupted(char *str, char *msg, Pool *p, Bhdr *b, void *v)
 {
 	HOSTED_API(print)("%s(%p): pool %s CORRUPT: %s at %p'%lud(magic=%lux)\n",
-		str, v, p->name, msg, b, b->size, b->magic);
+		str, v, p->name, msg, b, b->bh_size, b->bh_magic);
 	dumpvl("bad Bhdr", (ulong *)((ulong)b & ~3)-4, 10);
 }
 
@@ -304,8 +288,8 @@ _auditmemloc(char *str, void *v)
 	SET(fmsg);
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
-		for (bc = p->chain; bc != nil; bc = bc->clink) {
-			if (bc->magic != MAGIC_E) {
+		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
+			if (bc->bh_magic != MAGIC_E) {
 				unlock(&p->l);
 				corrupted(str, "chain hdr!=MAGIC_E", p, bc, v);
 				goto nextpool;
@@ -322,7 +306,7 @@ nextpool:	;
 
 found:
 	for (b = bc; b < ec; b = nb) {
-		switch(b->magic) {
+		switch(b->bh_magic) {
 		case MAGIC_F:
 			msg = "free blk";
 			break;
@@ -333,7 +317,7 @@ found:
 			msg = "block";
 			break;
 		default:
-			if (b == bc && b->magic == MAGIC_E) {
+			if (b == bc && b->bh_magic == MAGIC_E) {
 				msg = "pool hdr";
 				break;
 			}
@@ -341,7 +325,7 @@ found:
 			corrupted(str, "bad magic", p, b, v);
 			goto badchunk;
 		}
-		if (b->size <= 0 || (b->size & p->quanta)) {
+		if (b->bh_size <= 0 || (b->bh_size & p->quanta)) {
 			unlock(&p->l);
 			corrupted(str, "bad size", p, b, v);
 			goto badchunk;
@@ -351,7 +335,7 @@ found:
 		nb = B2NB(b);
 		if ((Bhdr*)v < nb) {
 			fb = b;
-			fsz = b->size;
+			fsz = b->bh_size;
 			fmsg = msg;
 		}
 	}
@@ -359,7 +343,7 @@ found:
 	if (b >= ec) {
 		if (b > ec)
 			corrupted(str, "chain size mismatch", p, b, v);
-		else if (b->magic != MAGIC_E)
+		else if (b->bh_magic != MAGIC_E)
 			corrupted(str, "chain end!=MAGIC_E", p, b, v);
 	}
 badchunk:
@@ -382,17 +366,17 @@ poolaudit(char*(*audit)(int, Bhdr *))
 
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
-		for (bc = p->chain; bc != nil; bc = bc->clink) {
-			if (bc->magic != MAGIC_E) {
+		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
+			if (bc->bh_magic != MAGIC_E) {
 				unlock(&p->l);
 				return "bad chain hdr";
 			}
 			ec = B2LIMIT(bc);
 			for (b = bc; b < ec; b = B2NB(b)) {
-				if (b->size <= 0 || (b->size & p->quanta))
+				if (b->bh_size <= 0 || (b->bh_size & p->quanta))
 					r = "bad size in bhdr";
 				else
-					switch(b->magic) {
+					switch(b->bh_magic) {
 					case MAGIC_E:
 						if (b != bc) {
 							r = "unexpected MAGIC_E";
@@ -411,7 +395,7 @@ poolaudit(char*(*audit)(int, Bhdr *))
 					return r;
 				}
 			}
-			if (b != ec || b->magic != MAGIC_E) {
+			if (b != ec || b->bh_magic != MAGIC_E) {
 				unlock(&p->l);
 				return "bad chain ending";
 			}
