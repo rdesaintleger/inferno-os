@@ -9,7 +9,6 @@ struct Pool {
     char* name;
     int pnum;
     size_t maxsize;
-    int quanta;
     int chunk;
     int monitor;
     size_t ressize; /* restricted size */

@@ -5,23 +5,6 @@
 #include "interp.h"
 #include "error.h"
 
-/*	non tracing
- *
-enum {
-	Npadlong	= 0,
-	MallocOffset = 0,
-	ReallocOffset = 0
-};
- *
- */
-
-/* tracing */
-enum {
-	Npadlong	= 2,
-	MallocOffset = 0,
-	ReallocOffset = 1
-};
-
 char*
 poolname(Pool *p)
 {
@@ -173,7 +156,6 @@ dopoolalloc(Pool *p, size_t asize)
 	osize = size;
 	overhead = BHDR_L_SIZE+BTAIL_SIZE+BHDR_E_SIZE;
 	size = BCEIL(size, BALIGN_SZ) + BCEIL(BHDRSIZE, BALIGN_SZ);
-	//size = (size + BHDRSIZE + p->quanta) & ~(p->quanta);
 
 	lock(&p->l);
 	p->nalloc++;
@@ -498,7 +480,7 @@ poolcompact(Pool *pool)
 		if(next >= limit) {
 			nb = (uchar*)limit - (uchar*)end;
 			if(nb > 0){
-				if(nb < pool->quanta+1){
+				if(nb < BFREESIZE){
 					HOSTED_API(print)("poolcompact: leftover too small\n");
 					abort();
 				}
