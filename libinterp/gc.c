@@ -269,6 +269,7 @@ okbhdr(Bhdr *b)
 	switch(b->bh_magic) {
 	case MAGIC_A:
 	case MAGIC_F:
+	case MAGIC_L:
 	case MAGIC_E:
 	case MAGIC_I:
 		return 1;

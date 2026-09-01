@@ -96,7 +96,7 @@ Tk_toplevel(void *a)
 
 	h = heapz(fakeTkTop);
 	t = H2D(TkTop*, h);
-	poolimmutable(D2P(t));
+	heapimmutable(D2P(t));
 
 	t->dd = f->d;
 	D2H(t->dd)->ref++;
@@ -142,7 +142,7 @@ Tk_toplevel(void *a)
 	t->windows = tk;
 	t->root = tk;
 	Setmark(h);
-	poolmutable(D2P(t));
+	 heapmutable(D2P(t));
 	t->wreq = cnewc(&Tptr, movp, 8);
 	*f->ret = (Tk_Toplevel*)t;
 }

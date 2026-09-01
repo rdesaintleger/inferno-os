@@ -539,19 +539,19 @@ newPK(SigAlg *sa, String *owner, int increfsa)
 void
 pkimmutable(PK *k)
 {
-	poolimmutable(D2P(k));
-	poolimmutable(D2P(k->x.sa));
-	poolimmutable(D2P(k->x.sa->name));
-	poolimmutable(D2P(k->x.owner));
+	 heapimmutable(D2P(k));
+	 heapimmutable(D2P(k->x.sa));
+	 heapimmutable(D2P(k->x.sa->name));
+	 heapimmutable(D2P(k->x.owner));
 }
 
 void
 pkmutable(PK *k)
 {
-	poolmutable(D2P(k));
-	poolmutable(D2P(k->x.sa));
-	poolmutable(D2P(k->x.sa->name));
-	poolmutable(D2P(k->x.owner));
+	 heapmutable(D2P(k));
+	 heapmutable(D2P(k->x.sa));
+	 heapmutable(D2P(k->x.sa->name));
+	 heapmutable(D2P(k->x.owner));
 }
 
 void
@@ -707,23 +707,23 @@ Keyring_strtopk(void *fp)
 void
 certimmutable(Certificate *c)
 {
-	poolimmutable(D2P(c));
-	poolimmutable(D2P(c->x.signer));
-	poolimmutable(D2P(c->x.ha));
-	poolimmutable(D2P(c->x.sa));
-	poolimmutable(D2P(c->x.sa->name));
+	 heapimmutable(D2P(c));
+	 heapimmutable(D2P(c->x.signer));
+	 heapimmutable(D2P(c->x.ha));
+	 heapimmutable(D2P(c->x.sa));
+	 heapimmutable(D2P(c->x.sa->name));
 }
 
 void
 certmutable(Certificate *c)
 {
-	poolmutable(D2P(c));
-	poolmutable(D2P(c->x.signer));
-	poolmutable(D2P(c->x.ha));
+	 heapmutable(D2P(c));
+	 heapmutable(D2P(c->x.signer));
+	 heapmutable(D2P(c->x.ha));
 	Setmark(D2H(c->x.sa));
-	poolmutable(D2P(c->x.sa));
+	 heapmutable(D2P(c->x.sa));
 	Setmark(D2H(c->x.sa->name));
-	poolmutable(D2P(c->x.sa->name));
+	 heapmutable(D2P(c->x.sa->name));
 }
 
 Certificate*

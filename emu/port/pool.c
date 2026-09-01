@@ -22,28 +22,6 @@ enum {
 	ReallocOffset = 1
 };
 
-/* TODO: reorganise includes to have Heap** as parameter */
-
-void
-poolimmutable(void *v)
-{
-	Bhdr *b;
-
-	D2B(b, v);
-	b->bh_magic = MAGIC_I;
-}
-
-void
-poolmutable(void *v)
-{
-	Heap *h = *((Heap**)v);
-	Bhdr *b;
-
-	D2B(b, v);
-	b->bh_magic = MAGIC_A;
-	h->color = mutator;
-}
-
 char*
 poolname(Pool *p)
 {
@@ -306,7 +284,7 @@ dopoolalloc(Pool *p, ulong asize)
 		q->bh_size = alloc;
 		B2T(q)->hdr = q;
 		t = B2NB(q);
-		t->bh_magic = MAGIC_E;
+		t->bh_magic = MAGIC_E; /* Mark the new end of the chunk */
 		p->chain->bh_limit += alloc;
 		p->cursize += alloc;
 		unlock(&p->l);
@@ -314,7 +292,7 @@ dopoolalloc(Pool *p, ulong asize)
 		return poolalloc(p, osize);
 	}
 	
-	t->bh_magic = MAGIC_E;		/* Make a leader */
+	t->bh_magic = MAGIC_L;		/* Make a leader */
 	t->bh_size = ldr;
 	t->bh_limit = ns+ldr;
 	t->bh_link = p->chain;
@@ -361,7 +339,7 @@ poolfree(Pool *p, void *v)
 	Bhdr *b, *c;
 	extern Bhdr *ptr;
 
-	D2B(b, v);
+	D2B(b, v, poolfault);
 	if(p->monitor)
 		memprof_notify(p->pnum|(1<<8), v, b->bh_size);
 
@@ -408,7 +386,7 @@ poolrealloc(Pool *p, void *v, ulong size)
 	SET(osize);
 	if(v != nil){
 		lock(&p->l);
-		D2B(b, v);
+		D2B(b, v, poolfault);
 		osize = b->bh_size - BHDRSIZE;
 		unlock(&p->l);
 		if(osize >= size)
@@ -431,7 +409,7 @@ poolmsize(Pool *p, void *v)
 	if(v == nil)
 		return 0;
 	lock(&p->l);
-	D2B(b, v);
+	D2B(b, v, poolfault);
 	size = b->bh_size - BHDRSIZE;
 	unlock(&p->l);
 	return size;
@@ -475,8 +453,10 @@ pooldump(Pool *p)
 		HOSTED_API(print)("\tbase #%.8lux ptr #%.8lux", base, ptr);
 		if(ptr->bh_magic == MAGIC_A || ptr->bh_magic == MAGIC_I)
 			HOSTED_API(print)("\tA%.5d\n", ptr->bh_size);
-		else if(ptr->bh_magic == MAGIC_E)
+		else if(ptr->bh_magic == MAGIC_L)
 			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", ptr->bh_link, ptr->bh_limit);
+		else if(ptr->bh_magic == MAGIC_E)
+			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", nil, nil);
 		else
 			HOSTED_API(print)("\tF%.5d\tL#%.8lux\tR#%.8lux\tF#%.8lux\tP#%.8lux\tT#%.8lux\n",
 				ptr->bh_size, ptr->bh_left, ptr->bh_right, ptr->bh_fwd, ptr->bh_prev, ptr->bh_parent);

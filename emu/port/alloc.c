@@ -206,7 +206,7 @@ HOSTED_API(free)(void *v)
 	if(v != nil) {
 		if(Npadlong)
 			v = (ulong*)v-Npadlong;
-		D2B(b, v);
+		D2B(b, v, poolfault);
 		memprof_notify(1<<8|0, (ulong*)v+Npadlong, b->bh_size);
 		poolfree(mainmem, v);
 	}
@@ -289,9 +289,9 @@ _auditmemloc(char *str, void *v)
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
-			if (bc->bh_magic != MAGIC_E) {
+			if (bc->bh_magic != MAGIC_L) {
 				unlock(&p->l);
-				corrupted(str, "chain hdr!=MAGIC_E", p, bc, v);
+				corrupted(str, "chain hdr!=MAGIC_L", p, bc, v);
 				goto nextpool;
 			}
 			ec = B2LIMIT(bc);
@@ -316,11 +316,13 @@ found:
 		case MAGIC_A:
 			msg = "block";
 			break;
+		case MAGIC_L:
+			msg = "arena leader block";
+			break;
+		case MAGIC_E:
+			msg = "arena end block";
+			break;
 		default:
-			if (b == bc && b->bh_magic == MAGIC_E) {
-				msg = "pool hdr";
-				break;
-			}
 			unlock(&p->l);
 			corrupted(str, "bad magic", p, b, v);
 			goto badchunk;
@@ -367,7 +369,7 @@ poolaudit(char*(*audit)(int, Bhdr *))
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
-			if (bc->bh_magic != MAGIC_E) {
+			if (bc->bh_magic != MAGIC_L) {
 				unlock(&p->l);
 				return "bad chain hdr";
 			}
@@ -378,8 +380,11 @@ poolaudit(char*(*audit)(int, Bhdr *))
 				else
 					switch(b->bh_magic) {
 					case MAGIC_E:
+						r = "unexpected MAGIC_E";
+						break;
+					case MAGIC_L:
 						if (b != bc) {
-							r = "unexpected MAGIC_E";
+							r = "unexpected MAGIC_L";
 							break;
 						}
 					case MAGIC_F:

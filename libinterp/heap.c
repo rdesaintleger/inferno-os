@@ -239,7 +239,7 @@ destroy(void *v)
 		return;
 
 	h = D2H(v);
-	{ Bhdr *b; D2B(b, D2P(v)); }		/* consistency check */
+	{ Bhdr *b; D2B(b, D2P(v), poolfault); }		/* consistency check */
 
 	if(--h->ref > 0 || gchalt > 64) 	/* Protect 'C' thread stack */
 		return;
@@ -352,6 +352,28 @@ initmem(Type *t, void *vw)
 		p++;
 		w += 8;
 	}
+}
+
+/* TODO: reorganise includes to have Heap** as parameter */
+
+void
+heapimmutable(void *v)
+{
+	Bhdr *b;
+
+	D2B(b, v, poolfault);
+	b->bh_magic = MAGIC_I;
+}
+
+void
+heapmutable(void *v)
+{
+	Heap *h = *((Heap**)v);
+	Bhdr *b;
+
+	D2B(b, v, poolfault);
+	b->bh_magic = MAGIC_A;
+	h->color = mutator;
 }
 
 Heap*

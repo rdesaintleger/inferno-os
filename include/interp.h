@@ -451,6 +451,8 @@ extern	Heap*	heaparray(Type*, int);
 extern	void		(*heapmonitor)(int, void*, ulong);
 extern	Heap*		heapz(Type*);
 extern	int		hmsize(Heap *);
+extern	void	heapimmutable(void*);
+extern	void	heapmutable(void*);
 extern	void		incmem(void*, Type*);
 extern	void		initarray(Type*, Array*);
 extern	void		initmem(Type*, void*);
