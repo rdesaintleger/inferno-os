@@ -160,17 +160,20 @@ pooladd(Pool *p, Bhdr *q)
 }
 
 void*
-dopoolalloc(Pool *p, ulong asize)
+dopoolalloc(Pool *p, size_t asize)
 {
 	Bhdr *q, *t;
-	int alloc, ldr, ns, frag;
-	int osize, size;
+	size_t alloc, ns, frag, overhead;
+	size_t osize, size, size2;
+	intptr_t needed;
 
-	if(asize >= 1024*1024*1024)	/* for sanity and to avoid overflow */
+	if(asize >= p->maxsize)	/* for sanity and to avoid overflow */
 		return nil;
 	size = asize;
 	osize = size;
-	size = (size + BHDRSIZE + p->quanta) & ~(p->quanta);
+	overhead = BHDR_L_SIZE+BTAIL_SIZE+BHDR_E_SIZE;
+	size = BCEIL(size, BALIGN_SZ) + BCEIL(BHDRSIZE, BALIGN_SZ);
+	//size = (size + BHDRSIZE + p->quanta) & ~(p->quanta);
 
 	lock(&p->l);
 	p->nalloc++;
@@ -201,7 +204,7 @@ dopoolalloc(Pool *p, ulong asize)
 		pooldel(p, q);
 		q->bh_magic = MAGIC_A;
 		frag = q->bh_size - size;
-		if(frag < (size>>2) && frag < 0x8000) {
+		if(frag < BFREESIZE) {
 			p->cursize += q->bh_size;
 			if(p->cursize > p->hw)
 				p->hw = p->cursize;
@@ -213,10 +216,10 @@ dopoolalloc(Pool *p, ulong asize)
 		/* Split */
 		ns = q->bh_size - size;
 		q->bh_size = size;
-		B2T(q)->hdr = q;
+		B2T(q)->bt_hdr = q;
 		t = B2NB(q);
 		t->bh_size = ns;
-		B2T(t)->hdr = t;
+		B2T(t)->bt_hdr = t;
 		pooladd(p, t);
 		p->cursize += q->bh_size;
 		if(p->cursize > p->hw)
@@ -229,16 +232,21 @@ dopoolalloc(Pool *p, ulong asize)
 
 	ns = p->chunk;
 	if(size > ns)
-		ns = size;
-	ldr = p->quanta+1;
+		ns = BCEIL(size, ns);
 
-	alloc = ns+ldr+ldr;
+	alloc = ns+overhead;
 	p->arenasize += alloc;
 	if(p->arenasize > p->maxsize) {
 		p->arenasize -= alloc;
-		ns = p->maxsize-p->arenasize-ldr-ldr;
-		ns &= ~p->quanta;
-		if (ns < size) {
+
+		/* compute remaining space and substract overhead (signed) */
+		needed = ((intptr_t) p->maxsize)-((intptr_t) p->arenasize);
+		needed -= overhead;
+
+		/* compute proper alignment */
+		needed = needed < 0 ? 0 : BFLOOR(needed, BALIGN_SZ);
+
+		if (((size_t) needed) < size) {
 			if(poolcompact(p)) {
 				unlock(&p->l);
 				return poolalloc(p, osize);
@@ -249,69 +257,49 @@ dopoolalloc(Pool *p, ulong asize)
 			 p->name, size, p->cursize, p->arenasize, p->maxsize);
 			return nil;
 		}
-		alloc = ns+ldr+ldr;
+
+		ns = (size_t) needed; /* convert back to unsigned */
+		alloc = ns+overhead;
 		p->arenasize += alloc;
 	}
 
 	p->nbrk++;
 	t = (Bhdr *) malloc(alloc); // XXX to be changed with host malloc later
-	if(t == (void*)-1) {
+	if(t == NULL) {
 		p->nbrk--;
+		p->arenasize -= alloc;
 		unlock(&p->l);
 		return nil;
 	}
-#ifdef __NetBSD__
-	/* Align allocations to 16 bytes */
-	{
-		const size_t off = __builtin_offsetof(struct Bhdr, u.data)
-					+ Npadlong*sizeof(ulong);
-		struct assert_align {
-			unsigned int align_ok : (off % 8 == 0) ? 1 : -1;
-		};
-
-		const ulong align = (off - 1) % 16;
-		t = (Bhdr *)(((ulong)t + align) & ~align);
-	}
-#else
-	/* Double alignment */
-	t = (Bhdr *)(((ulong)t + 7) & ~7);
-#endif
-	if(p->chain != nil && (char*)t-(char*)B2LIMIT(p->chain)-ldr == 0){
-		/* can merge chains */
-		if(0)HOSTED_API(print)("merging chains %p and %p in %s\n", p->chain, t, p->name);
-		q = B2LIMIT(p->chain);
-		q->bh_magic = MAGIC_A;
-		q->bh_size = alloc;
-		B2T(q)->hdr = q;
-		t = B2NB(q);
-		t->bh_magic = MAGIC_E; /* Mark the new end of the chunk */
-		p->chain->bh_limit += alloc;
-		p->cursize += alloc;
-		unlock(&p->l);
-		poolfree(p, B2D(q));		/* for backward merge */
-		return poolalloc(p, osize);
-	}
 	
 	t->bh_magic = MAGIC_L;		/* Make a leader */
-	t->bh_size = ldr;
-	t->bh_limit = ns+ldr;
+	t->bh_size = BHDR_L_SIZE + BTAIL_SIZE;
+	t->bh_limit = ns+t->bh_size;
 	t->bh_link = p->chain;
 	p->chain = t;
-	B2T(t)->hdr = t;
+	B2T(t)->bt_hdr = t;
 	t = B2NB(t);
 
 	t->bh_magic = MAGIC_A;		/* Make the block we are going to return */
 	t->bh_size = size;
-	B2T(t)->hdr = t;
-	q = t;
 
 	ns -= size;			/* Free the rest */
-	if(ns > 0) {
+
+	if(ns >= BFREESIZE) {
+		B2T(t)->bt_hdr = t;
+		q = t;
+
 		q = B2NB(t);
 		q->bh_size = ns;
-		B2T(q)->hdr = q;
+		B2T(q)->bt_hdr = q;
 		pooladd(p, q);
+	} else {
+		t->bh_size += ns;
+
+		B2T(t)->bt_hdr = t;
+		q = t;
 	}
+
 	B2NB(q)->bh_magic = MAGIC_E;	/* Mark the end of the chunk */
 
 	p->cursize += t->bh_size;
@@ -353,10 +341,10 @@ poolfree(Pool *p, void *v)
 		pooldel(p, c);
 		c->bh_magic = 0;
 		b->bh_size += c->bh_size;
-		B2T(b)->hdr = b;
+		B2T(b)->bt_hdr = b;
 	}
 
-	c = B2PT(b)->hdr;
+	c = B2PT(b)->bt_hdr;
 	if(c->bh_magic == MAGIC_F) {	/* Join backward */
 		if(b == ptr)
 			ptr = c;
@@ -364,7 +352,7 @@ poolfree(Pool *p, void *v)
 		b->bh_magic = 0;
 		c->bh_size += b->bh_size;
 		b = c;
-		B2T(b)->hdr = b;
+		B2T(b)->bt_hdr = b;
 	}
 	pooladd(p, b);
 	unlock(&p->l);
@@ -377,7 +365,7 @@ poolrealloc(Pool *p, void *v, ulong size)
 	void *nv;
 	int osize;
 
-	if(size >= 1024*1024*1024)	/* for sanity and to avoid overflow */
+	if(size >= p->maxsize)	/* for sanity and to avoid overflow */
 		return nil;
 	if(size == 0){
 		poolfree(p, v);
@@ -515,7 +503,7 @@ poolcompact(Pool *pool)
 					abort();
 				}
 				end->bh_size = nb;
-				B2T(end)->hdr = end;
+				B2T(end)->bt_hdr = end;
 				pooladd(pool, end);
 			}
 			base = base->bh_link;

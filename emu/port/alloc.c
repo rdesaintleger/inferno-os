@@ -327,7 +327,8 @@ found:
 			corrupted(str, "bad magic", p, b, v);
 			goto badchunk;
 		}
-		if (b->bh_size <= 0 || (b->bh_size & p->quanta)) {
+		/* XXX maybe replace quanta check with computed alignment check */
+		if (b->bh_size <= 0 /*|| (b->bh_size & p->quanta)*/) {
 			unlock(&p->l);
 			corrupted(str, "bad size", p, b, v);
 			goto badchunk;
@@ -375,7 +376,8 @@ poolaudit(char*(*audit)(int, Bhdr *))
 			}
 			ec = B2LIMIT(bc);
 			for (b = bc; b < ec; b = B2NB(b)) {
-				if (b->bh_size <= 0 || (b->bh_size & p->quanta))
+				/* XXX maybe replace quanta check with computed alignment check */
+				if (b->bh_size <= 0 /*|| (b->bh_size & p->quanta)*/)
 					r = "bad size in bhdr";
 				else
 					switch(b->bh_magic) {

@@ -1,5 +1,5 @@
-#ifndef _INFERNO_ARENA_H_
-#define _INFERNO_ARENA_H_
+#ifndef _INFERNO_BHDR_H_
+#define _INFERNO_BHDR_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -27,17 +27,20 @@ struct Bhdr {
     uint32_t bh_magic;
     size_t bh_size;
     union {
-        Balign data;
+        Balign data; /* raw data */
         struct {
             Bhdr* bhl;
             Bhdr* bhr;
             Bhdr* bhp;
             Bhdr* bhv;
             Bhdr* bhf;
+
+            Balign data; /* free space */
         } s;
         struct {
             Bhdr* link;
             size_t limit;
+            Balign data; /* first aligned Bhdr */
         } l;
     } u;
 };
@@ -50,9 +53,12 @@ struct Bhdr {
 
 #define bh_link u.l.link
 #define bh_limit u.l.limit
+#define bh_first u.l.data
 
 struct Btail {
-    Bhdr* hdr;
+    Bhdr* bt_hdr;
+
+    Balign bt_next; /* next aligned header */
 };
 
 #define B2D(bp) \
@@ -71,15 +77,33 @@ struct Btail {
     ((Bhdr *)((uint8_t *)(b) + (b)->bh_size))
 
 #define B2PT(b) \
-    ((Btail *)((uint8_t *)(b) - sizeof(Btail)))
+    ((Btail *)((uint8_t *)(b) - offsetof(Btail, bt_next)))
 
 #define B2T(b) \
-    ((Btail *)((uint8_t *)(b) + (b)->bh_size - sizeof(Btail)))
+    ((Btail *)((uint8_t *)(b) + (b)->bh_size - offsetof(Btail, bt_next)))
 
 #define B2LIMIT(b) \
     ((Bhdr *)((uint8_t *)(b) + (b)->bh_limit))
 
-#define BHDRSIZE \
-    ((size_t)(offsetof(Bhdr, u.data) + sizeof(Btail)))
+#define BTAIL_SIZE \
+    ((size_t)(offsetof(Btail, bt_next)))
 
-#endif /* _INFERNO_ARENA_H_ */
+#define BALIGN_SZ    sizeof(Balign)
+#define BCEIL(s, pad)    BFLOOR((s) + ((pad) - 1), pad)
+#define BFLOOR(s, pad)   (((s) / (pad)) * (pad))
+
+#define BHDR_L_SIZE \
+    ((size_t)(offsetof(Bhdr, u.l.data)))
+
+#define BHDR_E_SIZE \
+    ((size_t)(offsetof(Bhdr, u.data)))
+
+#define BHDR_F_SIZE \
+    ((size_t)(offsetof(Bhdr, u.s.data)))
+
+#define BHDRSIZE \
+    ((size_t)(offsetof(Bhdr, u.data) + offsetof(Btail, bt_next)))
+
+#define BFREESIZE (BHDR_F_SIZE + BTAIL_SIZE)
+
+#endif /* _INFERNO_BHDR_H_ */

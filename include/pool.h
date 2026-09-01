@@ -6,7 +6,7 @@
 extern	void	(*poolfault)(void *, char *);
 extern	void	poolinit(void);
 extern	ulong	poolmax(Pool*);
-extern	void*	dopoolalloc(Pool*, ulong);
+extern	void*	dopoolalloc(Pool*, size_t);
 extern	void*	poolalloc(Pool*, ulong);
 extern	void	poolfree(Pool*, void*);
 extern	Bhdr*	poolchain(Pool*);
