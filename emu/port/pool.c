@@ -5,6 +5,13 @@
 #include "interp.h"
 #include "error.h"
 
+const size_t btail_overhead = BCEIL(BTAIL_SIZE, BALIGN_SZ);
+const size_t bhdr_a_overhead = BCEIL(BHDR_A_SIZE, BALIGN_SZ) + btail_overhead;
+const size_t bhdr_f_overhead = BCEIL(BHDR_F_SIZE, BALIGN_SZ) + btail_overhead;
+const size_t bhdr_l_overhead = BCEIL(BHDR_L_SIZE, BALIGN_SZ) + btail_overhead;
+const size_t bhdr_e_overhead = BCEIL(BHDR_E_SIZE, BALIGN_SZ);
+const size_t arena_overhead = bhdr_l_overhead + bhdr_e_overhead;
+
 char*
 poolname(Pool *p)
 {
@@ -146,16 +153,19 @@ void*
 dopoolalloc(Pool *p, size_t asize)
 {
 	Bhdr *q, *t;
-	size_t alloc, ns, frag, overhead;
-	size_t osize, size, size2;
-	intptr_t needed;
+	size_t alloc, ns, frag;
+	size_t osize, size;
 
 	if(asize >= p->maxsize)	/* for sanity and to avoid overflow */
 		return nil;
 	size = asize;
 	osize = size;
-	overhead = BHDR_L_SIZE+BTAIL_SIZE+BHDR_E_SIZE;
-	size = BCEIL(size, BALIGN_SZ) + BCEIL(BHDRSIZE, BALIGN_SZ);
+	size = BCEIL(size, BALIGN_SZ) + bhdr_a_overhead;
+
+	if (size < bhdr_f_overhead) {
+		/* each 'allocated' block must be able to be mutated to 'free' */
+		size = bhdr_f_overhead;
+	}
 
 	lock(&p->l);
 	p->nalloc++;
@@ -186,7 +196,7 @@ dopoolalloc(Pool *p, size_t asize)
 		pooldel(p, q);
 		q->bh_magic = MAGIC_A;
 		frag = q->bh_size - size;
-		if(frag < BFREESIZE) {
+		if(frag < bhdr_f_overhead) {
 			p->cursize += q->bh_size;
 			if(p->cursize > p->hw)
 				p->hw = p->cursize;
@@ -216,19 +226,18 @@ dopoolalloc(Pool *p, size_t asize)
 	if(size > ns)
 		ns = BCEIL(size, ns);
 
-	alloc = ns+overhead;
+	alloc = ns+arena_overhead;
 	p->arenasize += alloc;
 	if(p->arenasize > p->maxsize) {
 		p->arenasize -= alloc;
 
-		/* compute remaining space and substract overhead (signed) */
-		needed = ((intptr_t) p->maxsize)-((intptr_t) p->arenasize);
-		needed -= overhead;
+		/* compute remaining space (paranoid) */
+		ns = p->arenasize > p->maxsize ? 0 : p->maxsize-p->arenasize;
 
-		/* compute proper alignment */
-		needed = needed < 0 ? 0 : BFLOOR(needed, BALIGN_SZ);
+		/* substract overhead and compute proper alignment */
+		ns = ns < arena_overhead ? 0 : BFLOOR(ns - arena_overhead, BALIGN_SZ);
 
-		if (((size_t) needed) < size) {
+		if (ns < size) {
 			if(poolcompact(p)) {
 				unlock(&p->l);
 				return poolalloc(p, osize);
@@ -240,8 +249,7 @@ dopoolalloc(Pool *p, size_t asize)
 			return nil;
 		}
 
-		ns = (size_t) needed; /* convert back to unsigned */
-		alloc = ns+overhead;
+		alloc = ns+arena_overhead;
 		p->arenasize += alloc;
 	}
 
@@ -255,7 +263,7 @@ dopoolalloc(Pool *p, size_t asize)
 	}
 	
 	t->bh_magic = MAGIC_L;		/* Make a leader */
-	t->bh_size = BHDR_L_SIZE + BTAIL_SIZE;
+	t->bh_size = bhdr_l_overhead;
 	t->bh_limit = ns+t->bh_size;
 	t->bh_link = p->chain;
 	p->chain = t;
@@ -267,9 +275,8 @@ dopoolalloc(Pool *p, size_t asize)
 
 	ns -= size;			/* Free the rest */
 
-	if(ns >= BFREESIZE) {
+	if(ns >= bhdr_f_overhead) {
 		B2T(t)->bt_hdr = t;
-		q = t;
 
 		q = B2NB(t);
 		q->bh_size = ns;
@@ -357,7 +364,7 @@ poolrealloc(Pool *p, void *v, ulong size)
 	if(v != nil){
 		lock(&p->l);
 		D2B(b, v, poolfault);
-		osize = b->bh_size - BHDRSIZE;
+		osize = b->bh_size - bhdr_a_overhead;
 		unlock(&p->l);
 		if(osize >= size)
 			return v;
@@ -380,7 +387,7 @@ poolmsize(Pool *p, void *v)
 		return 0;
 	lock(&p->l);
 	D2B(b, v, poolfault);
-	size = b->bh_size - BHDRSIZE;
+	size = b->bh_size - bhdr_a_overhead;
 	unlock(&p->l);
 	return size;
 }
@@ -400,8 +407,8 @@ poolmax(Pool *p)
 		if(size < t->bh_size)
 			size = t->bh_size;
 	}
-	if(size >= BHDRSIZE)
-		size -= BHDRSIZE;
+	if(size >= bhdr_a_overhead)
+		size -= bhdr_a_overhead;
 	unlock(&p->l);
 	return size;
 }
@@ -480,7 +487,7 @@ poolcompact(Pool *pool)
 		if(next >= limit) {
 			nb = (uchar*)limit - (uchar*)end;
 			if(nb > 0){
-				if(nb < BFREESIZE){
+				if(nb < bhdr_f_overhead){
 					HOSTED_API(print)("poolcompact: leftover too small\n");
 					abort();
 				}

@@ -25,10 +25,15 @@ union Balign {
 
 struct Bhdr {
     uint32_t bh_magic;
-    size_t bh_size;
+    size_t bh_size; /* block size, include header and tail */
     union {
-        Balign data; /* raw data */
+        Balign data; /* aligned block raw data */
         struct {
+            /* Exec memory subsystem compat */
+            //uint32_t mc_next;  /* next mapped memory chunk */
+            //uint32_t mc_bytes; /* size of memory chunk */
+
+            /* host free metadata */
             Bhdr* bhl;
             Bhdr* bhr;
             Bhdr* bhp;
@@ -56,54 +61,52 @@ struct Bhdr {
 #define bh_first u.l.data
 
 struct Btail {
-    Bhdr* bt_hdr;
+    Bhdr* bt_hdr;   /* pointer to bloc  */
+    Bhdr* bt_arena; /* pointer to arena */
 
     Balign bt_next; /* next aligned header */
 };
 
-#define B2D(bp) \
-    ((void *)((uint8_t *)(bp) + offsetof(Bhdr, u.data)))
-
-#define D2B(b, dp, blockfault)                                                          \
-    do                                                                      \
-    {                                                                       \
-        void *_dp = (void *)(dp);                                           \
-        Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - offsetof(Bhdr, u.data)); \
-        if (_b->bh_magic != MAGIC_A && _b->bh_magic != MAGIC_I)             \
-            blockfault(_dp, "alloc:D2B");                                   \
-    } while (0)
+#define BTAIL_SIZE \
+    ((size_t)(offsetof(Btail, bt_next)))
 
 #define B2NB(b) \
     ((Bhdr *)((uint8_t *)(b) + (b)->bh_size))
 
-#define B2PT(b) \
-    ((Btail *)((uint8_t *)(b) - offsetof(Btail, bt_next)))
-
-#define B2T(b) \
-    ((Btail *)((uint8_t *)(b) + (b)->bh_size - offsetof(Btail, bt_next)))
-
 #define B2LIMIT(b) \
     ((Bhdr *)((uint8_t *)(b) + (b)->bh_limit))
 
-#define BTAIL_SIZE \
-    ((size_t)(offsetof(Btail, bt_next)))
+#define B2PT(b) \
+    ((Btail *)((uint8_t *)(b) - BTAIL_SIZE))
+
+#define B2T(b) B2PT(B2NB(b))
 
 #define BALIGN_SZ    sizeof(Balign)
 #define BCEIL(s, pad)    BFLOOR((s) + ((pad) - 1), pad)
 #define BFLOOR(s, pad)   (((s) / (pad)) * (pad))
 
-#define BHDR_L_SIZE \
-    ((size_t)(offsetof(Bhdr, u.l.data)))
-
 #define BHDR_E_SIZE \
     ((size_t)(offsetof(Bhdr, u.data)))
+
+#define BHDR_L_SIZE \
+    ((size_t)(offsetof(Bhdr, u.l.data)))
 
 #define BHDR_F_SIZE \
     ((size_t)(offsetof(Bhdr, u.s.data)))
 
-#define BHDRSIZE \
-    ((size_t)(offsetof(Bhdr, u.data) + offsetof(Btail, bt_next)))
+#define BHDR_A_SIZE BHDR_E_SIZE
+#define BHDR_I_SIZE BHDR_E_SIZE
 
-#define BFREESIZE (BHDR_F_SIZE + BTAIL_SIZE)
+#define B2D(bp) \
+    ((void *)((uint8_t *)(bp) + BHDR_A_SIZE))
+
+#define D2B(b, dp, blockfault)                                   \
+    do                                                           \
+    {                                                            \
+        void *_dp = (void *)(dp);                                \
+        Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - BHDR_A_SIZE); \
+        if (_b->bh_magic != MAGIC_A && _b->bh_magic != MAGIC_I)  \
+            blockfault(_dp, "alloc:D2B");                        \
+    } while (0)
 
 #endif /* _INFERNO_BHDR_H_ */

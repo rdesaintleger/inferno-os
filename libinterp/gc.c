@@ -352,6 +352,7 @@ rungc(Prog *p)
 				}
 				gcdestroys++;
 				poolfree(heapmem, h);
+				/* XXX potential use after free when using poolfree */
 			}
 		}
 		ptr = B2NB(ptr);
