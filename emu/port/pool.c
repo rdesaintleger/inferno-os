@@ -314,7 +314,6 @@ void
 poolfree(Pool *p, void *v)
 {
 	Bhdr *b, *c;
-	extern Bhdr *ptr;
 
 	D2B(b, v, poolfault);
 	if(p->monitor)
@@ -325,8 +324,6 @@ poolfree(Pool *p, void *v)
 	p->cursize -= b->bh_size;
 	c = B2NB(b);
 	if(c->bh_magic == MAGIC_F) {	/* Join forward */
-		if(c == ptr)
-			ptr = b;
 		pooldel(p, c);
 		c->bh_magic = 0;
 		b->bh_size += c->bh_size;
@@ -335,8 +332,6 @@ poolfree(Pool *p, void *v)
 
 	c = B2PT(b)->bt_hdr;
 	if(c->bh_magic == MAGIC_F) {	/* Join backward */
-		if(b == ptr)
-			ptr = c;
 		pooldel(p, c);
 		b->bh_magic = 0;
 		c->bh_size += b->bh_size;

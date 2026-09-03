@@ -35,13 +35,11 @@ struct Ptrhash
 
 static	int	marker  = 1;
 static	int	sweeper = 2;
-static	Bhdr*	base;
-static	Bhdr*	limit;
+static Bhdr* base = nil;
+static Bhdr* sptr = nil;
 
-/*
- * XXX need to update this pointer when merging/freeing blocks
- */
-Bhdr*	ptr;
+static Bhdr* limit;
+static Bhdr* ptr;
 
 static	int	visit;
 extern	Pool*	heapmem;
@@ -327,12 +325,21 @@ rungc(Prog *p)
 		gchalted++;
 		return;
 	}
+
 	if(base == nil) {
 		gcsweeps++;
 		b = poolchain(heapmem);
 		base = b;
 		ptr = b;
 		limit = B2LIMIT(b);
+	} else if (sptr != nil) {
+		/* we stopped on allocated data, restore heap ref count */
+		ptr = sptr;
+		sptr = nil;
+		d = P2D(B2D(ptr)); /* retrieve the real data pointer (in heapmem) */
+		h = D2H(d); /* retrieve the heap pointer (in mainmem) */
+
+		h->ref--;
 	}
 
 	/* Chain broken ? */
@@ -348,14 +355,23 @@ rungc(Prog *p)
 	for(visit = quanta; visit > 0; ) {
 		if(ptr->bh_magic == MAGIC_A) {
 			visit--;
-			gct++;
-			gcinspects++;
+
 			/* 
 			 * XXX suboptimal: use macro to retrieve real data pointer
 			 * then convert this pointer to a Heap pointer
 			 */
 			d = P2D(B2D(ptr)); /* retrieve the real data pointer (in heapmem) */
 			h = D2H(d); /* retrieve the heap pointer (in mainmem) */
+
+			if (visit <= 0) {
+				/* quanta has expired, stay on current Bhdr. Increment ref count to prevent bloc to be freed */
+				sptr = ptr;
+				h->ref++;
+				break;
+			}
+
+			gct++;
+			gcinspects++;
 			t = h->t;
 			if(h->color == propagator) {
 				gce--;
