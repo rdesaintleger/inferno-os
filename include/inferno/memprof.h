@@ -1,5 +1,5 @@
-#ifndef _MEMPROF_H_
-#define _MEMPROF_H_
+#ifndef _INFERNO_MEMPROF_H_
+#define _INFERNO_MEMPROF_H_
 
 #include <stddef.h>
 
@@ -18,4 +18,4 @@ extern void memprof_register(CallbackEntry*);
 extern void memprof_unregister(CallbackEntry*);
 extern void memprof_notify(int v, void *base, size_t size);
 
-#endif /* _MEMPROF_H_ */
+#endif /* _INFERNO_MEMPROF_H_ */

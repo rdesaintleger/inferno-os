@@ -1,4 +1,5 @@
 #include <inferno/memprof.h>
+#include <inferno/heapprof.h>
 
 #include	"dat.h"
 #include	"fns.h"
@@ -13,8 +14,14 @@ static void	cpxec(Prog *);
 static void memprof(int, void*, ulong);
 static void memprofmi(int, void*, size_t);
 
-static void enter_monitor(void *ctx, void *data) {
+static void enter_memmonitor(void *ctx, void *data) {
 	MemProfEvent *event = (MemProfEvent *) data;
+
+	memprofmi(event->v, event->base, event->size);
+}
+
+static void enter_heapmonitor(void *ctx, void *data) {
+	HeapProfEvent *event = (HeapProfEvent *) data;
 
 	memprofmi(event->v, event->base, event->size);
 }
@@ -22,16 +29,31 @@ static void enter_monitor(void *ctx, void *data) {
 static CallbackEntry memprof_entry = {
 	.ctx = NULL,
 	.next = NULL,
-	.callback = enter_monitor,
+	.callback = enter_memmonitor,
 	.state = 0
 };
 
-static void start_monitor() {
+static CallbackEntry heapprof_entry = {
+	.ctx = NULL,
+	.next = NULL,
+	.callback = enter_heapmonitor,
+	.state = 0
+};
+
+static void start_memmonitor() {
 	memprof_register(&memprof_entry);
 }
 
-static void stop_monitor() {
+static void stop_memmonitor() {
 	memprof_unregister(&memprof_entry);
+}
+
+static void start_heapmonitor() {
+	heapprof_register(&heapprof_entry);
+}
+
+static void stop_heapmonitor() {
+	heapprof_unregister(&heapprof_entry);
 }
 
 extern	Inst*	pc2dispc(Inst*, Module*);
@@ -430,15 +452,15 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 					profiler = Pmem;
 					for(a = &fields[0][7]; *a != '\0'; a++){
 						if(*a == '1'){
-							start_monitor();
+							start_memmonitor();
 							mprofiler |= Mmain;
 						}
 						else if(*a == '2'){
-							heapmonitor = memprof;
+							start_heapmonitor();
 							mprofiler |= Mheap;
 						}
 						else if(*a == '3'){
-							start_monitor();
+							start_memmonitor();
 							mprofiler |= Mimage;
 						}
 					};
@@ -451,7 +473,7 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 			else if(strcmp(fields[0], "end") == 0){
 				profiler = Pnil;
 				mprofiler = Mnone;
-				stop_monitor();
+				stop_memmonitor();
 				freeprof();
 				interval = 100;
 			}
@@ -695,8 +717,8 @@ memprof(int c, void *v, ulong n)
 	USED(v);
 	USED(n);
 	if(profiler != Pmem){
-		stop_monitor();
-		heapmonitor = nil;
+		stop_memmonitor();
+		stop_heapmonitor();
 		return;
 	}
 	lock(&profile.l);

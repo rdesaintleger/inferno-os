@@ -319,6 +319,7 @@ struct Heap
 	ulong	hprof;	/* heap profiling */
 
 	void *data; /* pointer to allocated data */
+	Heap *gc_next; /* pointer for gc free queue */
 };
 
 union HeapAlign {
@@ -448,7 +449,6 @@ extern	void		go(Module*);
 extern	int		handler(char*);
 extern	Heap*	heap(Type*);
 extern	Heap*	heaparray(Type*, int);
-extern	void		(*heapmonitor)(int, void*, ulong);
 extern	Heap*		heapz(Type*);
 extern	int		hmsize(Heap *);
 extern	void	heapimmutable(void*);

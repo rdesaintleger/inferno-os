@@ -37,7 +37,12 @@ static	int	marker  = 1;
 static	int	sweeper = 2;
 static	Bhdr*	base;
 static	Bhdr*	limit;
+
+/*
+ * XXX need to update this pointer when merging/freeing blocks
+ */
 Bhdr*	ptr;
+
 static	int	visit;
 extern	Pool*	heapmem;
 static	Ptrhash	*ptrtab[PTRHASH];
@@ -297,12 +302,25 @@ domflag(Heap *h)
 		abort();
 }
 
+/* XXX from heap.c, need to make a shared function*/
+static void
+heapfree(Heap *h) {
+	void *d = D2P(H2D(void*, h));
+
+	poolfree(heapmem, d);
+	HOSTED_API(free)(h);
+}
+
 void
 rungc(Prog *p)
 {
 	Type *t;
 	Heap *h;
 	Bhdr *b;
+
+	Heap *freehead; /* head of free list */
+	Heap **freetail; /* tail of free list */
+	void *d; /* temporary heap data pointer */
 
 	gcnruns++;
 	if(gchalt) {
@@ -324,12 +342,20 @@ rungc(Prog *p)
 		return;
 	}
 
+	freehead = NULL;
+	freetail = &freehead;
+
 	for(visit = quanta; visit > 0; ) {
 		if(ptr->bh_magic == MAGIC_A) {
 			visit--;
 			gct++;
 			gcinspects++;
-			h = B2D(ptr);
+			/* 
+			 * XXX suboptimal: use macro to retrieve real data pointer
+			 * then convert this pointer to a Heap pointer
+			 */
+			d = P2D(B2D(ptr)); /* retrieve the real data pointer (in heapmem) */
+			h = D2H(d); /* retrieve the heap pointer (in mainmem) */
 			t = h->t;
 			if(h->color == propagator) {
 				gce--;
@@ -339,20 +365,11 @@ rungc(Prog *p)
 			}
 			else
 			if(h->color == sweeper) {
-				gce++;
-				if(0 && mflag)
-					domflag(h);
-				if(heapmonitor != nil)
-					heapmonitor(2, h, 0);
-				if(t != nil) {
-					gclock();
-					t->free(h, 1);
-					gcunlock();
-					freetype(t);
-				}
-				gcdestroys++;
-				poolfree(heapmem, h);
-				/* XXX potential use after free when using poolfree */
+				/* make a queue of heap pointers to be freed */
+				*freetail = h;
+				h->ref++; /* ensure this object will not be freed outside this scan */
+				h->gc_next = NULL;
+				freetail = &h->gc_next;
 			}
 		}
 		ptr = B2NB(ptr);
@@ -363,6 +380,25 @@ rungc(Prog *p)
 			ptr = base;
 			limit = B2LIMIT(base);
 		}
+	}
+
+	while(freehead != NULL) {
+		h = freehead;
+		t = h->t;
+		freehead = freehead->gc_next;
+	
+		gce++;
+		if(0 && mflag)
+			domflag(h);
+		heapprof_notify(2, h, 0);
+		if(t != nil) {
+			gclock();
+			t->free(h, 1);
+			gcunlock();
+			freetype(t);
+		}
+		gcdestroys++;
+		heapfree(h);
 	}
 
 	quanta = (MaxQuanta+Quanta)/2 + ((MaxQuanta-Quanta)/20)*((100*gce)/gct);

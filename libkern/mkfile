@@ -4,6 +4,7 @@ LIB=libkern.a
 
 OFILES=\
 	callback.$O\
+	heapprof.$O\
 	memprof.$O\
 
 HFILES=\

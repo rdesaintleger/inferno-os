@@ -40,12 +40,12 @@ struct Bhdr {
             Bhdr* bhv;
             Bhdr* bhf;
 
-            Balign data; /* free space */
+            Balign data; /* start of free space */
         } s;
         struct {
-            Bhdr* link;
-            size_t limit;
-            Balign data; /* first aligned Bhdr */
+            Bhdr* link;   /* next arena */
+            size_t limit; /* size of this arena minus the MAGIC_E block */
+            Balign data;  /* first aligned Bhdr */
         } l;
     } u;
 };
@@ -64,7 +64,7 @@ struct Btail {
     Bhdr* bt_hdr;   /* pointer to bloc  */
     Bhdr* bt_arena; /* pointer to arena */
 
-    Balign bt_next; /* next aligned header */
+    Balign bt_next; /* next aligned header (should be a block) */
 };
 
 #define BTAIL_SIZE \
@@ -100,9 +100,8 @@ struct Btail {
 #define B2D(bp) \
     ((void *)((uint8_t *)(bp) + BHDR_A_SIZE))
 
-#define D2B(b, dp, blockfault)                                   \
-    do                                                           \
-    {                                                            \
+#define D2B(b, dp, blockfault) \
+    do {                                                         \
         void *_dp = (void *)(dp);                                \
         Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - BHDR_A_SIZE); \
         if (_b->bh_magic != MAGIC_A && _b->bh_magic != MAGIC_I)  \

@@ -49,8 +49,6 @@ heapalloc(int n) {
 	return h;
 }
 
-void	(*heapmonitor)(int, void*, ulong);
-
 #define	BIT(bt, nb)	(bt & (1<<nb))
 
 void
@@ -199,8 +197,7 @@ freelist(Heap *h, int swept)
 			}
 		}
 		l = l->tail;
-		if(heapmonitor != nil)
-			heapmonitor(1, th, 0);
+		heapprof_notify(1, th, 0);
 		heapfree(th);
 	}
 }
@@ -244,8 +241,7 @@ destroy(void *v)
 	if(--h->ref > 0 || gchalt > 64) 	/* Protect 'C' thread stack */
 		return;
 
-	if(heapmonitor != nil)
-		heapmonitor(1, h, 0);
+	heapprof_notify(1, h, 0);
 	t = h->t;
 	if(t != nil) {
 		gclock();
@@ -384,8 +380,7 @@ nheap(int n)
 	h->t = nil;
 	h->ref = 1;
 	h->color = mutator;
-	if(heapmonitor != nil)
-		heapmonitor(0, h, n);
+	heapprof_notify(0, h, n);
 
 	return h;
 }
@@ -402,8 +397,7 @@ heapz(Type *t)
 	memset(H2D(void*, h), 0, t->size);
 	if(t->np)
 		initmem(t, H2D(void*, h));
-	if(heapmonitor != nil)
-		heapmonitor(0, h, t->size);
+	heapprof_notify(0, h, t->size);
 	return h;
 }
 
@@ -418,8 +412,7 @@ heap(Type *t)
 	h->color = mutator;
 	if(t->np)
 		initmem(t, H2D(void*, h));
-	if(heapmonitor != nil)
-		heapmonitor(0, h, t->size);
+	heapprof_notify(0, h, t->size);
 	return h;
 }
 
