@@ -23,7 +23,7 @@ static void enter_memmonitor(void *ctx, void *data) {
 static void enter_heapmonitor(void *ctx, void *data) {
 	HeapProfEvent *event = (HeapProfEvent *) data;
 
-	memprofmi(event->v, event->base, event->size);
+	memprof(event->v, event->base, event->size);
 }
 
 static CallbackEntry memprof_entry = {
