@@ -340,6 +340,14 @@ rungc(Prog *p)
 		h = D2H(d); /* retrieve the heap pointer (in mainmem) */
 
 		h->ref--;
+
+		if (h->ref == 0) {
+			/*
+			 * gc is hybrid, meaning that if ref == 0, no-one except gc has a reference
+			 * to this object. schedule object remove by forcing color
+			 */
+			h->color = sweeper;
+		}
 	}
 
 	/* Chain broken ? */
