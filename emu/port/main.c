@@ -147,14 +147,6 @@ option(int argc, char *argv[], void (*badusage)(void))
 	case 's':		/* No trap handling */
 		sflag++;
 		break;
-	case 'm':		/* gc mark and sweep */
-		cp = EARGF(badusage());
-		if (!isnum(cp))
-			badusage();
-		mflag = atoi(cp);
-		if(mflag < 0|| mflag > 9)
-			usage();
-		break;
 	case 'p':		/* pool option */
 		poolopt(EARGF(badusage()));
 		break;

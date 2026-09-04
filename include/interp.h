@@ -313,13 +313,15 @@ struct Modlink
 
 struct Heap
 {
-	int	color;		/* Allocation color */
-	ulong	ref;
 	Type*	t;
-	ulong	hprof;	/* heap profiling */
-
 	void *data; /* pointer to allocated data */
-	Heap *gc_next; /* pointer for gc free queue */
+	Heap *gc_succ; /* pointer for gc ptr list */
+	Heap *gc_pred; /* pointer for gc ptr list */
+	Heap *gc_collect; /* pointer for gc free queue */
+
+	ulong	hprof;	/* heap profiling */
+	ulong	ref;
+	int	color;		/* Allocation color */
 };
 
 union HeapAlign {

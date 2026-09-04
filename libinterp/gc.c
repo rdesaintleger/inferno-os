@@ -1,39 +1,32 @@
+#include <inferno/heapprof.h>
+
 #include "lib9.h"
 #include "interp.h"
 #include "pool.h"
 
-enum
-{
-	Quanta		= 50,		/* Allocated blocks to sweep each time slice usually */
-	MaxQuanta	= 15*Quanta,
-	PTRHASH		= (1<<5)
+enum {
+	Quanta = 50,		/* Allocated blocks to sweep each time slice usually */
+	MaxQuanta = 15 * Quanta,
+	PTRHASH = (1 << 5)
 };
 
 static int quanta = Quanta;
 static int gce, gct = 1;
 
-typedef struct Ptrhash Ptrhash;
-struct Ptrhash
-{
-	Heap	*value;
-	Ptrhash	*next;
-};
+int	nprop;
+int	gchalt;
+int	mutator = 0;
+int	gccolor = 3;
 
-	int	nprop;
-	int	gchalt;
-	int	mflag;
-	int	mutator = 0;
-	int	gccolor = 3;
+uint32_t	gcnruns;
+uint32_t	gcsweeps;
+uint32_t	gcbroken;
+uint32_t	gchalted;
+uint32_t	gcepochs;
+uint64_t	gcdestroys;
+uint64_t	gcinspects;
 
-	ulong	gcnruns;
-	ulong	gcsweeps;
-	ulong	gcbroken;
-	ulong	gchalted;
-	ulong	gcepochs;
-	uvlong	gcdestroys;
-	uvlong	gcinspects;
-
-static	int	marker  = 1;
+static	int	marker = 1;
 static	int	sweeper = 2;
 static Bhdr* base = nil;
 static Bhdr* sptr = nil;
@@ -42,62 +35,48 @@ static Bhdr* limit;
 static Bhdr* ptr;
 
 static	int	visit;
-extern	Pool*	heapmem;
-static	Ptrhash	*ptrtab[PTRHASH];
-static	Ptrhash	*ptrfree;
-
-#define	HASHPTR(p)	(((ulong)(p) >> 6) & (PTRHASH - 1))
+extern	Pool* heapmem;
+static Heap* ptrs = NULL;
 
 void
-ptradd(Heap *v)
-{
-	int h;
-	Ptrhash *p;
+ptradd(Heap* v) {
+	v->gc_succ = ptrs;
+	v->gc_pred = NULL;
 
-	if ((p = ptrfree) != nil)
-		ptrfree = p->next;
-	else if ((p = HOSTED_API(malloc)(sizeof (Ptrhash))) == nil)
-		error("ptradd malloc");
-	h = HASHPTR(v);
-	p->value = v;
-	p->next = ptrtab[h];
-	ptrtab[h] = p;
+	if (ptrs != NULL) {
+		ptrs->gc_pred = v;
+	}
+
+	ptrs = v;
 }
 
 void
-ptrdel(Heap *v)
-{
-	Ptrhash	*p, **l;
-
-	for (l = &ptrtab[HASHPTR(v)]; (p = *l) != nil; l = &p->next) {
-		if (p->value == v) {
-			*l = p->next;
-			p->next = ptrfree;
-			ptrfree = p;
-			return;
-		}
+ptrdel(Heap* v) {
+	/*
+	 * assume that provided Heap is in ptr list.
+	 */
+	if (ptrs == v) {
+		ptrs = v->gc_succ;
 	}
-	/* ptradd must have failed */
+
+	if (v->gc_succ != NULL) {
+		v->gc_succ->gc_pred = v->gc_pred;
+	}
+
+	if (v->gc_pred != NULL) {
+		v->gc_pred->gc_succ = v->gc_succ;
+	}
 }
 
 static void
-ptrmark(void)
-{
-	int	i;
-	Heap	*h;
-	Ptrhash	*p;
-
-	for (i = 0; i < PTRHASH; i++) {
-		for (p = ptrtab[i]; p != nil; p = p->next) {
-			h = p->value;
-			Setmark(h);
-		}
+ptrmark(void) {
+	for (Heap* h = ptrs; h != NULL; h = h->gc_succ) {
+		Setmark(h);
 	}
 }
 
 void
-noptrs(Type *t, void *vw)
-{
+noptrs(Type* t, void* vw) {
 	USED(t);
 	USED(vw);
 }
@@ -106,32 +85,31 @@ static int markdepth;
 
 /* code simpler with a depth search compared to a width search*/
 void
-markheap(Type *t, void *vw)
-{
-	Heap *h;
-	uchar *p;
+markheap(Type* t, void* vw) {
+	Heap* h;
+	uchar* p;
 	int i, c, m;
-	WORD **w, **q;
-	Type *t1;
+	WORD** w, ** q;
+	Type* t1;
 
-	if(t == nil || t->np == 0)
+	if (t == nil || t->np == 0)
 		return;
 
 	markdepth++;
 	w = (WORD**)vw;
 	p = t->map;
-	for(i = 0; i < t->np; i++) {
+	for (i = 0; i < t->np; i++) {
 		c = *p++;
-		if(c != 0) {
+		if (c != 0) {
 			q = w;
-			for(m = 0x80; m != 0; m >>= 1) {
-				if((c & m) && *q != H) {
+			for (m = 0x80; m != 0; m >>= 1) {
+				if ((c & m) && *q != H) {
 					h = D2H(*q);
 					Setmark(h);
-					if(h->color == propagator && --visit >= 0 && markdepth < 64){
+					if (h->color == propagator && --visit >= 0 && markdepth < 64) {
 						gce--;
 						h->color = mutator;
-						if((t1 = h->t) != nil)
+						if ((t1 = h->t) != nil)
 							t1->mark(t1, H2D(void*, h));
 					}
 				}
@@ -147,27 +125,26 @@ markheap(Type *t, void *vw)
  * This routine should be modified to be incremental, but how?
  */
 void
-markarray(Type *t, void *vw)
-{
+markarray(Type* t, void* vw) {
 	int i;
-	Heap *h;
-	uchar *v;
-	Array *a;
+	Heap* h;
+	uchar* v;
+	Array* a;
 
 	USED(t);
 
 	a = vw;
 	t = a->t;
-	if(a->root != H) {
+	if (a->root != H) {
 		h = D2H(a->root);
 		Setmark(h);
 	}
 
-	if(t->np == 0)
+	if (t->np == 0)
 		return;
 
 	v = a->data;
-	for(i = 0; i < a->len; i++) {
+	for (i = 0; i < a->len; i++) {
 		markheap(t, v);
 		v += t->size;
 	}
@@ -175,17 +152,16 @@ markarray(Type *t, void *vw)
 }
 
 void
-marklist(Type *t, void *vw)
-{
-	List *l;
-	Heap *h;
+marklist(Type* t, void* vw) {
+	List* l;
+	Heap* h;
 
 	USED(t);
 	l = vw;
 	markheap(l->t, l->data);
-	while(visit > 0) {
+	while (visit > 0) {
 		l = l->tail;
-		if(l == H)
+		if (l == H)
 			return;
 		h = D2H(l);
 		Setmark(h);
@@ -193,55 +169,54 @@ marklist(Type *t, void *vw)
 		visit--;
 	}
 	l = l->tail;
-	if(l != H) {
+	if (l != H) {
 		D2H(l)->color = propagator;
 		nprop = 1;
 	}
 }
 
 static void
-rootset(Prog *root)
-{
-	Heap *h;
-	Type *t;
-	Frame *f;
-	Module *m;
-	Stkext *sx;
-	Modlink *ml;
-	uchar *fp, *sp, *ex, *mp;
+rootset(Prog* root) {
+	Heap* h;
+	Type* t;
+	Frame* f;
+	Module* m;
+	Stkext* sx;
+	Modlink* ml;
+	uchar* fp, * sp, * ex, * mp;
 
 	mutator = gccolor % 3;
-	marker = (gccolor-1)%3;
-	sweeper = (gccolor-2)%3;
+	marker = (gccolor - 1) % 3;
+	sweeper = (gccolor - 2) % 3;
 
-	while(root != nil) {
+	while (root != nil) {
 		ml = root->R.M;
 		h = D2H(ml);
 		Setmark(h);
 		mp = ml->MP;
-		if(mp != H) {
+		if (mp != H) {
 			h = D2H(mp);
 			Setmark(h);
 		}
 
 		sp = root->R.SP;
 		ex = root->R.EX;
-		while(ex != nil) {
+		while (ex != nil) {
 			sx = (Stkext*)ex;
 			fp = sx->reg.tos.fu;
-			while(fp != sp) {
+			while (fp != sp) {
 				f = (Frame*)fp;
 				t = f->t;
-				if(t == nil)
+				if (t == nil)
 					t = sx->reg.TR;
 				fp += t->size;
 				t->mark(t, f);
 				ml = f->mr;
-				if(ml != nil) {
+				if (ml != nil) {
 					h = D2H(ml);
 					Setmark(h);
 					mp = ml->MP;
-					if(mp != H) {
+					if (mp != H) {
 						h = D2H(mp);
 						Setmark(h);
 					}
@@ -254,8 +229,8 @@ rootset(Prog *root)
 		root = root->next;
 	}
 
-	for(m = modules; m != nil; m = m->link) {
-		if(m->origmp != H) {
+	for (m = modules; m != nil; m = m->link) {
+		if (m->origmp != H) {
 			h = D2H(m->origmp);
 			Setmark(h);
 		}
@@ -265,11 +240,10 @@ rootset(Prog *root)
 }
 
 static int
-okbhdr(Bhdr *b)
-{
-	if(b == nil)
+okbhdr(Bhdr* b) {
+	if (b == nil)
 		return 0;
-	switch(b->bh_magic) {
+	switch (b->bh_magic) {
 	case MAGIC_A:
 	case MAGIC_F:
 	case MAGIC_L:
@@ -280,53 +254,32 @@ okbhdr(Bhdr *b)
 	return 0;
 }
 
-static void
-domflag(Heap *h)
-{
-	int i;
-	Module *m;
-
-	HOSTED_API(print)("sweep h=0x%lux t=0x%lux c=%d", (ulong)h, (ulong)h->t, h->color);
-	for(m = modules; m != nil; m = m->link) {
-		for(i = 0; i < m->ntype; i++) {
-			if(m->type[i] == h->t) {
-				HOSTED_API(print)(" module %s desc %d", m->name, i);
-				break;
-			}
-		}
-	}
-	HOSTED_API(print)("\n");
-	if(mflag > 1)
-		abort();
-}
-
 /* XXX from heap.c, need to make a shared function*/
 static void
-heapfree(Heap *h) {
-	void *d = D2P(H2D(void*, h));
+heapfree(Heap* h) {
+	void* d = D2P(H2D(void*, h));
 
 	poolfree(heapmem, d);
 	HOSTED_API(free)(h);
 }
 
 void
-rungc(Prog *p)
-{
-	Type *t;
-	Heap *h;
-	Bhdr *b;
+rungc(Prog* p) {
+	Type* t;
+	Heap* h;
+	Bhdr* b;
 
-	Heap *freehead; /* head of free list */
-	Heap **freetail; /* tail of free list */
-	void *d; /* temporary heap data pointer */
+	Heap* freehead; /* head of free list */
+	Heap** freetail; /* tail of free list */
+	void* d; /* temporary heap data pointer */
 
 	gcnruns++;
-	if(gchalt) {
+	if (gchalt) {
 		gchalted++;
 		return;
 	}
 
-	if(base == nil) {
+	if (base == nil) {
 		gcsweeps++;
 		b = poolchain(heapmem);
 		base = b;
@@ -351,7 +304,7 @@ rungc(Prog *p)
 	}
 
 	/* Chain broken ? */
-	if(!okbhdr(ptr)) {
+	if (!okbhdr(ptr)) {
 		base = nil;
 		gcbroken++;
 		return;
@@ -360,11 +313,11 @@ rungc(Prog *p)
 	freehead = NULL;
 	freetail = &freehead;
 
-	for(visit = quanta; visit > 0; ) {
-		if(ptr->bh_magic == MAGIC_A) {
+	for (visit = quanta; visit > 0; ) {
+		if (ptr->bh_magic == MAGIC_A) {
 			visit--;
 
-			/* 
+			/*
 			 * XXX suboptimal: use macro to retrieve real data pointer
 			 * then convert this pointer to a Heap pointer
 			 */
@@ -381,41 +334,38 @@ rungc(Prog *p)
 			gct++;
 			gcinspects++;
 			t = h->t;
-			if(h->color == propagator) {
+			if (h->color == propagator) {
 				gce--;
 				h->color = mutator;
-				if(t != nil)
+				if (t != nil)
 					t->mark(t, H2D(void*, h));
-			}
-			else
-			if(h->color == sweeper) {
-				/* make a queue of heap pointers to be freed */
-				*freetail = h;
-				h->ref++; /* ensure this object will not be freed outside this scan */
-				h->gc_next = NULL;
-				freetail = &h->gc_next;
-			}
+			} else
+				if (h->color == sweeper) {
+					/* make a queue of heap pointers to be freed */
+					*freetail = h;
+					h->ref++; /* ensure this object will not be freed outside this scan */
+					h->gc_collect = NULL;
+					freetail = &h->gc_collect;
+				}
 		}
 		ptr = B2NB(ptr);
-		if(ptr >= limit) {
+		if (ptr >= limit) {
 			base = base->bh_link;
-			if(base == nil)
+			if (base == nil)
 				break;
 			ptr = base;
 			limit = B2LIMIT(base);
 		}
 	}
 
-	while(freehead != NULL) {
+	while (freehead != NULL) {
 		h = freehead;
 		t = h->t;
-		freehead = freehead->gc_next;
-	
+		freehead = freehead->gc_collect;
+
 		gce++;
-		if(0 && mflag)
-			domflag(h);
 		heapprof_notify(2, h, 0);
-		if(t != nil) {
+		if (t != nil) {
 			gclock();
 			t->free(h, 1);
 			gcunlock();
@@ -425,15 +375,15 @@ rungc(Prog *p)
 		heapfree(h);
 	}
 
-	quanta = (MaxQuanta+Quanta)/2 + ((MaxQuanta-Quanta)/20)*((100*gce)/gct);
-	if(quanta < Quanta)
+	quanta = (MaxQuanta + Quanta) / 2 + ((MaxQuanta - Quanta) / 20) * ((100 * gce) / gct);
+	if (quanta < Quanta)
 		quanta = Quanta;
-	if(quanta > MaxQuanta)
+	if (quanta > MaxQuanta)
 		quanta = MaxQuanta;
 
-	if(base != nil)		/* Completed this iteration ? */
+	if (base != nil)		/* Completed this iteration ? */
 		return;
-	if(nprop == 0) {	/* Completed the epoch ? */
+	if (nprop == 0) {	/* Completed the epoch ? */
 		gcepochs++;
 		gccolor++;
 		rootset(p);

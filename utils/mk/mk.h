@@ -140,7 +140,7 @@ enum {
 };
 
 extern	int	debug;
-extern	int	nflag, tflag, iflag, kflag, aflag, mflag;
+extern	int	nflag, tflag, iflag, kflag, aflag;
 extern	int	mkinline;
 extern	char	*infile;
 extern	int	nreps;
