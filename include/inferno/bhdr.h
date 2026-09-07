@@ -9,12 +9,22 @@ typedef struct Btail Btail;
 typedef union Balign Balign;
 
 enum {
-    MAGIC_A = 0xa110c,    /* Allocated block */
-    MAGIC_F = 0xbadc0c0a, /* Free block */
-    MAGIC_L = 0xdeadbabe, /* start of arena */
-    MAGIC_E = 0xdeadbeef, /* end of arena */
-    MAGIC_I = 0xabba      /* Block is immutable (hidden from gc) */
+    MAGIC_A = 0x00a110c0, /* Allocated block */
+    MAGIC_F = 0xbadc0c00, /* Free block */
+    MAGIC_L = 0xdeadbab0, /* start of arena */
+    MAGIC_E = 0xdeadbee0  /* end of arena */
 };
+
+enum {
+    BF_MAPPED    = 0x1,  /* 32 bits mapped arena */
+    BF_IMMUTABLE = 0x2,  /* hidden from GC */
+    BF_SCRAMBLE  = 0x4,  /* scramble memory on free */
+    BF_RESERVED  = 0x8,  /* for future use */
+};
+
+#define BFLAGS_MASK ((uint32_t) 0xf)
+#define BMAGIC_MASK (~BFLAGS_MASK)
+#define BMAGIC(b) ((b)->bh_magic & BMAGIC_MASK)
 
 union Balign {
     uintptr_t p;
@@ -29,10 +39,6 @@ struct Bhdr {
     union {
         Balign data; /* aligned block raw data */
         struct {
-            /* Exec memory subsystem compat */
-            //uint32_t mc_next;  /* next mapped memory chunk */
-            //uint32_t mc_bytes; /* size of memory chunk */
-
             /* host free metadata */
             Bhdr* bhl;
             Bhdr* bhr;
@@ -104,7 +110,7 @@ struct Btail {
     do {                                                         \
         void *_dp = (void *)(dp);                                \
         Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - BHDR_A_SIZE); \
-        if (_b->bh_magic != MAGIC_A && _b->bh_magic != MAGIC_I)  \
+        if (BMAGIC(_b) != MAGIC_A)                               \
             blockfault(_dp, "alloc:D2B");                        \
     } while (0)
 

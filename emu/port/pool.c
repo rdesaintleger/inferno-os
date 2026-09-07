@@ -323,7 +323,7 @@ poolfree(Pool *p, void *v)
 	p->nfree++;
 	p->cursize -= b->bh_size;
 	c = B2NB(b);
-	if(c->bh_magic == MAGIC_F) {	/* Join forward */
+	if(BMAGIC(c) == MAGIC_F) {	/* Join forward */
 		pooldel(p, c);
 		c->bh_magic = 0;
 		b->bh_size += c->bh_size;
@@ -331,7 +331,7 @@ poolfree(Pool *p, void *v)
 	}
 
 	c = B2PT(b)->bt_hdr;
-	if(c->bh_magic == MAGIC_F) {	/* Join backward */
+	if(BMAGIC(c) == MAGIC_F) {	/* Join backward */
 		pooldel(p, c);
 		b->bh_magic = 0;
 		c->bh_size += b->bh_size;
@@ -423,11 +423,11 @@ pooldump(Pool *p)
 
 	while(base != nil) {
 		HOSTED_API(print)("\tbase #%.8lux ptr #%.8lux", base, ptr);
-		if(ptr->bh_magic == MAGIC_A || ptr->bh_magic == MAGIC_I)
+		if(BMAGIC(ptr) == MAGIC_A)
 			HOSTED_API(print)("\tA%.5d\n", ptr->bh_size);
-		else if(ptr->bh_magic == MAGIC_L)
+		else if(BMAGIC(ptr) == MAGIC_L)
 			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", ptr->bh_link, ptr->bh_limit);
-		else if(ptr->bh_magic == MAGIC_E)
+		else if(BMAGIC(ptr) == MAGIC_E)
 			HOSTED_API(print)("\tE\tL#%.8lux\tS#%.8lux\n", nil, nil);
 		else
 			HOSTED_API(print)("\tF%.5d\tL#%.8lux\tR#%.8lux\tF#%.8lux\tP#%.8lux\tT#%.8lux\n",
@@ -471,7 +471,7 @@ poolcompact(Pool *pool)
 	end = ptr;
 	while(base != nil) {
 		next = B2NB(ptr);
-		if(ptr->bh_magic == MAGIC_A || ptr->bh_magic == MAGIC_I) {
+		if(BMAGIC(ptr) == MAGIC_A) {
 			if(ptr != end) {
 				memmove(end, ptr, ptr->bh_size);
 				pool->move(B2D(ptr), B2D(end));

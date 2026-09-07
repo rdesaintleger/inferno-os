@@ -1,3 +1,5 @@
+#include <inferno/heapprof.h>
+
 #include "lib9.h"
 #include "isa.h"
 #include "interp.h"
@@ -350,25 +352,23 @@ initmem(Type *t, void *vw)
 	}
 }
 
-/* TODO: reorganise includes to have Heap** as parameter */
-
 void
-heapimmutable(void *v)
+heapimmutable(Heap **v)
 {
 	Bhdr *b;
 
 	D2B(b, v, poolfault);
-	b->bh_magic = MAGIC_I;
+	b->bh_magic |= BF_IMMUTABLE;
 }
 
 void
-heapmutable(void *v)
+heapmutable(Heap **v)
 {
-	Heap *h = *((Heap**)v);
+	Heap *h = *v;
 	Bhdr *b;
 
 	D2B(b, v, poolfault);
-	b->bh_magic = MAGIC_A;
+	b->bh_magic &= ~BF_IMMUTABLE;
 	h->color = mutator;
 }
 

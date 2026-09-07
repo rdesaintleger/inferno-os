@@ -243,12 +243,11 @@ static int
 okbhdr(Bhdr* b) {
 	if (b == nil)
 		return 0;
-	switch (b->bh_magic) {
+	switch (BMAGIC(b)) {
 	case MAGIC_A:
 	case MAGIC_F:
 	case MAGIC_L:
 	case MAGIC_E:
-	case MAGIC_I:
 		return 1;
 	}
 	return 0;
@@ -314,7 +313,7 @@ rungc(Prog* p) {
 	freetail = &freehead;
 
 	for (visit = quanta; visit > 0; ) {
-		if (ptr->bh_magic == MAGIC_A) {
+		if ((ptr->bh_magic & (BMAGIC_MASK | BF_IMMUTABLE)) == MAGIC_A) {
 			visit--;
 
 			/*

@@ -289,7 +289,7 @@ _auditmemloc(char *str, void *v)
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
-			if (bc->bh_magic != MAGIC_L) {
+			if (BMAGIC(bc) != MAGIC_L) {
 				unlock(&p->l);
 				corrupted(str, "chain hdr!=MAGIC_L", p, bc, v);
 				goto nextpool;
@@ -306,15 +306,16 @@ nextpool:	;
 
 found:
 	for (b = bc; b < ec; b = nb) {
-		switch(b->bh_magic) {
+		switch(BMAGIC(b)) {
 		case MAGIC_F:
 			msg = "free blk";
 			break;
-		case MAGIC_I:
-			msg = "immutable block";
-			break;
 		case MAGIC_A:
-			msg = "block";
+			if (b->bh_magic & BF_IMMUTABLE) {
+				msg = "immutable block";
+			} else {
+				msg = "block";
+			}
 			break;
 		case MAGIC_L:
 			msg = "arena leader block";
@@ -346,7 +347,7 @@ found:
 	if (b >= ec) {
 		if (b > ec)
 			corrupted(str, "chain size mismatch", p, b, v);
-		else if (b->bh_magic != MAGIC_E)
+		else if (BMAGIC(b) != MAGIC_E)
 			corrupted(str, "chain end!=MAGIC_E", p, b, v);
 	}
 badchunk:
@@ -370,7 +371,7 @@ poolaudit(char*(*audit)(int, Bhdr *))
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
-			if (bc->bh_magic != MAGIC_L) {
+			if (BMAGIC(bc) != MAGIC_L) {
 				unlock(&p->l);
 				return "bad chain hdr";
 			}
@@ -380,7 +381,7 @@ poolaudit(char*(*audit)(int, Bhdr *))
 				if (b->bh_size <= 0 /*|| (b->bh_size & p->quanta)*/)
 					r = "bad size in bhdr";
 				else
-					switch(b->bh_magic) {
+					switch(BMAGIC(b)) {
 					case MAGIC_E:
 						r = "unexpected MAGIC_E";
 						break;
@@ -391,7 +392,6 @@ poolaudit(char*(*audit)(int, Bhdr *))
 						}
 					case MAGIC_F:
 					case MAGIC_A:
-					case MAGIC_I:
 						r = audit(p->pnum, b);
 						break;
 					default:
@@ -402,7 +402,7 @@ poolaudit(char*(*audit)(int, Bhdr *))
 					return r;
 				}
 			}
-			if (b != ec || b->bh_magic != MAGIC_E) {
+			if (b != ec || BMAGIC(b) != MAGIC_E) {
 				unlock(&p->l);
 				return "bad chain ending";
 			}
