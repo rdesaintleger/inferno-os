@@ -752,11 +752,11 @@ memprof(int c, void *v, ulong n)
 	}
 	else{
 		if(c == Mmfree)
-			k = nil;
+			k = (int) nil;
 		else if(c == Mifree)
-			k = ((ulong*)v)[1];
+			k = (int) ((ulong*)v)[1];
 		else
-			k = h->hprof;
+			k = (int) h->hprof;
 		if((r = getrec(k>>24)) == nil){
 			unlock(&profile.l);
 			return;
