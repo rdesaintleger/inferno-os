@@ -83,6 +83,14 @@ poolsetsize(char *s, int size)
 	return 0;
 }
 
+void* poolalloc(Pool* p, size_t asize) {
+	Prog* prog;
+
+	if (p->cursize > p->ressize && (prog = currun()) != NULL && prog->flags & Prestricted)
+		return NULL;
+	return dopoolalloc(p, asize);
+}
+
 ulong
 poolmaxsize(void)
 {
@@ -96,7 +104,7 @@ poolmaxsize(void)
 }
 
 int
-poolread(char *va, int count, ulong offset)
+poolread(char *va, int count, size_t offset)
 {
 	Pool *p;
 	int n, i, signed_off;
@@ -181,7 +189,7 @@ HOSTED_API(malloc)(size_t size)
 }
 
 void*
-HOSTED_API(mallocz)(ulong size, int clr)
+HOSTED_API(mallocz)(size_t size, int clr)
 {
 	void *v;
 
@@ -206,7 +214,7 @@ HOSTED_API(free)(void *v)
 	if(v != nil) {
 		if(Npadlong)
 			v = (ulong*)v-Npadlong;
-		D2B(b, v, poolfault);
+		DATA2BHDR(b, v, poolfault);
 		memprof_notify(1<<8|0, (ulong*)v+Npadlong, b->bh_size);
 		poolfree(mainmem, v);
 	}
@@ -231,7 +239,7 @@ HOSTED_API(realloc)(void *v, size_t size)
 	return nv;
 }
 
-ulong
+size_t
 HOSTED_API(msize)(void *v)
 {
 	if(v == nil)
@@ -288,13 +296,13 @@ _auditmemloc(char *str, void *v)
 	SET(fmsg);
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
-		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
+		for (bc = p->chain; bc != nil; bc = bc->bhl_nextchain) {
 			if (BMAGIC(bc) != MAGIC_L) {
 				unlock(&p->l);
 				corrupted(str, "chain hdr!=MAGIC_L", p, bc, v);
 				goto nextpool;
 			}
-			ec = B2LIMIT(bc);
+			ec = bc->bhl_trail;
 			if (((Bhdr*)v >= bc) && ((Bhdr*)v < ec))
 				goto found;
 		}
@@ -313,6 +321,8 @@ found:
 		case MAGIC_A:
 			if (b->bh_magic & BF_IMMUTABLE) {
 				msg = "immutable block";
+			} else if (b->bh_magic & BF_COLLECTABLE) {
+				msg = "collectable block";
 			} else {
 				msg = "block";
 			}
@@ -336,7 +346,7 @@ found:
 		}
 		if (fb != nil)
 			break;
-		nb = B2NB(b);
+		nb = &BHDR2CHKSUCC(b)->bc_self;
 		if ((Bhdr*)v < nb) {
 			fb = b;
 			fsz = b->bh_size;
@@ -370,13 +380,13 @@ poolaudit(char*(*audit)(int, Bhdr *))
 
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
 		lock(&p->l);
-		for (bc = p->chain; bc != nil; bc = bc->bh_link) {
+		for (bc = p->chain; bc != nil; bc = bc->bhl_nextchain) {
 			if (BMAGIC(bc) != MAGIC_L) {
 				unlock(&p->l);
 				return "bad chain hdr";
 			}
-			ec = B2LIMIT(bc);
-			for (b = bc; b < ec; b = B2NB(b)) {
+			ec = bc->bhl_trail;
+			for (b = bc; b < ec; b = &BHDR2CHKSUCC(b)->bc_self) {
 				/* XXX maybe replace quanta check with computed alignment check */
 				if (b->bh_size <= 0 /*|| (b->bh_size & p->quanta)*/)
 					r = "bad size in bhdr";

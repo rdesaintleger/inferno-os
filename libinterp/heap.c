@@ -238,7 +238,7 @@ destroy(void *v)
 		return;
 
 	h = D2H(v);
-	{ Bhdr *b; D2B(b, D2P(v), poolfault); }		/* consistency check */
+	{ Bhdr *b; DATA2BHDR(b, D2P(v), poolfault); }		/* consistency check */
 
 	if(--h->ref > 0 || gchalt > 64) 	/* Protect 'C' thread stack */
 		return;
@@ -357,7 +357,7 @@ heapimmutable(Heap **v)
 {
 	Bhdr *b;
 
-	D2B(b, v, poolfault);
+	DATA2BHDR(b, v, poolfault);
 	b->bh_magic |= BF_IMMUTABLE;
 }
 
@@ -367,7 +367,7 @@ heapmutable(Heap **v)
 	Heap *h = *v;
 	Bhdr *b;
 
-	D2B(b, v, poolfault);
+	DATA2BHDR(b, v, poolfault);
 	b->bh_magic &= ~BF_IMMUTABLE;
 	h->color = mutator;
 }

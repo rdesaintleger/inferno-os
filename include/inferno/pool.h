@@ -2,6 +2,7 @@
 #define _INFERNO_POOL_H_
 
 #include <inferno/bhdr.h>
+#include <inferno/lock.h>
 
 typedef struct Pool Pool;
 
@@ -21,7 +22,6 @@ struct Pool {
     size_t nalloc;
     size_t nfree;
     int nbrk;
-    int lastfree;
     void (*move)(void*, void*);
 };
 

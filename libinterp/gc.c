@@ -29,10 +29,13 @@ uint64_t	gcinspects;
 static	int	marker = 1;
 static	int	sweeper = 2;
 static Bhdr* base = nil;
-static Bhdr* sptr = nil;
 
-static Bhdr* limit;
-static Bhdr* ptr;
+static Bwalk walker = {
+	NULL,
+	NULL,
+	NULL
+};
+
 
 static	int	visit;
 extern	Pool* heapmem;
@@ -241,7 +244,7 @@ rootset(Prog* root) {
 
 static int
 okbhdr(Bhdr* b) {
-	if (b == nil)
+	if (b == NULL)
 		return 0;
 	switch (BMAGIC(b)) {
 	case MAGIC_A:
@@ -266,7 +269,7 @@ void
 rungc(Prog* p) {
 	Type* t;
 	Heap* h;
-	Bhdr* b;
+	Bhdr* b, *ptr;
 
 	Heap* freehead; /* head of free list */
 	Heap** freetail; /* tail of free list */
@@ -278,17 +281,19 @@ rungc(Prog* p) {
 		return;
 	}
 
-	if (base == nil) {
+	if (base == NULL) {
 		gcsweeps++;
 		b = poolchain(heapmem);
 		base = b;
 		ptr = b;
-		limit = B2LIMIT(b);
-	} else if (sptr != nil) {
+	} else if (walker.bw_ptr != NULL) {
 		/* we stopped on allocated data, restore heap ref count */
-		ptr = sptr;
-		sptr = nil;
-		d = P2D(B2D(ptr)); /* retrieve the real data pointer (in heapmem) */
+		ptr = walker.bw_ptr;
+		walker.bw_ptr = NULL;
+
+		bwalk_unlink(base, &walker);
+
+		d = P2D(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
 		h = D2H(d); /* retrieve the heap pointer (in mainmem) */
 
 		h->ref--;
@@ -300,6 +305,8 @@ rungc(Prog* p) {
 			 */
 			h->color = sweeper;
 		}
+	} else {
+		ptr = NULL;
 	}
 
 	/* Chain broken ? */
@@ -320,13 +327,16 @@ rungc(Prog* p) {
 			 * XXX suboptimal: use macro to retrieve real data pointer
 			 * then convert this pointer to a Heap pointer
 			 */
-			d = P2D(B2D(ptr)); /* retrieve the real data pointer (in heapmem) */
+			d = P2D(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
 			h = D2H(d); /* retrieve the heap pointer (in mainmem) */
 
 			if (visit <= 0) {
 				/* quanta has expired, stay on current Bhdr. Increment ref count to prevent bloc to be freed */
-				sptr = ptr;
+				walker.bw_ptr = ptr;
 				h->ref++;
+
+				bwalk_link(base, &walker);
+
 				break;
 			}
 
@@ -336,7 +346,7 @@ rungc(Prog* p) {
 			if (h->color == propagator) {
 				gce--;
 				h->color = mutator;
-				if (t != nil)
+				if (t != NULL)
 					t->mark(t, H2D(void*, h));
 			} else
 				if (h->color == sweeper) {
@@ -347,13 +357,12 @@ rungc(Prog* p) {
 					freetail = &h->gc_collect;
 				}
 		}
-		ptr = B2NB(ptr);
-		if (ptr >= limit) {
-			base = base->bh_link;
-			if (base == nil)
+		ptr = &BHDR2CHKSUCC(ptr)->bc_self;
+		if (BMAGIC(ptr) == MAGIC_E) {
+			base = base->bhl_nextchain;
+			if (base == NULL)
 				break;
 			ptr = base;
-			limit = B2LIMIT(base);
 		}
 	}
 

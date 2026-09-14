@@ -56,7 +56,6 @@ mod
 
 port
 	alloc
-	pool
 	cache
 	chan
 	dev

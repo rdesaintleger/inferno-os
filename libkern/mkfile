@@ -6,6 +6,8 @@ OFILES=\
 	callback.$O\
 	heapprof.$O\
 	memprof.$O\
+	avlfree.$O\
+	pool.$O\
 
 HFILES=\
 	$ROOT/include/inferno/callback.h\

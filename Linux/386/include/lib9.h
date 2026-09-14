@@ -82,22 +82,7 @@ extern	int	encodefmt(Fmt*);
  *  synchronization
  */
 extern int	_tas(int*);
-
-extern	void	lock(Lock*);
-extern	void	unlock(Lock*);
-extern	int	canlock(Lock*);
-
-extern	void	qlock(QLock*);
-extern	void	qunlock(QLock*);
-extern	int	canqlock(QLock*);
 extern	void	_qlockinit(ulong (*)(ulong, ulong));	/* called only by the thread library */
-
-extern	int	canrlock(RWLock*);
-extern	int	canwlock(RWLock*);
-extern	void	rlock(RWLock*);
-extern	void	runlock(RWLock*);
-extern	void	wlock(RWLock*);
-extern	void	wunlock(RWLock*);
 
 extern	Dir*	dirstat(char*);
 extern	Dir*	dirfstat(int);

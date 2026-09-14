@@ -5,16 +5,16 @@
 
 extern	void	(*poolfault)(void *, char *);
 extern	void	poolinit(void);
-extern	ulong	poolmax(Pool*);
+extern	size_t	poolmax(Pool*);
 extern	void*	dopoolalloc(Pool*, size_t);
-extern	void*	poolalloc(Pool*, ulong);
+extern	void*	poolalloc(Pool*, size_t);
 extern	void	poolfree(Pool*, void*);
 extern	Bhdr*	poolchain(Pool*);
 extern	int	poolcompact(Pool*);
-extern	ulong	poolmsize(Pool*, void*);
+extern	size_t	poolmsize(Pool*, void*);
 extern	char*	poolname(Pool*);
-extern	int	poolread(char*, int, ulong);
-extern	void*	poolrealloc(Pool*, void*, ulong);
+extern	int	poolread(char*, int, size_t);
+extern	void*	poolrealloc(Pool*, void*, size_t);
 extern	int	poolsetsize(char*, int);
 extern	void	poolsetcompact(Pool*, void (*)(void*, void*));
 extern	char*	poolaudit(char*(*)(int, Bhdr *));

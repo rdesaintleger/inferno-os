@@ -26,9 +26,9 @@ extern	char*	HOSTED_API(utfecpy)(char*, char*, char*);
  * malloc
  */
 extern	void*	HOSTED_API(malloc)(size_t);
-extern	void*	HOSTED_API(mallocz)(ulong, int);
+extern	void*	HOSTED_API(mallocz)(size_t, int);
 extern	void	HOSTED_API(free)(void*);
-extern	ulong	HOSTED_API(msize)(void*);
+extern	size_t	HOSTED_API(msize)(void*);
 extern	void*	HOSTED_API(calloc)(size_t, size_t);
 extern	void*	HOSTED_API(realloc)(void*, size_t);
 
