@@ -131,7 +131,6 @@ enum
 	TkBlinkinterval	= 500
 };
 
-#define TKSTRUCTALIGN	4
 #define TKI2F(i)	((i)*Tkfpscalar)
 extern	int TKF2I(int);
 /*#define TKF2I(f)	(((f) + Tkfpscalar/2)/Tkfpscalar)*/
@@ -201,7 +200,7 @@ struct TkMsg
 {
 	TkVar*	var;
 	TkMsg*	link;
-	char	msg[TKSTRUCTALIGN];
+	char	msg[];
 };
 
 enum
@@ -215,7 +214,7 @@ struct TkVar
 	int	type;
 	TkVar*	link;
 	void*	value;
-	char	name[TKSTRUCTALIGN];
+	char	name[];
 };
 
 struct TkPanelimage
@@ -526,7 +525,7 @@ struct TkName
 		TkAction*	binds;
 	}prop;				/* Properties for ... */
 	int		ref;
-	char		name[TKSTRUCTALIGN];
+	char		name[];
 };
 
 struct TkTtabstop

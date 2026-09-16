@@ -58,7 +58,7 @@ struct Blead {
     Bhdr*    bh_trail;     /* pointer to arena sentinel block */
     Bwalk*   bh_walkers;   /* pointer to first arena walker */
     size_t   bh_freecnt;   /* free blocks counter for this arena (allows compaction if > 1, 0 for direct arenas) */
-    uint32_t bh_mapbase;   /* base arenamapped address (can be 0, valid if flag set in magic) */
+    uint32_t bh_mapoffset; /* 32 bits mapping offset for first valid data in arena */
 
     Balign data; /* start of arena raw data */
 };
@@ -142,7 +142,7 @@ struct Bwalk {
 #define bhl_trail     u.l.bh_trail
 #define bhl_freecnt   u.l.bh_freecnt
 #define bhl_walkers   u.l.bh_walkers
-#define bhl_mapbase   u.l.bh_mapbase
+#define bhl_mapoffset u.l.bh_mapoffset
 #define bhl_data      u.l.data
 
 #define BALIGN_SZ    sizeof(Balign)

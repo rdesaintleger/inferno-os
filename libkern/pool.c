@@ -14,6 +14,10 @@ Bhdr* poolchain(Pool* p) {
 	return p->chain;
 }
 
+/* defined in alloc.c */
+extern void* poolalloc(Pool*, size_t);
+extern void (*poolfault)(void *, char *);
+
 /* defined in avlfree.c */
 extern void pooladd(Pool*, Bhdr*, Bhdr*);
 extern void pooldel(Pool*, Bhdr*);
@@ -222,7 +226,7 @@ static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint3
 	/* initialize leader */
 	lead->bh_magic = MAGIC_L;
 	lead->bhl_freecnt = 0;
-	lead->bhl_mapbase = 0;
+	lead->bhl_mapoffset = 0;
 	lead->bhl_walkers = NULL;
 	lead->bhl_trail = &trail->bc_self;
 
@@ -615,7 +619,16 @@ poolrealloc(Pool* p, void* v, size_t asize) {
 		DATA2BHDR(b, v, poolfault);
 		osize = b->bh_size - offsetof(Bhdr, bha_data);
 
-		if (osize >= asize || pooltrygrowinplace(p, b, size)) {
+		if (osize >= asize) {
+			p->cursize -= b->bh_size; /* remove old size */
+			b = chunksplitblock(p, b, b->bha_lead, size); /* shrink the current block */
+			p->cursize += b->bh_size; /* consume new size */
+
+			unlock(&p->l);
+			return v;
+		}
+
+		if (pooltrygrowinplace(p, b, size)) {
 			unlock(&p->l);
 			return v;
 		}

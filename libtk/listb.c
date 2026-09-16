@@ -19,7 +19,7 @@ struct TkLentry
 	TkLentry*	link;
 	int		flag;
 	int		width;
-	char		text[TKSTRUCTALIGN];
+	char		text[];
 };
 
 struct TkListbox
