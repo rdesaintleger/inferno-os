@@ -467,7 +467,7 @@ void pooldel(Pool* p, Bhdr* t) {
  * must be considered whenever they might still hold a match; spatial
  * pruning is replaced by the flag-presence mask.
  * -------------------------------------------------------------- */
-
+ 
 /* Per-block acceptance test beyond the flags. The default is a plain
  * size check; pool.c-side integration defines it to also honor the
  * address-dependent header alignment padding (BALIGN_SIZE16) that
@@ -478,63 +478,94 @@ void pooldel(Pool* p, Bhdr* t) {
 #define POOL_BLOCK_FITS(c, size) \
     ((c)->bh_size == (size) || \
      BALIGN_SIZE16((c)->bhf_lead, (c), (size), offsetof(Bchk, bc_self.bha_data)) <= (c)->bh_size)
-
-static Bhdr* dupchain_find(Bhdr* node, size_t size, uint32_t iflags) {
-    Bhdr* c;
-
-    if (node->bh_size < size) {
-        return NULL;
-    }
-
-    c = node;
-    do {
-        if (arena_flags_of(c) == iflags && POOL_BLOCK_FITS(c, size)) {
-            return c;
-        }
-        c = c->bhf_succ;
-    } while (c != node);
-
-    return NULL;
-}
-
-static void pool_search(Bhdr* node, size_t size, uint32_t iflags, Bhdr** best) {
+ 
+/* Same traversal as a recursive "visit node, then left, then right"
+ * search, but iterative: nodes carry bhf_parent, so no stack is needed
+ * (O(1) extra space, no recursion depth to worry about on a small
+ * stack). Each node goes through at most three states:
+ *   SEARCH_ENTER      just arrived from above (or the root)
+ *   SEARCH_AFTER_LEFT left side handled (or skipped), right side pending
+ *   SEARCH_DONE       both sides handled, go back up
+ * When climbing back, the child we come from tells the parent which of
+ * SEARCH_AFTER_LEFT / SEARCH_DONE it is in. */
+enum {
+    SEARCH_ENTER,
+    SEARCH_AFTER_LEFT,
+    SEARCH_DONE
+};
+ 
+static Bhdr* pool_search(Bhdr* root, size_t size, uint32_t iflags) {
+    Bhdr* best = NULL;
+    Bhdr* node = root;
+    Bhdr* child;
     Bhdr* m;
-
-    if (node == NULL) {
-        return;
+    int state = SEARCH_ENTER;
+ 
+    while (node != NULL) {
+        switch (state) {
+        case SEARCH_ENTER:
+            if (best != NULL && best->bh_size == size) {
+                return best; /* exact-size match already found, nothing can beat it */
+            }
+ 
+            if ((rb_fmask(node) & iflags) != iflags) {
+                /* not every requested flag is present anywhere in this subtree */
+                state = SEARCH_DONE;
+                break;
+            }
+ 
+            /* Candidate check on the whole duplicate chain (same bh_size,
+             * possibly different arenas): first member with the exact
+             * flags that also fits. Skipped when node can't improve on
+             * best anyway (every member has node's bh_size). */
+            if (node->bh_size >= size && (best == NULL || node->bh_size < best->bh_size)) {
+                m = node;
+                do {
+                    if (arena_flags_of(m) == iflags && POOL_BLOCK_FITS(m, size)) {
+                        best = m;
+                        break;
+                    }
+                    m = m->bhf_succ;
+                } while (m != node);
+            }
+ 
+            /* Left: every element there has bh_size <= node->bh_size, so
+             * only worth visiting if that upper bound still leaves room
+             * for a sufficient candidate. */
+            if (size <= node->bh_size && node->bhf_left != NULL) {
+                node = node->bhf_left; /* state stays SEARCH_ENTER */
+            } else {
+                state = SEARCH_AFTER_LEFT;
+            }
+            break;
+ 
+        case SEARCH_AFTER_LEFT:
+            /* Right: every element there has bh_size >= node->bh_size, so
+             * only worth visiting if node's own size could still be
+             * improved upon (otherwise every candidate over there is
+             * provably no better). */
+            if ((best == NULL || node->bh_size < best->bh_size) && node->bhf_right != NULL) {
+                node = node->bhf_right;
+                state = SEARCH_ENTER;
+            } else {
+                state = SEARCH_DONE;
+            }
+            break;
+ 
+        default: /* SEARCH_DONE: climb back up */
+            child = node;
+            node = node->bhf_parent;
+            if (node != NULL) {
+                state = (node->bhf_left == child) ? SEARCH_AFTER_LEFT : SEARCH_DONE;
+            }
+            break;
+        }
     }
-
-    if (*best != NULL && (*best)->bh_size == size) {
-        return; /* exact-size match already found, nothing can beat it */
-    }
-
-    if ((rb_fmask(node) & iflags) != iflags) {
-        return; /* not every requested flag is present anywhere in this subtree */
-    }
-
-    m = dupchain_find(node, size, iflags);
-    if (m != NULL && (*best == NULL || node->bh_size < (*best)->bh_size)) {
-        *best = m;
-    }
-
-    /* Left: every element there has bh_size <= node->bh_size, so only
-     * worth visiting if that upper bound still leaves room for a
-     * sufficient candidate. */
-    if (size <= node->bh_size) {
-        pool_search(node->bhf_left, size, iflags, best);
-    }
-
-    /* Right: every element there has bh_size >= node->bh_size, so only
-     * worth visiting if node's own size could still be improved upon
-     * (otherwise every candidate over there is provably no better). */
-    if (*best == NULL || node->bh_size < (*best)->bh_size) {
-        pool_search(node->bhf_right, size, iflags, best);
-    }
+ 
+    return best;
 }
+
 
 Bhdr* poolfindbest(Pool* p, size_t size, uint32_t iflags) {
-    Bhdr* best = NULL;
-
-    pool_search(p->root, size, iflags, &best);
-    return best;
+    return pool_search(p->root, size, iflags);
 }

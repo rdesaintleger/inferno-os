@@ -660,60 +660,100 @@ int arena_map_fixed(Bhdr* arena, uint16_t base) {
     return result;
 }
 
+/* Best-fit search constrained to the window [page_min, page_max).
+ *
+ * Iterative (no recursion, no stack): nodes carry a parent index, so
+ * the traversal simply walks down and climbs back up. Each node goes
+ * through at most three states:
+ *   MAP_SEARCH_ENTER       just arrived from above (or the root)
+ *   MAP_SEARCH_AFTER_LEFT  left side handled (or skipped), right pending
+ *   MAP_SEARCH_DONE        both sides handled, go back up
+ * When climbing back, the child we come from tells the parent which
+ * of AFTER_LEFT / DONE it is in. Visit order (node, left, right) and
+ * pruning rules are the ones of the recursive formulation. */
+enum {
+    MAP_SEARCH_ENTER,
+    MAP_SEARCH_AFTER_LEFT,
+    MAP_SEARCH_DONE
+};
+ 
 static void map_range_search(uint16_t node, struct map_range_search_state *state) {
-    uint16_t candidate_base, candidate_end, candidate_size;
-    uint16_t raw_base, raw_end;
-
-    if (node == FREENODE_NIL) {
-        return; /* given node is not valid */
-    }
-
-    if (state->best_entry != FREENODE_NIL && state->best_size == state->page_cnt) {
-        return; /* the best possible entry has been found, do not do anything */
-    }
-
-    if (unmapped[node].fe_amax < state->page_cnt) {
-        return; /* size pruning: nothing in this subtree is big enough */
-    }
-
-    /* current node bounds */
-    raw_base = candidate_base = unmapped[node].fe_base;
-    raw_end = candidate_end = candidate_base + unmapped[node].fe_size;
-
-    /* current node clamping against mapping window */
-    candidate_base = raw_base < state->page_min ? state->page_min : raw_base;
-    candidate_end = raw_end > state->page_max ? state->page_max : raw_end;
-
-    if (candidate_base < candidate_end) {
-        /* compute clamped size */
-        candidate_size = candidate_end - candidate_base;
-
-        /* check if enough room is remaining in this node */
-        if (state->page_cnt <= candidate_size) {
-            /* check if this is the actual best fit */
-            if (state->best_entry == FREENODE_NIL || candidate_size < state->best_size) {
-                state->best_entry = node;
-                state->best_base = candidate_base;
-                state->best_size = candidate_size;
+    uint16_t child;
+    int st = MAP_SEARCH_ENTER;
+ 
+    while (node != FREENODE_NIL) {
+        switch (st) {
+        case MAP_SEARCH_ENTER: {
+            uint16_t raw_base, raw_end;
+            uint16_t candidate_base, candidate_end, candidate_size;
+ 
+            if (state->best_entry != FREENODE_NIL && state->best_size == state->page_cnt) {
+                return; /* the best possible entry has been found, do not do anything */
             }
+ 
+            if (unmapped[node].fe_amax < state->page_cnt) {
+                /* size pruning: nothing in this subtree is big enough */
+                st = MAP_SEARCH_DONE;
+                break;
+            }
+ 
+            /* current node bounds */
+            raw_base = unmapped[node].fe_base;
+            raw_end = raw_base + unmapped[node].fe_size;
+ 
+            /* current node clamping against mapping window */
+            candidate_base = raw_base < state->page_min ? state->page_min : raw_base;
+            candidate_end = raw_end > state->page_max ? state->page_max : raw_end;
+ 
+            if (candidate_base < candidate_end) {
+                /* compute clamped size */
+                candidate_size = candidate_end - candidate_base;
+ 
+                /* check if enough room is remaining in this node, and if
+                 * this is the actual best fit */
+                if (state->page_cnt <= candidate_size &&
+                    (state->best_entry == FREENODE_NIL || candidate_size < state->best_size)) {
+                    state->best_entry = node;
+                    state->best_base = candidate_base;
+                    state->best_size = candidate_size;
+                }
+            }
+ 
+            /* Left spatial pruning: free entries are disjoint and sorted
+             * by fe_base, so every entry in the left subtree ends at or
+             * before this node's own fe_base. If this node already
+             * starts at or before page_min, the whole left subtree ends
+             * at or before page_min too - not worth exploring. */
+            if (raw_base > state->page_min && unmapped[node].fe_left != FREENODE_NIL) {
+                node = unmapped[node].fe_left; /* st stays MAP_SEARCH_ENTER */
+            } else {
+                st = MAP_SEARCH_AFTER_LEFT;
+            }
+            break;
         }
-    }
-
-    /* Left spatial pruning: free entries are disjoint and sorted by
-     * fe_base, so every entry in the left subtree ends at or before
-     * this node's own fe_base. If this node already starts at or
-     * before page_min, the whole left subtree ends at or before
-     * page_min too - not worth exploring. */
-    if (raw_base > state->page_min) {
-        map_range_search(unmapped[node].fe_left, state);
-    }
-
-    /* Right spatial pruning: symmetrically, every entry in the right
-     * subtree starts at or after this node's own end. If this node
-     * already ends at or after page_max, the whole right subtree
-     * starts at or after page_max too. */
-    if (raw_end < state->page_max) {
-        map_range_search(unmapped[node].fe_right, state);
+ 
+        case MAP_SEARCH_AFTER_LEFT:
+            /* Right spatial pruning: symmetrically, every entry in the
+             * right subtree starts at or after this node's own end. If
+             * this node already ends at or after page_max, the whole
+             * right subtree starts at or after page_max too. */
+            if ((uint16_t)(unmapped[node].fe_base + unmapped[node].fe_size) < state->page_max &&
+                unmapped[node].fe_right != FREENODE_NIL) {
+                node = unmapped[node].fe_right;
+                st = MAP_SEARCH_ENTER;
+            } else {
+                st = MAP_SEARCH_DONE;
+            }
+            break;
+ 
+        default: /* MAP_SEARCH_DONE: climb back up */
+            child = node;
+            node = rb_parent(node);
+            if (node != FREENODE_NIL) {
+                st = (unmapped[node].fe_left == child) ? MAP_SEARCH_AFTER_LEFT : MAP_SEARCH_DONE;
+            }
+            break;
+        }
     }
 }
 
