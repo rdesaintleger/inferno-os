@@ -1,189 +1,205 @@
 #include <inferno/bhdr.h>
 #include <inferno/pool.h>
 
-/* Directions and subtree helpers */
-#define AVLFREE_LEFT          0
-#define AVLFREE_RIGHT         1
-#define AVLFREE_OPPOSITE(d)   (1 - (d))
+/* -------------------------------------------------------------- *
+ * Red-Black tree keyed by bh_size, augmented with a 3-bit arena-flag
+ * presence mask (ARENA_FLAGS_MASK) packed alongside the RB color bit
+ * in the low nibble of bh_magic (BFLAGS_MASK).
+ * -------------------------------------------------------------- */
 
-/* Access child node by direction */
-#define AVLFREE_CHILD(node, dir) \
-	((dir) == AVLFREE_LEFT ? (node)->bhf_left : (node)->bhf_right)
+#define RB_COLOR_BIT ((uint32_t) 0x08) /* last bit of the low nibble */
+#define RB_RED       ((uint32_t) 0x00)
+#define RB_BLACK     RB_COLOR_BIT
 
-/*
- * Balance factor storage: packed into the low 3 bits of bh_magic, with
- * BAL_BIAS (4) as the raw value representing signed balance 0. The
- * algorithm below never converts back to a signed value -- it works
- * entirely in raw space, comparing against BAL_BIAS and BAL_BIAS+-1
- * instead of 0 and +-1. A +-1 delta on the signed balance is the same
- * bit pattern as a +-1 delta on the raw nibble (additive bias commutes
- * with addition), so BAL_ADD needs no mask. Only absolute writes
- * (BAL_RAW_SET) and same-type nibble copies (BAL_COPY) touch bh_magic
- * outside of a plain add.
- *
- * All base magics (MAGIC_A/F/L/E) end in a zero nibble by construction,
- * so ORing BAL_BIAS into a freshly-typed magic sets balance to 0 in a
- * single instruction (see pooladd).
- */
-#define BAL_BIAS 4
+enum {
+    ARENA_FLAGS_MASK = BFLAGS_MASK & ~RB_COLOR_BIT
+};
 
-#define BAL_RAW(b)          ((int)((b)->bh_magic & BFLAGS_MASK))
-#define BAL_RAW_SET(b, r)   ((b)->bh_magic = ((b)->bh_magic & BMAGIC_MASK) | \
-                             ((uint32_t)(r) & BFLAGS_MASK))
-#define BAL_ADD(b, delta)   ((b)->bh_magic += (delta))
-#define BAL_COPY(dst, src)  ((dst)->bh_magic = ((dst)->bh_magic & BMAGIC_MASK) | \
-                             ((src)->bh_magic & BFLAGS_MASK))
+#define rb_color(n)        ((n)->bh_magic & RB_COLOR_BIT)
+#define rb_is_red(n)       (rb_color(n) == RB_RED)
+#define rb_is_black(n)     (rb_color(n) == RB_BLACK)
+#define rb_set_color(n, c) \
+    ((n)->bh_magic = ((n)->bh_magic & ~RB_COLOR_BIT) | (c))
 
-/* Balance check on a raw nibble: unbalanced iff signed value is +-2 */
-#define AVLFREE_RAW_UNBALANCED(r) ((r) > (BAL_BIAS + 1) || (r) < (BAL_BIAS - 1))
+/* NULL is conventionally black, like a classic RB sentinel leaf */
+#define rb_node_is_red(n)   ((n) != NULL && rb_is_red(n))
+#define rb_node_is_black(n) ((n) == NULL || rb_is_black(n))
 
-/* Set child pointer of a node according to direction */
-static void avlfree_set_child(Bhdr* node, int dir, Bhdr* child) {
-    if (dir == AVLFREE_LEFT) {
-        node->bhf_left = child;
-    } else {
-        node->bhf_right = child;
+#define rb_fmask(n) ((uint32_t)((n)->bh_magic & ARENA_FLAGS_MASK))
+#define rb_set_fmask(n, m) \
+    ((n)->bh_magic = ((n)->bh_magic & ~(uint32_t)ARENA_FLAGS_MASK) | ((m) & ARENA_FLAGS_MASK))
+
+#define arena_flags_of(t) ((uint32_t)((t)->bhf_lead->bh_magic & ARENA_FLAGS_MASK))
+
+/* -------------------------------------------------------------- *
+ * Flag-mask maintenance
+ * -------------------------------------------------------------- */
+
+/* OR of arena_flags_of() over every node in t's duplicate (same
+ * bh_size) circular list, t included. Duplicates hang off a single
+ * tree node via bhf_succ/bhf_pred and are otherwise invisible to the
+ * tree structure - this is the "self" contribution a tree node brings
+ * to its own subtree mask. */
+static uint32_t dupchain_mask(Bhdr* t) {
+    uint32_t m = 0;
+    Bhdr* c = t;
+
+    do {
+        m |= arena_flags_of(c);
+        c = c->bhf_succ;
+    } while (c != t);
+
+    return m;
+}
+
+static uint32_t fmask_of(Bhdr* node) {
+    uint32_t m = dupchain_mask(node);
+
+    if (node->bhf_left != NULL) {
+        m |= rb_fmask(node->bhf_left);
+    }
+    if (node->bhf_right != NULL) {
+        m |= rb_fmask(node->bhf_right);
+    }
+
+    return m;
+}
+
+/* Recomputes node's own mask (dup-chain + children) and walks toward
+ * the root redoing the same for every ancestor, stopping as soon as a
+ * level's value doesn't change (higher ancestors can't be affected
+ * either). Unlike mapper.c's propagate_amax, this also recomputes
+ * node itself - needed because a node's own contribution can change
+ * on its own (a duplicate joining/leaving its circular list) without
+ * any structural tree change happening at that node. */
+static void fixup_fmask(Bhdr* node) {
+    while (node != NULL) {
+        uint32_t m = fmask_of(node);
+
+        if (m == rb_fmask(node)) {
+            break;
+        }
+
+        rb_set_fmask(node, m);
+        node = node->bhf_parent;
     }
 }
 
-/* Replace old_node with new_node under parent (updates *root if parent is NULL) */
-static void avlfree_replace_child(Bhdr** root, Bhdr* parent, Bhdr* old_node, Bhdr* new_node) {
-    if (parent == NULL) {
-        *root = new_node;
-    } else if (parent->bhf_left == old_node) {
-        parent->bhf_left = new_node;
+/* -------------------------------------------------------------- *
+ * Rotations. Self-contained like mapper.c's: a rotation rearranges
+ * the SAME set of nodes under x/y, so recomputing the mask for the
+ * pair afterward reproduces exactly what was already true beforehand
+ * - nothing beyond x/y ever needs to be touched here.
+ * -------------------------------------------------------------- */
+
+static void rb_rotate_left(Pool* p, Bhdr* x) {
+    Bhdr* y = x->bhf_right;
+    Bhdr* pp = x->bhf_parent;
+
+    x->bhf_right = y->bhf_left;
+    if (y->bhf_left != NULL) {
+        y->bhf_left->bhf_parent = x;
+    }
+    y->bhf_parent = pp;
+    if (pp == NULL) {
+        p->root = y;
+    } else if (x == pp->bhf_left) {
+        pp->bhf_left = y;
     } else {
-        parent->bhf_right = new_node;
+        pp->bhf_right = y;
     }
-
-    if (new_node != NULL) {
-        new_node->bhf_parent = parent;
-    }
-}
-
-/* Generic rotation: dir = AVLFREE_RIGHT promotes right child (left rotation), dir = AVLFREE_LEFT promotes left child (right rotation) */
-static Bhdr* avlfree_rotate(Bhdr** root, Bhdr* x, int dir) {
-    int opp = AVLFREE_OPPOSITE(dir);
-    Bhdr* y = AVLFREE_CHILD(x, dir);
-    Bhdr* parent = x->bhf_parent;
-    Bhdr* sub = AVLFREE_CHILD(y, opp);
-
-    avlfree_set_child(x, dir, sub);
-    if (sub != NULL) {
-        sub->bhf_parent = x;
-    }
-
-    avlfree_set_child(y, opp, x);
+    y->bhf_left = x;
     x->bhf_parent = y;
-    y->bhf_parent = parent;
 
-    avlfree_replace_child(root, parent, x, y);
-
-    return y;
+    rb_set_fmask(x, fmask_of(x));
+    rb_set_fmask(y, fmask_of(y));
 }
 
-/* Rebalance a node with a raw balance nibble of BAL_BIAS+-2. Returns 1 if subtree height decreased, 0 otherwise. */
-static int avlfree_rebalance(Bhdr** root, Bhdr* q, int dir) {
-    /* raw value of "balance == dir's sign" and of "balance == opposite
-     * sign" -- branchless: dir is 0 or 1, so this is a shift+add, no
-     * conditional. dirraw/oppraw replace the old +-s pair entirely. */
-    int dirraw = (BAL_BIAS - 1) + (dir << 1);   /* RIGHT->(BAL_BIAS + 1), LEFT->(BAL_BIAS - 1) */
-    int oppraw = (BAL_BIAS + 1) - (dir << 1);   /* RIGHT->(BAL_BIAS - 1), LEFT->(BAL_BIAS + 1) */
-    int opp = AVLFREE_OPPOSITE(dir);
-    Bhdr* c = AVLFREE_CHILD(q, dir);
-    int craw = BAL_RAW(c);
+static void rb_rotate_right(Pool* p, Bhdr* x) {
+    Bhdr* y = x->bhf_left;
+    Bhdr* pp = x->bhf_parent;
 
-    /* c's balance is always in {-1,0,1} here (only q was unbalanced),
-     * so "same sign as dir, or zero" reduces to "not the opposite raw
-     * value" -- a single equality test, cheaper than the original
-     * multiply-and-compare. */
-    if (craw != oppraw) {
-        /* Single rotation (LL or RR) */
-        if (craw == BAL_BIAS) {
-            BAL_RAW_SET(q, dirraw);
-            BAL_RAW_SET(c, oppraw);
-            avlfree_rotate(root, q, dir);
-            return 0; /* Subtree height unchanged */
-        }
-        BAL_RAW_SET(q, BAL_BIAS);
-        BAL_RAW_SET(c, BAL_BIAS);
-        avlfree_rotate(root, q, dir);
-        return 1; /* Subtree height decreased */
+    x->bhf_left = y->bhf_right;
+    if (y->bhf_right != NULL) {
+        y->bhf_right->bhf_parent = x;
+    }
+    y->bhf_parent = pp;
+    if (pp == NULL) {
+        p->root = y;
+    } else if (x == pp->bhf_right) {
+        pp->bhf_right = y;
     } else {
-        /* Double rotation (LR or RL) */
-        Bhdr* g = AVLFREE_CHILD(c, opp);
-        int graw = BAL_RAW(g);
-        BAL_RAW_SET(q, (graw == dirraw) ? oppraw : BAL_BIAS);
-        BAL_RAW_SET(c, (graw == oppraw) ? dirraw : BAL_BIAS);
-        BAL_RAW_SET(g, BAL_BIAS);
-        avlfree_rotate(root, c, opp);
-        avlfree_rotate(root, q, dir);
-        return 1;
+        pp->bhf_left = y;
     }
+    y->bhf_right = x;
+    x->bhf_parent = y;
+
+    rb_set_fmask(x, fmask_of(x));
+    rb_set_fmask(y, fmask_of(y));
 }
 
-/* Bottom-up balance factor fix after insertion */
-static void avlfree_fix_insert(Bhdr** root, Bhdr* node) {
-    Bhdr* parent = node->bhf_parent;
+/* -------------------------------------------------------------- *
+ * Insertion
+ * -------------------------------------------------------------- */
 
-    while (parent != NULL) {
-        int raw;
+static void rb_insert_fixup(Pool* p, Bhdr* z) {
+    while (z->bhf_parent != NULL && rb_is_red(z->bhf_parent)) {
+        Bhdr* pn = z->bhf_parent;
+        Bhdr* g = pn->bhf_parent;
 
-        BAL_ADD(parent, (node == parent->bhf_left) ? -1 : 1);
-        raw = BAL_RAW(parent);
+        if (pn == g->bhf_left) {
+            Bhdr* u = g->bhf_right;
 
-        if (AVLFREE_RAW_UNBALANCED(raw)) {
-            int heavy_dir = (raw > BAL_BIAS) ? AVLFREE_RIGHT : AVLFREE_LEFT;
-            avlfree_rebalance(root, parent, heavy_dir);
-            break; /* Single rebalance restores tree height on insertion */
-        }
-
-        if (raw == BAL_BIAS) {
-            break; /* Subtree height did not increase */
-        }
-
-        node = parent;
-        parent = node->bhf_parent;
-    }
-}
-
-/* Bottom-up balance factor fix after deletion */
-static void avlfree_fix_delete(Bhdr** root, Bhdr* q, int shrank_dir) {
-    while (q != NULL) {
-        Bhdr* parent = q->bhf_parent;
-        int next_shrank_dir = (parent != NULL && parent->bhf_left == q) ? AVLFREE_LEFT : AVLFREE_RIGHT;
-        int raw;
-
-        BAL_ADD(q, (shrank_dir == AVLFREE_LEFT) ? 1 : -1);
-        raw = BAL_RAW(q);
-
-        if (AVLFREE_RAW_UNBALANCED(raw)) {
-            int heavy_dir = (raw > BAL_BIAS) ? AVLFREE_RIGHT : AVLFREE_LEFT;
-            int height_decreased = avlfree_rebalance(root, q, heavy_dir);
-
-            if (!height_decreased) {
-                break; /* Stop if subtree height remains unchanged */
+            if (rb_node_is_red(u)) {
+                rb_set_color(pn, RB_BLACK);
+                rb_set_color(u, RB_BLACK);
+                rb_set_color(g, RB_RED);
+                z = g;
+            } else {
+                if (z == pn->bhf_right) {
+                    z = pn;
+                    rb_rotate_left(p, z);
+                    pn = z->bhf_parent;
+                    g = pn->bhf_parent;
+                }
+                rb_set_color(pn, RB_BLACK);
+                rb_set_color(g, RB_RED);
+                rb_rotate_right(p, g);
             }
-        } else if (raw != BAL_BIAS) {
-            break; /* Balance is +-1: subtree height unchanged */
-        }
+        } else {
+            Bhdr* u = g->bhf_left;
 
-        q = parent;
-        shrank_dir = next_shrank_dir;
+            if (rb_node_is_red(u)) {
+                rb_set_color(pn, RB_BLACK);
+                rb_set_color(u, RB_BLACK);
+                rb_set_color(g, RB_RED);
+                z = g;
+            } else {
+                if (z == pn->bhf_left) {
+                    z = pn;
+                    rb_rotate_right(p, z);
+                    pn = z->bhf_parent;
+                    g = pn->bhf_parent;
+                }
+                rb_set_color(pn, RB_BLACK);
+                rb_set_color(g, RB_RED);
+                rb_rotate_left(p, g);
+            }
+        }
     }
+    rb_set_color(p->root, RB_BLACK);
 }
 
 void pooladd(Pool* p, Bhdr* q, Bhdr* lead) {
+    Bhdr* x = p->root;
+    Bhdr* y = NULL;
     size_t size;
-    Bhdr* tp, * t;
 
-    /* MAGIC_F's low nibble is 0 by construction, so ORing BAL_BIAS sets
-     * type and balance==0 in a single write. */
-    q->bh_magic = MAGIC_F | BAL_BIAS;
+    /* MAGIC_F's low nibble is 0 by construction: color defaults to
+     * RB_RED and fmask to 0 in the same write, both fixed up below. */
+    q->bh_magic = MAGIC_F;
     q->bhf_lead = lead;
-
-    /* Increment free blocks counter for arena compaction */
-    q->bhf_lead->bhl_freecnt++;
+    lead->bhl_freecnt++;
 
     q->bhf_left = NULL;
     q->bhf_right = NULL;
@@ -191,114 +207,334 @@ void pooladd(Pool* p, Bhdr* q, Bhdr* lead) {
     q->bhf_succ = q;
     q->bhf_pred = q;
 
-    t = p->root;
-    if (t == NULL) {
-        p->root = q;
-        return;
-    }
-
     size = q->bh_size;
 
-    tp = NULL;
-    while (t != NULL) {
-        if (size == t->bh_size) {
-            /* Duplicate size: insert into circular list without modifying tree structure */
-            q->bhf_pred = t->bhf_pred;
+    while (x != NULL) {
+        if (size == x->bh_size) {
+            /* Duplicate size: join the circular list, tree shape
+             * unaffected - no rotation, no color/rebalance work. */
+            q->bhf_pred = x->bhf_pred;
             q->bhf_pred->bhf_succ = q;
-            q->bhf_succ = t;
-            t->bhf_pred = q;
+            q->bhf_succ = x;
+            x->bhf_pred = q;
+
+            fixup_fmask(x);
             return;
         }
-        tp = t;
-        if (size < t->bh_size) {
-            t = t->bhf_left;
+        y = x;
+        x = (size < x->bh_size) ? x->bhf_left : x->bhf_right;
+    }
+
+    q->bhf_parent = y;
+    if (y == NULL) {
+        p->root = q;
+    } else if (size < y->bh_size) {
+        y->bhf_left = q;
+    } else {
+        y->bhf_right = q;
+    }
+
+    rb_set_color(q, RB_RED);
+    rb_set_fmask(q, dupchain_mask(q)); /* leaf: no children yet */
+
+    fixup_fmask(y);
+    rb_insert_fixup(p, q);
+}
+
+/* -------------------------------------------------------------- *
+ * Removal
+ * -------------------------------------------------------------- */
+
+static void rb_transplant(Pool* p, Bhdr* u, Bhdr* v) {
+    Bhdr* pu = u->bhf_parent;
+
+    if (pu == NULL) {
+        p->root = v;
+    } else if (u == pu->bhf_left) {
+        pu->bhf_left = v;
+    } else {
+        pu->bhf_right = v;
+    }
+    if (v != NULL) {
+        v->bhf_parent = pu;
+    }
+}
+
+static Bhdr* rb_minimum(Bhdr* x) {
+    while (x->bhf_left != NULL) {
+        x = x->bhf_left;
+    }
+    return x;
+}
+
+static void rb_remove_fixup(Pool* p, Bhdr* x, Bhdr* xp) {
+    while (x != p->root && rb_node_is_black(x)) {
+        if (x == xp->bhf_left) {
+            Bhdr* w = xp->bhf_right;
+
+            if (rb_node_is_red(w)) {
+                rb_set_color(w, RB_BLACK);
+                rb_set_color(xp, RB_RED);
+                rb_rotate_left(p, xp);
+                w = xp->bhf_right;
+            }
+            if (rb_node_is_black(w->bhf_left) && rb_node_is_black(w->bhf_right)) {
+                rb_set_color(w, RB_RED);
+                x = xp;
+                xp = x->bhf_parent;
+            } else {
+                if (rb_node_is_black(w->bhf_right)) {
+                    if (w->bhf_left != NULL) {
+                        rb_set_color(w->bhf_left, RB_BLACK);
+                    }
+                    rb_set_color(w, RB_RED);
+                    rb_rotate_right(p, w);
+                    w = xp->bhf_right;
+                }
+                rb_set_color(w, rb_color(xp));
+                rb_set_color(xp, RB_BLACK);
+                if (w->bhf_right != NULL) {
+                    rb_set_color(w->bhf_right, RB_BLACK);
+                }
+                rb_rotate_left(p, xp);
+                x = p->root;
+                xp = NULL;
+            }
         } else {
-            t = t->bhf_right;
+            Bhdr* w = xp->bhf_left;
+
+            if (rb_node_is_red(w)) {
+                rb_set_color(w, RB_BLACK);
+                rb_set_color(xp, RB_RED);
+                rb_rotate_right(p, xp);
+                w = xp->bhf_left;
+            }
+            if (rb_node_is_black(w->bhf_right) && rb_node_is_black(w->bhf_left)) {
+                rb_set_color(w, RB_RED);
+                x = xp;
+                xp = x->bhf_parent;
+            } else {
+                if (rb_node_is_black(w->bhf_left)) {
+                    if (w->bhf_right != NULL) {
+                        rb_set_color(w->bhf_right, RB_BLACK);
+                    }
+                    rb_set_color(w, RB_RED);
+                    rb_rotate_left(p, w);
+                    w = xp->bhf_left;
+                }
+                rb_set_color(w, rb_color(xp));
+                rb_set_color(xp, RB_BLACK);
+                if (w->bhf_left != NULL) {
+                    rb_set_color(w->bhf_left, RB_BLACK);
+                }
+                rb_rotate_right(p, xp);
+                x = p->root;
+                xp = NULL;
+            }
         }
     }
-
-    q->bhf_parent = tp;
-    if (size < tp->bh_size) {
-        tp->bhf_left = q;
-    } else {
-        tp->bhf_right = q;
+    if (x != NULL) {
+        rb_set_color(x, RB_BLACK);
     }
-
-    /* Bottom-up rebalancing after insertion */
-    avlfree_fix_insert(&p->root, q);
 }
 
 void pooldel(Pool* p, Bhdr* t) {
-    Bhdr* q_fix = NULL;
-    int shrank_dir = AVLFREE_RIGHT;
+    Bhdr* y;
+    Bhdr* x;
+    Bhdr* xp;
+    uint32_t y_orig_color;
 
-    /* Decrement free blocks counter */
     t->bhf_lead->bhl_freecnt--;
 
-    /* Case 1: Duplicate size block handling */
     if (t->bhf_succ != t) {
         if (t->bhf_parent == NULL && p->root != t) {
-            /* Secondary duplicate node: remove from circular list */
+            /* Secondary duplicate: unlink from the circular list. The
+             * tree structure is unaffected, but the primary node's
+             * dup-chain contribution just shrank - its mask (and its
+             * ancestors') must be recomputed. The primary is the one
+             * chain member linked into the tree (has a parent, or is
+             * the root); secondaries have neither. */
+            Bhdr* primary = t->bhf_succ;
+
+            while (primary->bhf_parent == NULL && p->root != primary) {
+                primary = primary->bhf_succ;
+            }
+
             t->bhf_pred->bhf_succ = t->bhf_succ;
             t->bhf_succ->bhf_pred = t->bhf_pred;
+
+            fixup_fmask(primary);
             return;
         }
-        /* Main tree node: promote successor from duplicate list without tree layout changes */
-        Bhdr* f = t->bhf_succ;
-        f->bhf_left = t->bhf_left;
-        if (f->bhf_left != NULL) {
-            f->bhf_left->bhf_parent = f;
-        }
-        f->bhf_right = t->bhf_right;
-        if (f->bhf_right != NULL) {
-            f->bhf_right->bhf_parent = f;
-        }
-        BAL_COPY(f, t);
 
-        avlfree_replace_child(&p->root, t->bhf_parent, t, f);
+        /* Primary (tree-linked) node with duplicates: promote the
+         * next one into the tree slot. Its own mask depends on its
+         * new children and its own (now shorter) duplicate chain, so
+         * it must be recomputed - never copied from t. */
+        {
+            Bhdr* f = t->bhf_succ;
 
-        t->bhf_pred->bhf_succ = t->bhf_succ;
-        t->bhf_succ->bhf_pred = t->bhf_pred;
+            f->bhf_left = t->bhf_left;
+            if (f->bhf_left != NULL) {
+                f->bhf_left->bhf_parent = f;
+            }
+            f->bhf_right = t->bhf_right;
+            if (f->bhf_right != NULL) {
+                f->bhf_right->bhf_parent = f;
+            }
+            rb_set_color(f, rb_color(t)); /* color is structural, must be preserved */
+
+            /* f takes t's place: its stored mask must be what t's
+             * ancestors currently see (t's old mask), otherwise
+             * fixup_fmask would compare against a meaningless value
+             * (a secondary duplicate's stored mask is never
+             * maintained) and could stop too early. */
+            rb_set_fmask(f, rb_fmask(t));
+
+            rb_transplant(p, t, f);
+
+            t->bhf_pred->bhf_succ = t->bhf_succ;
+            t->bhf_succ->bhf_pred = t->bhf_pred;
+
+            fixup_fmask(f);
+        }
         return;
     }
 
-    /* Case 2: Standard AVL node removal */
-    if (t->bhf_left == NULL || t->bhf_right == NULL) {
-        /* 0 or 1 child */
-        Bhdr* child = (t->bhf_left != NULL) ? t->bhf_left : t->bhf_right;
-        q_fix = t->bhf_parent;
-        shrank_dir = (q_fix != NULL && q_fix->bhf_left == t) ? AVLFREE_LEFT : AVLFREE_RIGHT;
+    /* Standard RB node removal (no duplicates) */
+    y = t;
+    y_orig_color = rb_color(y);
 
-        avlfree_replace_child(&p->root, q_fix, t, child);
+    if (t->bhf_left == NULL) {
+        x = t->bhf_right;
+        xp = t->bhf_parent;
+        rb_transplant(p, t, x);
+        fixup_fmask(xp);
+    } else if (t->bhf_right == NULL) {
+        x = t->bhf_left;
+        xp = t->bhf_parent;
+        rb_transplant(p, t, x);
+        fixup_fmask(xp);
     } else {
-        /* 2 children: extract in-order successor (smallest node in right subtree) */
-        Bhdr* rp = t->bhf_right;
-        while (rp->bhf_left != NULL) {
-            rp = rp->bhf_left;
-        }
+        y = rb_minimum(t->bhf_right);
+        y_orig_color = rb_color(y);
+        x = y->bhf_right;
 
-        Bhdr* f = rp->bhf_parent;
-        if (f != t) {
-            q_fix = f;
-            shrank_dir = AVLFREE_LEFT;
-            avlfree_replace_child(&p->root, f, rp, rp->bhf_right);
-
-            rp->bhf_right = t->bhf_right;
-            rp->bhf_right->bhf_parent = rp;
+        if (y->bhf_parent == t) {
+            xp = y;
         } else {
-            q_fix = rp;
-            shrank_dir = AVLFREE_RIGHT;
+            xp = y->bhf_parent;
+            rb_transplant(p, y, x);
+            y->bhf_right = t->bhf_right;
+            y->bhf_right->bhf_parent = y;
         }
 
-        rp->bhf_left = t->bhf_left;
-        rp->bhf_left->bhf_parent = rp;
-        BAL_COPY(rp, t);
+        rb_transplant(p, t, y);
+        y->bhf_left = t->bhf_left;
+        y->bhf_left->bhf_parent = y;
+        rb_set_color(y, rb_color(t));
 
-        avlfree_replace_child(&p->root, t->bhf_parent, t, rp);
+        /* y now sits where t was: what t's ancestors currently see is
+         * t's old mask, so y inherits it before propagating (same
+         * reason as the promotion path above). Two walks are needed,
+         * both on the fully relinked structure:
+         * - from xp, for the nodes between y's old position and y
+         *   (their subtree lost y);
+         * - from y itself, unconditionally: the first walk may stop
+         *   early (unchanged value) before ever reaching y, yet y
+         *   replaces t with a different duplicate chain and different
+         *   children, so y and t's old ancestors must be recomputed
+         *   regardless. */
+        rb_set_fmask(y, rb_fmask(t));
+        if (xp != y) {
+            fixup_fmask(xp);
+        }
+        fixup_fmask(y);
     }
 
-    /* Case 3: Bottom-up rebalancing if subtree height decreased */
-    if (q_fix != NULL) {
-        avlfree_fix_delete(&p->root, q_fix, shrank_dir);
+    if (y_orig_color == RB_BLACK) {
+        rb_remove_fixup(p, x, xp);
     }
+}
+
+/* -------------------------------------------------------------- *
+ * Combined (size, flags) search - exact flag match, best (smallest
+ * sufficient) size. Same spirit as mapper.c's map_range_search: the
+ * tree's own key (bh_size) already prunes by size via ordering, but
+ * once flags enter the picture a single-path descent is no longer
+ * enough (the flag-matching candidate may sit on the "wrong" side of
+ * an otherwise-better-sized but non-matching node) - both children
+ * must be considered whenever they might still hold a match; spatial
+ * pruning is replaced by the flag-presence mask.
+ * -------------------------------------------------------------- */
+
+/* Per-block acceptance test beyond the flags. The default is a plain
+ * size check; pool.c-side integration defines it to also honor the
+ * address-dependent header alignment padding (BALIGN_SIZE16) that
+ * chunksplitblock will apply - that padding depends on the block's own
+ * address, so it must be evaluated per block, never per tree node. It
+ * doesn't affect BST ordering or the flag mask, only which members of
+ * a (size, flags)-eligible set are actually usable. */
+#define POOL_BLOCK_FITS(c, size) \
+    ((c)->bh_size == (size) || \
+     BALIGN_SIZE16((c)->bhf_lead, (c), (size), offsetof(Bchk, bc_self.bha_data)) <= (c)->bh_size)
+
+static Bhdr* dupchain_find(Bhdr* node, size_t size, uint32_t iflags) {
+    Bhdr* c;
+
+    if (node->bh_size < size) {
+        return NULL;
+    }
+
+    c = node;
+    do {
+        if (arena_flags_of(c) == iflags && POOL_BLOCK_FITS(c, size)) {
+            return c;
+        }
+        c = c->bhf_succ;
+    } while (c != node);
+
+    return NULL;
+}
+
+static void pool_search(Bhdr* node, size_t size, uint32_t iflags, Bhdr** best) {
+    Bhdr* m;
+
+    if (node == NULL) {
+        return;
+    }
+
+    if (*best != NULL && (*best)->bh_size == size) {
+        return; /* exact-size match already found, nothing can beat it */
+    }
+
+    if ((rb_fmask(node) & iflags) != iflags) {
+        return; /* not every requested flag is present anywhere in this subtree */
+    }
+
+    m = dupchain_find(node, size, iflags);
+    if (m != NULL && (*best == NULL || node->bh_size < (*best)->bh_size)) {
+        *best = m;
+    }
+
+    /* Left: every element there has bh_size <= node->bh_size, so only
+     * worth visiting if that upper bound still leaves room for a
+     * sufficient candidate. */
+    if (size <= node->bh_size) {
+        pool_search(node->bhf_left, size, iflags, best);
+    }
+
+    /* Right: every element there has bh_size >= node->bh_size, so only
+     * worth visiting if node's own size could still be improved upon
+     * (otherwise every candidate over there is provably no better). */
+    if (*best == NULL || node->bh_size < (*best)->bh_size) {
+        pool_search(node->bhf_right, size, iflags, best);
+    }
+}
+
+Bhdr* poolfindbest(Pool* p, size_t size, uint32_t iflags) {
+    Bhdr* best = NULL;
+
+    pool_search(p->root, size, iflags, &best);
+    return best;
 }

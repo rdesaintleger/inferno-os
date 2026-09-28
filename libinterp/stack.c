@@ -6,6 +6,18 @@
 
 #define T(r)	*((void**)(R.r))
 
+extern	Pool*	mainmem;
+
+Stkext *allocstack(size_t l) {
+	//return HOSTED_API(mallocz)(l, 0);
+	return poolalloc(mainmem, l, MEMF_32BIT | MEMF_ZERO);
+}
+
+void freestack(Stkext *sx) {
+	//HOSTED_API(free)(sx);
+	poolfree(mainmem, sx);
+}
+
 void
 newstack(Prog *p)
 {
@@ -27,7 +39,7 @@ newstack(Prog *p)
 	/* 16 bytes for Stkext record keeping */
 	if(l < t->size+16)
 		l = t->size+16;
-	ns = HOSTED_API(mallocz)(l, 0);
+	ns = allocstack(l);
 	if(ns == nil)
 		error(exNomem);
 
@@ -58,7 +70,7 @@ extend(void)
 	/* 16 bytes for Stkext record keeping */
 	if(l < t->size+16)
 		l = 2*t->size+16;
-	ns = HOSTED_API(mallocz)(l, 0);
+	ns = allocstack(l);
 	if(ns == nil)
 		error(exNomem);
 
@@ -91,7 +103,7 @@ unextend(Frame *f)
 	t = sx->reg.TR;
 	if (t->np)
 		freeptrs(f, t);
-	HOSTED_API(free)(sx);
+	freestack(sx);
 }
 
 void
@@ -113,6 +125,6 @@ unframe(void)
 		sx = SEXTYPE(f);
 		R.TS = sx->reg.TS;
 		R.EX = sx->reg.EX;
-		HOSTED_API(free)(sx);
+		freestack(sx);
 	}
 }

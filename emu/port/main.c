@@ -1,3 +1,5 @@
+#include <inferno/mapper.h>
+
 #include	"dat.h"
 #include	"fns.h"
 #include	"error.h"
@@ -230,6 +232,8 @@ main(int argc, char *argv[])
 	char *enva[20];
 	int envc;
 
+	arena_initmapper();
+
 	if(coherence == nil)
 		coherence = nofence;
 	HOSTED_API(quotefmtinstall)();
@@ -427,4 +431,32 @@ oserror(void)
 {
 	oserrstr(up->env->errstr, ERRMAX);
 	error(up->env->errstr);
+}
+
+void inferno_panic(char *fmt, ...) {
+	va_list arg;
+	char buf[512];
+
+	va_start(arg, fmt);
+	HOSTED_API(vseprint)(buf, buf+sizeof(buf), fmt, arg);
+	va_end(arg);
+	HOSTED_API(fprint)(2, "panic: %s\n", buf);
+	if(sflag)
+		abort();
+
+	cleanexit(0);
+}
+
+void *inferno_malloc(size_t size, size_t *got) {
+	void *v = malloc(size);
+
+	if (v != NULL) {
+		*got = size; /* other platform allocatros may increase allocated value */
+	}
+
+	return v;
+}
+
+void inferno_free(void *ptr, size_t size) {
+	free(ptr);
 }

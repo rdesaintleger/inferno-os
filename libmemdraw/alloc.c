@@ -80,7 +80,7 @@ allocmemimage(Rectangle r, ulong chan)
 		return nil;
 
 	md->ref = 1;
-	md->base = poolalloc(imagmem, (2+nw)*sizeof(ulong));
+	md->base = poolalloc(imagmem, (2+nw)*sizeof(ulong), 0);
 	if(md->base == nil){
 		HOSTED_API(free)(md);
 		return nil;

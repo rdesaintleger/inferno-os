@@ -527,6 +527,7 @@ extern	void		sysmodinit(void);
 extern	void		tellsomeone(Prog*, char*);
 extern	void		tkmodinit(void);
 extern	void		unextend(Frame*);
+extern	void		freestack(Stkext*);
 extern	void		unframe(void);
 extern	void		unload(Module*);
 extern	int		verifysigner(uchar*, int, uchar*, ulong);

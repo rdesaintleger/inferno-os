@@ -6,8 +6,8 @@
 extern	void	(*poolfault)(void *, char *);
 extern	void	poolinit(void);
 extern	size_t	poolmax(Pool*);
-extern	void*	dopoolalloc(Pool*, size_t);
-extern	void*	poolalloc(Pool*, size_t);
+extern	void*	dopoolalloc(Pool*, size_t, uint32_t flags);
+extern	void*	poolalloc(Pool*, size_t, uint32_t flags);
 extern	void	poolfree(Pool*, void*);
 extern	Bhdr*	poolchain(Pool*);
 extern	int	poolcompact(Pool*);

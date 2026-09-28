@@ -1,4 +1,5 @@
 #include <inferno/heapprof.h>
+#include <inferno/bhdr.h>
 
 #include "lib9.h"
 #include "isa.h"
@@ -40,7 +41,7 @@ heapalloc(int n) {
 	h = HOSTED_API(malloc)(sizeof(Heap));
 	if(h == nil)
 		error(exHeap);
-	d = poolalloc(heapmem, sizeof(HeapAlign)+n);
+	d = poolalloc(heapmem, sizeof(HeapAlign)+n, MEMF_32BIT);
 	if(d == nil) {
 		HOSTED_API(free)(h);
 		error(exHeap);

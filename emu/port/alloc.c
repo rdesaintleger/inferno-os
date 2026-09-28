@@ -1,4 +1,5 @@
 #include <inferno/memprof.h>
+#include <inferno/bhdr.h>
 
 #include "dat.h"
 #include "fns.h"
@@ -83,12 +84,12 @@ poolsetsize(char *s, int size)
 	return 0;
 }
 
-void* poolalloc(Pool* p, size_t asize) {
+void* poolalloc(Pool* p, size_t asize, uint32_t flags) {
 	Prog* prog;
 
 	if (p->cursize > p->ressize && (prog = currun()) != NULL && prog->flags & Prestricted)
 		return NULL;
-	return dopoolalloc(p, asize);
+	return dopoolalloc(p, asize, flags);
 }
 
 ulong
@@ -158,7 +159,7 @@ kmalloc(size_t size)
 {
 	void *v;
 
-	v = dopoolalloc(mainmem, size+Npadlong*sizeof(ulong));
+	v = dopoolalloc(mainmem, size+Npadlong*sizeof(ulong), 0);
 	if(v != nil){
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
@@ -176,7 +177,7 @@ HOSTED_API(malloc)(size_t size)
 {
 	void *v;
 
-	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong));
+	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong), 0);
 	if(v != nil){
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
@@ -193,7 +194,7 @@ HOSTED_API(mallocz)(size_t size, int clr)
 {
 	void *v;
 
-	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong));
+	v = poolalloc(mainmem, size+Npadlong*sizeof(ulong), MEMF_ZERO);
 	if(v != nil){
 		if(Npadlong){
 			v = (ulong*)v+Npadlong;
@@ -321,8 +322,6 @@ found:
 		case MAGIC_A:
 			if (b->bh_magic & BF_IMMUTABLE) {
 				msg = "immutable block";
-			} else if (b->bh_magic & BF_COLLECTABLE) {
-				msg = "collectable block";
 			} else {
 				msg = "block";
 			}

@@ -1606,7 +1606,7 @@ destroystack(REG *reg)
 			}
 		} while(f != fp);
 		ex = sx->reg.EX;
-		HOSTED_API(free)(sx);
+		freestack(sx);
 	}
 	destroy(reg->M);
 	reg->M = H;	/* for devprof */

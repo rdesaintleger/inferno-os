@@ -25,19 +25,21 @@ enum {
 /* allocated flags */
 enum {
     BF_SCRAMBLE    = 0x01,  /* scramble memory on free */
-    BF_COLLECTABLE = 0x02,  /* GC can collect and free this block */
-    BF_IMMUTABLE   = 0x04,  /* GC can collect this block but it won't free it */
-    BF_MEMZERO     = 0x20,  /* ensure memory is reset after allocation (non persistent) */
+    BF_IMMUTABLE   = 0x02,  /* GC can collect this block but it won't free it */
 };
 
-/* arena flags */
+/* arena flags : only 3 flags allowed */
+/* once set, arena flags are immutable */
 enum {
     BF_MAPPED   = 0x01,  /* 32 bits mapped arena (implies arena is chunked) */
-    BF_MAXIMIZE = 0x10,  /* maximize arena allocation (internal, not persistent) */
 };
 
+/* allocation flags */
 enum {
-    CHUNK_PAGESIZE = 128*1024,
+    MEMF_MAXIMIZE = 0x10,  /* maximize arena allocation */
+    MEMF_ZERO     = 0x20,  /* reset memory before allocation */
+    MEMF_32BIT    = 0x40,  /* 32 bits memory requested */
+    MEMF_SCRAMBLE = 0x80,  /* scramble memory on free */
 };
 
 #define BFLAGS_MASK ((uint32_t) 0xf)
@@ -155,21 +157,18 @@ struct Bwalk {
 #define BCEIL(s, pad)    BFLOOR((s) + ((pad) - 1), pad)
 #define BFLOOR(s, pad)   (((s) / (pad)) * (pad))
 
-#define BHDRSIZE \
-    ((size_t)(offsetof(Bhdr, bha_data)))
-
 #define BHDR2BCHK(bp) \
     ((Bchk *)((uint8_t *)(bp) - offsetof(Bchk, bc_self)))
 
 #define BHDR2DATA(bp) \
-    ((void *)((uint8_t *)(bp) + BHDRSIZE))
+    ((void *)((uint8_t *)(bp) + offsetof(Bhdr, bha_data)))
 
 #define DATA2BHDR(b, dp, blockfault) \
-    do {                                                         \
-        void *_dp = (void *)(dp);                                \
-        Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - BHDRSIZE);    \
-        if (BMAGIC(_b) != MAGIC_A)                               \
-            blockfault(_dp, "alloc:D2B");                        \
+    do {                                  \
+        void *_dp = (void *)(dp);         \
+        Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - offsetof(Bhdr, bha_data));    \
+        if (BMAGIC(_b) != MAGIC_A)        \
+            blockfault(_dp, "alloc:D2B"); \
     } while (0)
 
 #define BHDR2CHKSUCC(b) \

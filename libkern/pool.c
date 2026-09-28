@@ -1,10 +1,17 @@
 #include <inferno/memprof.h>
 #include <inferno/pool.h>
+#include <inferno/mapper.h>
+#include <inferno/platform.h>
 
 #include <inferno/protos/lib9.h>
 
 #include <stdlib.h>
 #include <string.h>
+
+enum {
+	MAPPED_LOWBOUND  = 0x08000000,
+	MAPPED_HIGHBOUND = 0x0fffffff
+};
 
 char* poolname(Pool* p) {
 	return p->name;
@@ -15,12 +22,13 @@ Bhdr* poolchain(Pool* p) {
 }
 
 /* defined in alloc.c */
-extern void* poolalloc(Pool*, size_t);
+extern void* poolalloc(Pool*, size_t, uint32_t flags);
 extern void (*poolfault)(void *, char *);
 
 /* defined in avlfree.c */
 extern void pooladd(Pool*, Bhdr*, Bhdr*);
 extern void pooldel(Pool*, Bhdr*);
+extern Bhdr* poolfindbest(Pool*, size_t, uint32_t iflags); /* defined in avlfree.c */
 
 static Bhdr* arenaappendalloc(Bhdr* b, Bhdr* lead, uint32_t flags) {
 	/* reset block type */
@@ -28,18 +36,19 @@ static Bhdr* arenaappendalloc(Bhdr* b, Bhdr* lead, uint32_t flags) {
 	b->bha_lead = lead;
 
 	/* clear memory if requested */
-	if (flags & BF_MEMZERO) {
+	if (flags & MEMF_ZERO) {
 		void *v = &b->bha_data;
 		size_t size = (size_t) ((uintptr_t) BHDR2CHKSUCC(b) - (uintptr_t) v);
 
-		memset(&b->bha_data, 0, size);
+		memset(v, 0, size);
+	}
+
+	if (flags & MEMF_SCRAMBLE) {
+		/* set this flag so memory will be cleared when freed */
+		b->bh_magic |= BF_SCRAMBLE;
 	}
 
 	return b;
-}
-
-static int arena_flags_match(Bhdr* lead, uint32_t flags) {
-	return (lead->bh_magic & BFLAGS_MASK) == (flags & BFLAGS_MASK);
 }
 
 static Bhdr* chunksplitblock(Pool* p, Bhdr* q, Bhdr* lead, size_t size) {
@@ -72,76 +81,34 @@ static Bhdr* chunksplitblock(Pool* p, Bhdr* q, Bhdr* lead, size_t size) {
 	return q;
 }
 
-static Bhdr* chunkfindflagged(Bhdr* t, uint32_t flags) {
-	Bhdr* c = t;
-
-	do {
-		if (arena_flags_match(c->bhf_lead, flags)) {
-			return c;
-		}
-		c = c->bhf_succ;
-	} while (c != t);
-
-	return NULL;
-}
-
 static Bhdr* chunkallocfromfree(Pool* p, size_t size, uint32_t flags) {
-	/*
-	 * note that provided size in this fonction must include the overhead of the allocated block header (bhdr_a_overhead)
-	 */
-	Bhdr* q, * t, * m, * lead;
-	size_t aligned;
+    Bhdr* best;
+    Bhdr* lead;
+    uint32_t iflags = 0; /* arena flags */
 
-	t = p->root;
-	q = NULL;
-	while (t) {
-		if (t->bh_size == size) {
-			m = chunkfindflagged(t, flags);
+    if (flags & MEMF_32BIT) {
+        iflags |= BF_MAPPED;
+    }
 
-			if (m != NULL) {
-				lead = m->bhf_lead;
+    best = poolfindbest(p, size, iflags);
+    if (best == NULL) {
+        return NULL;
+    }
 
-				pooldel(p, m);
+    lead = best->bhf_lead;
+    pooldel(p, best);
 
-				return arenaappendalloc(m, lead, flags);
-			}
+    if (best->bh_size == size) {
+        return arenaappendalloc(best, lead, flags);
+    }
 
-			t = t->bhf_right;
-			continue;
-		}
-
-		if (size < t->bh_size) {
-			/* this may fit, check with requested header alignment */
-			aligned = BALIGN_SIZE16(t->bhf_lead, t, size, offsetof(Bchk, bc_self.bha_data));
-
-			if (aligned <= t->bh_size) {
-				m = chunkfindflagged(t, flags);
-				if (m != NULL) {
-					q = m;
-				}
-			}
-			t = t->bhf_left;
-			continue;
-		}
-
-		t = t->bhf_right;
-	}
-
-	if (q == NULL) {
-		return NULL;
-	}
-
-	lead = q->bhf_lead;
-
-	pooldel(p, q);
-
-	return arenaappendalloc(chunksplitblock(p, q, lead, size), lead, flags);
+    return arenaappendalloc(chunksplitblock(p, best, lead, size), lead, flags);
 }
 
 static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint32_t flags) {
 	Bhdr* lead;
 	Bchk* data, * trail;
-	size_t leadsize, dataoffset, tailsize, alloc, minsize, size, overhead;
+	size_t leadsize, dataoffset, tailsize, alloc, minsize, size, overhead, got;
 
 	*free = NULL;
 
@@ -165,17 +132,19 @@ static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint3
 		size = BCEIL(request, BALIGN_SZ);
 	}
 
-	if (flags & BF_MAPPED) {
+	if (flags & MEMF_32BIT) {
 		/* ensure first data will be page aligned without header */
+		/* header is excluded because it may not be aligned properly */
 		overhead += dataoffset;
 
 		/* mapping is requested, constraint requested size to pagesize */
-		size = BCEIL(size, CHUNK_PAGESIZE);
+		/* alignment is done like this because allocated Bhdr may not be on BALIGN_SZ boudary */
+		size = BCEIL(size, ARENA_PAGESIZE);
 	} else {
 		/* original pool semantic : size is for Bhdr, alloc is for Bchk */
 		overhead += offsetof(Bchk, bc_self);
 
-		if (flags & BF_MAXIMIZE) {
+		if (flags & MEMF_MAXIMIZE) {
 			/* compute minimal allocation */
 			alloc = overhead + minsize;
 
@@ -202,7 +171,7 @@ static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint3
 		return NULL;
 	}
 
-	lead = (Bhdr*)malloc(alloc); // XXX to be changed with host malloc later
+	lead = (Bhdr*)inferno_malloc(alloc, &got);
 
 	if (lead == NULL) {
 		return NULL;
@@ -211,7 +180,7 @@ static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint3
 	lead->bh_size = leadsize;
 
 	/* place trailer at the end */
-	trail = (Bchk*)((uint8_t*)lead + (alloc - tailsize));
+	trail = (Bchk*)((uint8_t*)lead + (got - tailsize));
 
 	/* retrieve free member according to lead size */
 	data = BHDR2CHKSUCC(lead);
@@ -290,6 +259,7 @@ int poolcompact(Pool* pool) {
 				/* call the move callback */
 				/* Note: ptr data may be invalid goal is to make underlying move aware of the data move offset */
 				pool->move(BHDR2DATA(ptr), BHDR2DATA(end));
+
 				compacted++;
 			}
 
@@ -305,6 +275,9 @@ int poolcompact(Pool* pool) {
 				BHDR2BCHK(end)->bc_pred = last;
 
 				end->bh_size = (size_t)((uintptr_t)chk - (uintptr_t)end);
+
+				/* clear remaining memory. This ensures that scrambled requests are honored */
+				memset(&end->bhf_data, 0, end->bh_size - offsetof(Bhdr, bhf_data));
 
 				pooladd(pool, end, lead);
 			}
@@ -350,7 +323,18 @@ static int chunkgrowpool(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 
 		if (lead == NULL && chunk != size) {
 			/* try to allocate an arena which fits remaining space in pool (including headers) */
-			lead = chunkallocnewarena(size, limit, &data, flags | BF_MAXIMIZE);
+			lead = chunkallocnewarena(size, limit, &data, flags | MEMF_MAXIMIZE);
+		}
+
+		/* 
+		 * try to map arena BEFORE locking pool again
+		 * BF_MAPPED will be set by mapper.
+		 */
+		if ((lead != NULL) && (flags & MEMF_32BIT) && arena_map_range(lead, MAPPED_LOWBOUND, MAPPED_HIGHBOUND)) {
+			alloc = (size_t)((uintptr_t)BHDR2CHKSUCC(lead->bhl_trail) - (uintptr_t)lead);
+
+			inferno_free(lead, alloc);
+			lead = NULL;
 		}
 
 		lock(&p->l);
@@ -360,7 +344,7 @@ static int chunkgrowpool(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 
 			if ((p->maxsize - alloc) < p->arenasize) {
 				/* pool size has changed, cancel this allocation and retry */
-				free(lead); // XXX to be changed with host free later
+				inferno_free(lead, alloc);
 
 				return 1;
 			}
@@ -379,8 +363,9 @@ static int chunkgrowpool(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 
 			b = arenaappendalloc(chunksplitblock(p, &data->bc_self, lead, size), lead, flags);
 			*bp = b;
-			return 0;
 		}
+
+		return 0;
 	}
 
 	if (poolcompact(p)) {
@@ -407,7 +392,7 @@ static int chunkalloc(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 	return b != NULL ? 0 : chunkgrowpool(p, size, bp, flags);
 }
 
-void* dopoolalloc(Pool* p, size_t asize) {
+void* dopoolalloc(Pool* p, size_t asize, uint32_t flags) {
 	Bhdr* b;
 	void* v;
 	size_t osize, size;
@@ -435,7 +420,7 @@ void* dopoolalloc(Pool* p, size_t asize) {
 		p->nalloc++;
 
 		/* XXX need to handle flags (later) */
-		retry = chunkalloc(p, size, &b, 0);
+		retry = chunkalloc(p, size, &b, flags);
 	} while (retry);
 
 	if (b != NULL) {
@@ -480,6 +465,13 @@ void poolfree(Pool* p, void* v) {
 	size_t size, alloc;
 
 	DATA2BHDR(b, v, poolfault);
+
+	/* clear memory if requested */
+	if (b->bh_magic & BF_SCRAMBLE) {
+		size_t size = (size_t) ((uintptr_t) BHDR2CHKSUCC(b) - (uintptr_t) v);
+
+		memset(&b->bha_data, 0, size);
+	}
 
 	lock(&p->l);
 
@@ -542,9 +534,19 @@ void poolfree(Pool* p, void* v) {
 			p->arenasize -= alloc;
 			p->nbrk--;
 
-			free(lead); // XXX to be changed with host free later
-
 			b = NULL;
+
+			/* pool is now up to date, unlocks it before freeing arena */
+			unlock(&p->l);
+
+			if (lead->bh_magic & BF_MAPPED) {
+				/* unmap the arena if needed */
+				arena_unmap(lead);
+			}
+
+			inferno_free(lead, alloc);
+
+			lock(&p->l);
 		}
 	}
 
@@ -594,11 +596,11 @@ static int pooltrygrowinplace(Pool* p, Bhdr* b, size_t size) {
 	return 1;
 }
 
-void*
-poolrealloc(Pool* p, void* v, size_t asize) {
-	Bhdr* b;
+void *poolrealloc(Pool* p, void* v, size_t asize) {
+	Bhdr* b, * nb;
 	void* nv;
 	size_t osize, size;
+	uint32_t flags;
 
 	/* for sanity and to avoid overflow */
 	if (asize >= p->maxsize) {
@@ -621,7 +623,7 @@ poolrealloc(Pool* p, void* v, size_t asize) {
 
 		if (osize >= asize) {
 			p->cursize -= b->bh_size; /* remove old size */
-			b = chunksplitblock(p, b, b->bha_lead, size); /* shrink the current block */
+			b = chunksplitblock(p, b, b->bha_lead, size); /* shrink the current block (if possible) */
 			p->cursize += b->bh_size; /* consume new size */
 
 			unlock(&p->l);
@@ -633,14 +635,34 @@ poolrealloc(Pool* p, void* v, size_t asize) {
 			return v;
 		}
 
+		/* if we are still there, we need a new allocation*/
+
+		if (b->bh_magic & BF_SCRAMBLE) {
+			/* ensure memory will be scrambled after freed */
+			flags |= MEMF_SCRAMBLE;
+		}
+
+		if (b->bha_lead->bh_magic & BF_MAPPED) {
+			/* ensure memory will be 32 bits mapped */
+			flags |= MEMF_32BIT;
+		}
+
 		unlock(&p->l);
+
 	}
 
-	nv = poolalloc(p, asize);
+	nv = poolalloc(p, asize, flags);
 
 	if (nv != NULL && v != NULL) {
+		if (b->bh_magic & BF_IMMUTABLE) {
+			/* propagate immutable flag if needed */
+			DATA2BHDR(nb, nv, poolfault);
+
+			nb->bh_magic |= BF_IMMUTABLE;
+		}
+
 		memmove(nv, v, osize);
-		poolfree(p, v);
+		poolfree(p, v); /* poolfree will honor BF_SCRAMBLE */
 	}
 
 	return nv;
