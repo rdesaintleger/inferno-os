@@ -27,7 +27,7 @@ extern	int	mutator;
 
 static void
 heapfree(Heap *h) {
-	void *d = D2P(H2D(void*, h));
+	void *d = DPTR2HPTR(HEAP2DPTR(void*, h));
 
 	poolfree(heapmem, d);
 	HOSTED_API(free)(h);
@@ -46,7 +46,7 @@ heapalloc(int n) {
 		HOSTED_API(free)(h);
 		error(exHeap);
 	}
-	h->data = P2D(d); /* set pointer to actual data */
+	h->data = HPTR2DPTR(d); /* set pointer to actual data */
 	*d = h; /* set back pointer to Heap structure */
 
 	return h;
@@ -113,7 +113,7 @@ freechan(Heap *h, int swept)
 	Channel *c;
 
 	USED(swept);
-	c = H2D(Channel*, h);
+	c = HEAP2DPTR(Channel*, h);
 	if(c->mover == movtmp)
 		freetype(c->mid.t);
 	killcomm(&c->send);
@@ -128,7 +128,7 @@ freestring(Heap *h, int swept)
 	String *s;
 
 	USED(swept);
-	s = H2D(String*, h);
+	s = HEAP2DPTR(String*, h);
 	if(s->tmp != nil)
 		HOSTED_API(free)(s->tmp);
 }
@@ -141,7 +141,7 @@ freearray(Heap *h, int swept)
 	uchar *v;
 	Array *a;
 
-	a = H2D(Array*, h);
+	a = HEAP2DPTR(Array*, h);
 	t = a->t;
 
 	if(!swept) {
@@ -169,7 +169,7 @@ freelist(Heap *h, int swept)
 	List *l;
 	Heap *th;
 
-	l = H2D(List*, h);
+	l = HEAP2DPTR(List*, h);
 	t = l->t;
 
 	if(t != nil) {
@@ -186,7 +186,7 @@ freelist(Heap *h, int swept)
 	l = l->tail;
 	while(l != (List*)H) {
 		t = l->t;
-		th = D2H(l);
+		th = DPTR2HEAP(l);
 		if(th->ref-- != 1)
 			break;
 		th->t->ref--;	/* should be &Tlist and ref shouldn't go to 0 here nor be 0 already */
@@ -210,7 +210,7 @@ freemodlink(Heap *h, int swept)
 {
 	Modlink *ml;
 
-	ml = H2D(Modlink*, h);
+	ml = HEAP2DPTR(Modlink*, h);
 	if(!swept)
 		destroy(ml->MP);
 	unload(ml->m);
@@ -226,7 +226,7 @@ freeheap(Heap *h, int swept)
 
 	t = h->t;
 	if (t->np)
-		freeptrs(H2D(void*, h), t);
+		freeptrs(HEAP2DPTR(void*, h), t);
 }
 
 void
@@ -238,8 +238,8 @@ destroy(void *v)
 	if(v == H)
 		return;
 
-	h = D2H(v);
-	{ Bhdr *b; DATA2BHDR(b, D2P(v), poolfault); }		/* consistency check */
+	h = DPTR2HEAP(v);
+	{ Bhdr *b; DATA2BHDR(b, DPTR2HPTR(v), poolfault); }		/* consistency check */
 
 	if(--h->ref > 0 || gchalt > 64) 	/* Protect 'C' thread stack */
 		return;
@@ -279,7 +279,7 @@ checktype(void *v, Type *t, char *name, int newref)
 
 	if(v == H || v == nil)
 		error(exNilref);
-	h = D2H(v);
+	h = DPTR2HEAP(v);
 	if(t == nil || h->t != t)
 		errorf("%s: %s", exType, name);
 	if(newref){
@@ -315,7 +315,7 @@ incmem(void *vw, Type *t)
 			q = w;
 			for(m = 0x80; m != 0; m >>= 1) {
 				if((c & m) && (wp = *q) != H) {
-					h = D2H(wp);
+					h = DPTR2HEAP(wp);
 					h->ref++;
 					Setmark(h);
 				}
@@ -395,9 +395,9 @@ heapz(Type *t)
 	t->ref++;
 	h->ref = 1;
 	h->color = mutator;
-	memset(H2D(void*, h), 0, t->size);
+	memset(HEAP2DPTR(void*, h), 0, t->size);
 	if(t->np)
-		initmem(t, H2D(void*, h));
+		initmem(t, HEAP2DPTR(void*, h));
 	heapprof_notify(0, h, t->size);
 	return h;
 }
@@ -412,7 +412,7 @@ heap(Type *t)
 	h->ref = 1;
 	h->color = mutator;
 	if(t->np)
-		initmem(t, H2D(void*, h));
+		initmem(t, HEAP2DPTR(void*, h));
 	heapprof_notify(0, h, t->size);
 	return h;
 }
@@ -426,7 +426,7 @@ heaparray(Type *t, int sz)
 	h = nheap(sizeof(Array) + (t->size*sz));
 	h->t = &Tarray;
 	Tarray.ref++;
-	a = H2D(Array*, h);
+	a = HEAP2DPTR(Array*, h);
 	a->t = t;
 	a->len = sz;
 	a->root = H;
@@ -438,7 +438,7 @@ heaparray(Type *t, int sz)
 int
 hmsize(Heap *v)
 {
-	void *d = D2P(H2D(void*, v));
+	void *d = DPTR2HPTR(HEAP2DPTR(void*, v));
 
 	return poolmsize(heapmem, d);
 }
@@ -475,7 +475,7 @@ arraycpy(Array *sa)
 	dh = nheap(sizeof(Array) + sa->t->size*sa->len);
 	dh->t = &Tarray;
 	Tarray.ref++;
-	da = H2D(Array*, dh);
+	da = HEAP2DPTR(Array*, dh);
 	da->t = sa->t;
 	da->t->ref++;
 	da->len = sa->len;
@@ -518,7 +518,7 @@ newmp(void *dst, void *src, Type *t)
 			q = uld;
 			while(m != 0) {
 				if((m & c) && (wp = *q) != H) {
-					h = D2H(wp);
+					h = DPTR2HEAP(wp);
 					if(h->t == &Tarray)
 						*q = arraycpy(wp);
 					else {

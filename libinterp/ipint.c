@@ -47,7 +47,7 @@ newIPint(mpint* b)
 	if(b == nil)
 		error(exHeap);
 	h = heap(TIPint);	/* TO DO: caller might lose other values if heap raises error here */
-	ip = H2D(IPint*, h);
+	ip = HEAP2DPTR(IPint*, h);
 	ip->b = b;
 	return (IPints_IPint*)ip;
 }
@@ -62,7 +62,7 @@ checkIPint(void *a)
 	ip = (IPint*)v;
 	if(ip == H || ip == nil)
 		error(exNilref);
-	if(D2H(ip)->t != TIPint)
+	if(DPTR2HEAP(ip)->t != TIPint)
 		error(exType);
 	return ip->b;	/* non-nil by construction */
 }
@@ -73,7 +73,7 @@ freeIPint(Heap *h, int swept)
 	IPint *ip;
 
 	USED(swept);
-	ip = H2D(IPint*, h);
+	ip = HEAP2DPTR(IPint*, h);
 	if(ip->b)
 		mpfree(ip->b);
 	freeheap(h, 0);
@@ -836,7 +836,7 @@ IPints_DSAprimes(void *fp)
 	destroy(v);
 
 	h = heaparray(&Tbyte, SHA1dlen);
-	f->ret->t2 = H2D(Array*, h);
+	f->ret->t2 = HEAP2DPTR(Array*, h);
 
 	p = mpnew(0);
 	q = mpnew(0);

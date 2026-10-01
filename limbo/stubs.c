@@ -2,6 +2,41 @@
 
 static long	stubalign(long offset, int a, char** b, char *e);
 static void		pickadtstub(Type *t);
+ 
+/*
+ * Mirrors ctprint's own dispatch (below) to decide whether tt is a
+ * pointer type, by kind alone - no string inspection. Tref is always
+ * a pointer; Tadtpick resolves through its picked variant, exactly as
+ * ctprint recurses; Tadt/Ttuple are always by-value (dotprint/tuple
+ * struct, never a star); everything else falls into ctprint's shared
+ * ckindname[] case, where only Tarray/Tlist/Tstring/Tchan/Tmodule/
+ * Tpoly/Tany carry a pointer (ckindname[Tfix]=="WORD", a 4-byte VALUE
+ * despite being IBY2WD-sized like Tref et al. in sizetype()/types.c -
+ * that grouping is about size, not pointer-ness, and isn't reused
+ * here).
+ */
+static int
+isptrtype(Type *t)
+{
+	if(t->kind == Tref)
+		return 1;
+	if(t->kind == Tadtpick)
+		return isptrtype(t->decl->dot->ty);
+	if(t->kind == Tadt || t->kind == Ttuple)
+		return 0;
+	switch(t->kind){
+	case Tarray:
+	case Tlist:
+	case Tstring:
+	case Tchan:
+	case Tmodule:
+	case Tpoly:
+	case Tany:
+		return 1;
+	default:
+		return 0;
+	}
+}
 
 void
 emit(Decl *globals)
@@ -60,6 +95,7 @@ modcode(Decl *globals)
 		HOSTED_API(print)("#include <lib9.h>\n");
 		HOSTED_API(print)("#include <isa.h>\n");
 		HOSTED_API(print)("#include <interp.h>\n");
+		HOSTED_API(print)("#include <inferno/dptr.h>\n");
 		HOSTED_API(print)("#include \"%smod.h\"\n", emitcode);
 	}
 	HOSTED_API(print)("\n");
@@ -97,8 +133,8 @@ modcode(Decl *globals)
 	if(emitdyn){
 		for(id = d->ty->ids; id != nil; id = id->next)
 			if(id->store == Dtype && id->ty->kind == Tadt){
-				HOSTED_API(print)("\n%s_%s*\n%salloc%s(void)\n{\n\tHeap *h;\n\n\th = heap(T_%s);\n\treturn H2D(%s_%s*, h);\n}\n", emitcode, id->sym->name, emitcode, id->sym->name, id->sym->name, emitcode, id->sym->name);
-				HOSTED_API(print)("\nvoid\n%sfree%s(Heap *h, int swept)\n{\n\t%s_%s *d;\n\n\td = H2D(%s_%s*, h);\n\tfreeheap(h, swept);\n}\n", emitcode, id->sym->name, emitcode, id->sym->name, emitcode, id->sym->name);
+				HOSTED_API(print)("\n%s_%s*\n%salloc%s(void)\n{\n\tHeap *h;\n\n\th = heap(T_%s);\n\treturn HEAP2DPTR(%s_%s*, h);\n}\n", emitcode, id->sym->name, emitcode, id->sym->name, id->sym->name, emitcode, id->sym->name);
+				HOSTED_API(print)("\nvoid\n%sfree%s(Heap *h, int swept)\n{\n\t%s_%s *d;\n\n\td = HEAP2DPTR(%s_%s*, h);\n\tfreeheap(h, swept);\n}\n", emitcode, id->sym->name, emitcode, id->sym->name, emitcode, id->sym->name);
 			}
 	}
 
@@ -210,7 +246,7 @@ modstub(Decl *globals)
 				buf, buf, buf, buf);
 			HOSTED_API(print)("	WORD	regs[NREG-1];\n");
 			if(id->ty->tof != tnone)
-				HOSTED_API(print)("	%R*	ret;\n", id->ty->tof);
+				HOSTED_API(print)("	DREF(%R, ret);\n", id->ty->tof);
 			else
 				HOSTED_API(print)("	WORD	noret;\n");
 			HOSTED_API(print)("	uchar	temps[%d];\n", MaxTemp-NREG*IBY2WD);
@@ -231,7 +267,11 @@ modstub(Decl *globals)
 				if(offset != m->offset)
 					yyerror("module stub must not contain data objects");
 					// fatal("modstub bad offset");
-				HOSTED_API(print)("	%R	%s;\n", t, p);
+				if (isptrtype(t)) {
+					HOSTED_API(print)("	DREF(%#R, %s);\n", t, p);
+				} else {
+					HOSTED_API(print)("	%R	%s;\n", t, p);
+				}
 				arg++;
 				offset += t->size;
 			}
@@ -249,8 +289,13 @@ static void
 chanstub(char *in, Decl *id)
 {
 	Desc *desc;
+	Type *tt = id->ty->tof;
 
-	HOSTED_API(print)("typedef %R %s_%s;\n", id->ty->tof, in, id->sym->name);
+	if (isptrtype(tt)) {
+		HOSTED_API(print)("typedef DREF(%#R, %s_%s);\n", id->ty->tof, in, id->sym->name);
+	} else {
+		HOSTED_API(print)("typedef %R %s_%s;\n", id->ty->tof, in, id->sym->name);
+	}
 	desc = mktdesc(id->ty->tof);
 	HOSTED_API(print)("#define %s_%s_size %ld\n", in, id->sym->name, desc->size);
 	HOSTED_API(print)("#define %s_%s_map %M\n", in, id->sym->name, desc);
@@ -267,6 +312,8 @@ adtstub(Decl *globals)
 	Decl *m, *d, *id;
 	char buf[2*StrSize];
 	long offset;
+
+	HOSTED_API(print)("#include <inferno/dptr.h>\n");
 
 	for(m = globals; m != nil; m = m->next){
 		if(m->store != Dtype || m->ty->kind != Tmodule)
@@ -312,7 +359,11 @@ adtstub(Decl *globals)
 						offset = stubalign(offset, tt->align, nil, nil);
 						if(offset != id->offset)
 							fatal("adtstub bad offset");
-						HOSTED_API(print)("	%R	%s;\n", tt, id->sym->name);
+						if (isptrtype(tt)) {
+							HOSTED_API(print)("	DREF(%#R, %s);\n", tt, id->sym->name);
+						} else {
+							HOSTED_API(print)("	%R	%s;\n", tt, id->sym->name);
+						}
 						offset += tt->size;
 					}
 				}
@@ -504,7 +555,11 @@ ctprint(char *buf, char *end, Type *t)
 			offset = stubalign(offset, tt->align, &buf, end);
 			if(offset != id->offset)
 				fatal("ctypeconv tuple bad offset");
-			buf = HOSTED_API(seprint)(buf, end, "%R %s; ", tt, id->sym->name);
+			if (isptrtype(tt)) {
+				buf = HOSTED_API(seprint)(buf, end, "DREF(%#R, %s); ", tt, id->sym->name);
+			} else {
+				buf = HOSTED_API(seprint)(buf, end, "%R %s; ", tt, id->sym->name);
+			}
 			offset += tt->size;
 		}
 		offset = stubalign(offset, t->align, &buf, end);
@@ -544,7 +599,11 @@ pickadtstub(Type *t)
 			offset = stubalign(offset, tt->align, nil, nil);
 			if(offset != id->offset)
 				fatal("pickadtstub bad offset");
-			HOSTED_API(print)("	%R	%s;\n", tt, id->sym->name);
+			if (isptrtype(tt)) {
+				HOSTED_API(print)("	DREF(%#R, %s);\n", tt, id->sym->name);
+			} else {
+				HOSTED_API(print)("	%R	%s;\n", tt, id->sym->name);
+			}
 			offset += tt->size;
 		}
 	}
@@ -558,7 +617,11 @@ pickadtstub(Type *t)
 				tgoffset = stubalign(tgoffset, tt->align, nil, nil);
 				if(tgoffset != id->offset)
 					fatal("pickadtstub bad offset");
-				HOSTED_API(print)("			%R	%s;\n", tt, id->sym->name);
+				if (isptrtype(tt)) {
+					HOSTED_API(print)("			DREF(%#R, %s);\n", tt, id->sym->name);
+				} else {
+					HOSTED_API(print)("			%R	%s;\n", tt, id->sym->name);
+				}
 				tgoffset += tt->size;
 			}
 		}

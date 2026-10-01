@@ -92,7 +92,7 @@ Loader_ifetch(void *a)
 	h = nheap(sizeof(Array)+m->nprog*sizeof(Loader_Inst));
 	h->t = &Tarray;
 	h->t->ref++;
-	ar = H2D(Array*, h);
+	ar = HEAP2DPTR(Array*, h);
 	ar->t = Tinst;
 	Tinst->ref++;
 	ar->len = m->nprog;
@@ -146,7 +146,7 @@ Loader_link(void *a)
 	h = nheap(sizeof(Array)+nlink*sizeof(Loader_Link));
 	h->t = &Tarray;
 	h->t->ref++;
-	ar = H2D(Array*, h);
+	ar = HEAP2DPTR(Array*, h);
 	ar->t = Tlink;
 	Tlink->ref++;
 	ar->len = nlink;
@@ -196,7 +196,7 @@ Loader_tdesc(void *a)
 	h = nheap(sizeof(Array)+m->ntype*sizeof(Loader_Typedesc));
 	h->t = &Tarray;
 	h->t->ref++;
-	ar = H2D(Array*, h);
+	ar = HEAP2DPTR(Array*, h);
 	ar->t = Tdesc;
 	Tdesc->ref++;
 	ar->len = m->ntype;
@@ -257,7 +257,7 @@ Loader_newmod(void *a)
 		goto bad;
 	}
 	m->origmp = (uchar*)f->data;
-	h = D2H(f->data);
+	h = DPTR2HEAP(f->data);
 	h->ref++;
 	Setmark(h);
 	m->type[0] = h->t;
@@ -412,7 +412,7 @@ Loader_dnew(void *a)
 		return;
         }
 		
-	*f->ret=H2D(Loader_Niladt*, h);
+	*f->ret=HEAP2DPTR(Loader_Niladt*, h);
 }
 
 void

@@ -94,7 +94,7 @@ altrdy(Alt *a, Prog *p)
 			e = exNilref;
 			continue;
 		}
-		t = D2H(c)->t;
+		t = DPTR2HEAP(c)->t;
 		if(t == &Tarray)
 			nrdy += altmark(c, p);
 		else {
@@ -164,7 +164,7 @@ altdone(Alt *a, Prog *p, Channel *sel, int sr)
 	while(ac < eac) {
 		c = ac->c;
 		if(c != H) {
-			t = D2H(c)->t;
+			t = DPTR2HEAP(c)->t;
 			if(t == &Tarray)
 				altunmark(c, ac->ptr, p, sr, &sel, n);
 			else {
@@ -214,7 +214,7 @@ altcomm(Alt *a, int which)
 	eac = eac + a->nrecv;
 	while(ac < eac) {
 		c = ac->c;
-		t = D2H(c)->t;
+		t = DPTR2HEAP(c)->t;
 		if(t == &Tarray) {
 			an = 0;
 			r = (Array*)c;

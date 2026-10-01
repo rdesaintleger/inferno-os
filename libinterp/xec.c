@@ -274,7 +274,7 @@ OP(movp)
 
 	sv = P(s);
 	if(sv != H) {
-		h = D2H(sv);
+		h = DPTR2HEAP(sv);
 		h->ref++;
 		Setmark(h);
 	}
@@ -301,7 +301,7 @@ OP(new)
 	h = heap(R.M->type[W(s)]);
 	wp = R.d;
 	t = *wp;
-	*wp = H2D(WORD*, h);
+	*wp = HEAP2DPTR(WORD*, h);
 	destroy(t);
 }
 OP(newz)
@@ -312,7 +312,7 @@ OP(newz)
 	h = heapz(R.M->type[W(s)]);
 	wp = R.d;
 	t = *wp;
-	*wp = H2D(WORD*, h);
+	*wp = HEAP2DPTR(WORD*, h);
 	destroy(t);
 }
 OP(mnewz)
@@ -327,7 +327,7 @@ OP(mnewz)
 	h = heapz(ml->type[W(m)]);
 	wp = R.d;
 	t = *wp;
-	*wp = H2D(WORD*, h);
+	*wp = HEAP2DPTR(WORD*, h);
 	destroy(t);
 }
 OP(frame)
@@ -409,7 +409,7 @@ OP(newa)
 	h = nheap(sizeof(Array) + (t->size*sz));
 	h->t = &Tarray;
 	Tarray.ref++;
-	a = H2D(Array*, h);
+	a = HEAP2DPTR(Array*, h);
 	a->t = t;
 	a->len = sz;
 	a->root = H;
@@ -434,7 +434,7 @@ OP(newaz)
 	h = nheap(sizeof(Array) + (t->size*sz));
 	h->t = &Tarray;
 	Tarray.ref++;
-	a = H2D(Array*, h);
+	a = HEAP2DPTR(Array*, h);
 	a->t = t;
 	a->len = sz;
 	a->root = H;
@@ -454,7 +454,7 @@ cnewc(Type *t, void (*mover)(void), int len)
 	Channel *c;
 
 	h = heap(&Tchannel);
-	c = H2D(Channel*, h);
+	c = HEAP2DPTR(Channel*, h);
 	c->send = HOSTED_API(malloc)(sizeof(Progq));
 	c->recv = HOSTED_API(malloc)(sizeof(Progq));
 	if(c->send == nil || c->recv == nil){
@@ -467,7 +467,7 @@ cnewc(Type *t, void (*mover)(void), int len)
 	c->mover = mover;
 	c->buf = H;
 	if(len > 0)
-		c->buf = H2D(Array*, heaparray(t, len));
+		c->buf = HEAP2DPTR(Array*, heaparray(t, len));
 	c->front = 0;
 	c->size = 0;
 	if(mover == movtmp){
@@ -738,7 +738,7 @@ OP(iload)
 		ml = linkmod(m, ldt, 0);
 		if(ml != H) {
 			ml->MP = R.M->MP;
-			h = D2H(ml->MP);
+			h = DPTR2HEAP(ml->MP);
 			h->ref++;
 			Setmark(h);
 		}
@@ -772,7 +772,7 @@ OP(mcall)
 
 	R.FP = (uchar*)f;
 	R.M = ml;
-	h = D2H(ml);
+	h = DPTR2HEAP(ml);
 	h->ref++;
 
 	o = W(m);
@@ -1030,7 +1030,7 @@ csendalt(Channel *c, void *ip, Type *t, int len)
 			freeptrs(ip, t);
 			return 0;
 		}
-		c->buf = H2D(Array*, heaparray(t, len));
+		c->buf = HEAP2DPTR(Array*, heaparray(t, len));
 	}
 
 	rsav = R;
@@ -1051,12 +1051,12 @@ cons(ulong size, List **lp)
 	h = nheap(sizeof(List) + size - sizeof(((List*)0)->data));
 	h->t = &Tlist;
 	Tlist.ref++;
-	l = H2D(List*, h);
+	l = HEAP2DPTR(List*, h);
 	l->t = nil;
 
 	lv = *lp;
 	if(lv != H) {
-		h = D2H(lv);
+		h = DPTR2HEAP(lv);
 		Setmark(h);
 	}
 	l->tail = lv;
@@ -1093,7 +1093,7 @@ OP(consp)
 	l = cons(IBY2WD, R.d);
 	sv = P(s);
 	if(sv != H) {
-		h = D2H(sv);
+		h = DPTR2HEAP(sv);
 		h->ref++;
 		Setmark(h);
 	}
@@ -1210,7 +1210,7 @@ OP(slicea)
 
 	t = ds->t;
 	h = heap(&Tarray);
-	ss = H2D(Array*, h);
+	ss = HEAP2DPTR(Array*, h);
 	ss->len = n;
 	ss->data = ds->data + start*t->size;
 	ss->t = t;
@@ -1218,7 +1218,7 @@ OP(slicea)
 
 	if(ds->root != H) {			/* slicing a slice */
 		ds = ds->root;
-		h = D2H(ds);
+		h = DPTR2HEAP(ds);
 		h->ref++;
 		at = A(d);
 		A(d) = ss;
@@ -1226,7 +1226,7 @@ OP(slicea)
 		destroy(at);
 	}
 	else {
-		h = D2H(ds);
+		h = DPTR2HEAP(ds);
 		ss->root = ds;
 		A(d) = ss;
 	}
@@ -1296,7 +1296,7 @@ OP(tcmp)
 
 	s = T(s);
 	d = T(d);
-	if(s != H && (d == H || D2H(s)->t != D2H(d)->t))
+	if(s != H && (d == H || DPTR2HEAP(s)->t != DPTR2HEAP(d)->t))
 		error(exTcheck);
 }
 OP(eclr)
@@ -1318,7 +1318,7 @@ OP(iraise)
 	if(v == H)
 		error(exNilref);
 	p->exval = v;
-	h = D2H(v);
+	h = DPTR2HEAP(v);
 	h->ref++;
 	if(h->t == &Tstring)
 		error(string2c((String*)v));
@@ -1566,7 +1566,7 @@ OP(self)
 	Heap *h;
 
 	ml = R.M;
-	h = D2H(ml);
+	h = DPTR2HEAP(ml);
 	h->ref++;
 	Setmark(h);
 	mp = R.d;

@@ -283,7 +283,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			goto bad;
 		}
 		h = heapz(pt);
-		m->origmp = H2D(uchar*, h);
+		m->origmp = HEAP2DPTR(uchar*, h);
 	}
 	addr = m->origmp;
 	dasp = 0;
@@ -342,7 +342,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			h = nheap(sizeof(Array)+(pt->size*v));
 			h->t = &Tarray;
 			h->t->ref++;
-			ary = H2D(Array*, h);
+			ary = HEAP2DPTR(Array*, h);
 			ary->t = pt;
 			ary->len = v;
 			ary->root = H;
@@ -353,7 +353,7 @@ parsemod(char *path, uchar *code, ulong length, Dir *dir)
 			break;			
 		case DIND:			/* Set index */
 			ary = A(si);
-			if(ary == H || D2H(ary)->t != &Tarray) {
+			if(ary == H || DPTR2HEAP(ary)->t != &Tarray) {
 				kwerrstr("ind not array");
 				goto bad;
 			}

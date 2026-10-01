@@ -63,7 +63,7 @@ OP(insc)
 		}
 	}
 	else
-	if(D2H(ss)->ref > 1 || (expand && ss->len > 0))
+	if(DPTR2HEAP(ss)->ref > 1 || (expand && ss->len > 0))
 		ss = splitc(R.d, expand);
 
 	l = ss->len;
@@ -182,7 +182,7 @@ addstring(String *s1, String *s2, int append)
 			return H;
 		return stringdup(s2);
 	}
-	if(D2H(s1)->ref > 1)
+	if(DPTR2HEAP(s1)->ref > 1)
 		append = 0;
 	if(s2 == H) {
 		if(append)
@@ -471,7 +471,7 @@ newstring(int nb)
 	h = nheap(sizeof(String)+nb);
 	h->t = &Tstring;
 	Tstring.ref++;
-	s = H2D(String*, h);
+	s = HEAP2DPTR(String*, h);
 	s->tmp = nil;
 	s->len = nb;
 	s->max = hmsize(h) - (sizeof(String)+sizeof(HeapAlign));
@@ -491,7 +491,7 @@ newrunes(int nr)
 	h = nheap(sizeof(String)+nr*sizeof(Rune));
 	h->t = &Tstring;
 	Tstring.ref++;
-	s = H2D(String*, h);
+	s = HEAP2DPTR(String*, h);
 	s->tmp = nil;
 	s->len = -nr;
 	s->max = (hmsize(h) - (sizeof(String)+sizeof(HeapAlign)))/sizeof(Rune);

@@ -161,13 +161,13 @@ newprog(Prog *p, Modlink *m)
 	n->flags = 0;
 	n->exval = H;
 
-	h = D2H(m);
+	h = DPTR2HEAP(m);
 	h->ref++;
 	Setmark(h);
 	n->R.M = m;
 	n->R.MP = m->MP;
 	if(m->MP != H)
-		Setmark(D2H(m->MP));
+		Setmark(DPTR2HEAP(m->MP));
 	addrun(n);
 
 	if(p == nil){
@@ -767,12 +767,12 @@ schedmod(Module *m)
 		h = nheap(t->size);
 		h->t = t;
 		t->ref++;
-		ml->MP = H2D(uchar*, h);
+		ml->MP = HEAP2DPTR(uchar*, h);
 		newmp(ml->MP, m->origmp, t);
 	}
 
 	p = newprog(nil, ml);
-	h = D2H(ml);
+	h = DPTR2HEAP(ml);
 	h->ref--;
 	p->R.PC = m->entry;
 	fp = &f;

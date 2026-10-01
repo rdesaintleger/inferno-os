@@ -107,13 +107,13 @@ markheap(Type* t, void* vw) {
 			q = w;
 			for (m = 0x80; m != 0; m >>= 1) {
 				if ((c & m) && *q != H) {
-					h = D2H(*q);
+					h = DPTR2HEAP(*q);
 					Setmark(h);
 					if (h->color == propagator && --visit >= 0 && markdepth < 64) {
 						gce--;
 						h->color = mutator;
 						if ((t1 = h->t) != nil)
-							t1->mark(t1, H2D(void*, h));
+							t1->mark(t1, HEAP2DPTR(void*, h));
 					}
 				}
 				q++;
@@ -139,7 +139,7 @@ markarray(Type* t, void* vw) {
 	a = vw;
 	t = a->t;
 	if (a->root != H) {
-		h = D2H(a->root);
+		h = DPTR2HEAP(a->root);
 		Setmark(h);
 	}
 
@@ -166,14 +166,14 @@ marklist(Type* t, void* vw) {
 		l = l->tail;
 		if (l == H)
 			return;
-		h = D2H(l);
+		h = DPTR2HEAP(l);
 		Setmark(h);
 		markheap(l->t, l->data);
 		visit--;
 	}
 	l = l->tail;
 	if (l != H) {
-		D2H(l)->color = propagator;
+		DPTR2HEAP(l)->color = propagator;
 		nprop = 1;
 	}
 }
@@ -194,11 +194,11 @@ rootset(Prog* root) {
 
 	while (root != nil) {
 		ml = root->R.M;
-		h = D2H(ml);
+		h = DPTR2HEAP(ml);
 		Setmark(h);
 		mp = ml->MP;
 		if (mp != H) {
-			h = D2H(mp);
+			h = DPTR2HEAP(mp);
 			Setmark(h);
 		}
 
@@ -216,11 +216,11 @@ rootset(Prog* root) {
 				t->mark(t, f);
 				ml = f->mr;
 				if (ml != nil) {
-					h = D2H(ml);
+					h = DPTR2HEAP(ml);
 					Setmark(h);
 					mp = ml->MP;
 					if (mp != H) {
-						h = D2H(mp);
+						h = DPTR2HEAP(mp);
 						Setmark(h);
 					}
 				}
@@ -234,7 +234,7 @@ rootset(Prog* root) {
 
 	for (m = modules; m != nil; m = m->link) {
 		if (m->origmp != H) {
-			h = D2H(m->origmp);
+			h = DPTR2HEAP(m->origmp);
 			Setmark(h);
 		}
 	}
@@ -259,7 +259,7 @@ okbhdr(Bhdr* b) {
 /* XXX from heap.c, need to make a shared function*/
 static void
 heapfree(Heap* h) {
-	void* d = D2P(H2D(void*, h));
+	void* d = DPTR2HPTR(HEAP2DPTR(void*, h));
 
 	poolfree(heapmem, d);
 	HOSTED_API(free)(h);
@@ -293,8 +293,8 @@ rungc(Prog* p) {
 
 		bwalk_unlink(base, &walker);
 
-		d = P2D(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
-		h = D2H(d); /* retrieve the heap pointer (in mainmem) */
+		d = HPTR2DPTR(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
+		h = DPTR2HEAP(d); /* retrieve the heap pointer (in mainmem) */
 
 		h->ref--;
 
@@ -327,8 +327,8 @@ rungc(Prog* p) {
 			 * XXX suboptimal: use macro to retrieve real data pointer
 			 * then convert this pointer to a Heap pointer
 			 */
-			d = P2D(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
-			h = D2H(d); /* retrieve the heap pointer (in mainmem) */
+			d = HPTR2DPTR(BHDR2DATA(ptr)); /* retrieve the real data pointer (in heapmem) */
+			h = DPTR2HEAP(d); /* retrieve the heap pointer (in mainmem) */
 
 			if (visit <= 0) {
 				/* quanta has expired, stay on current Bhdr. Increment ref count to prevent bloc to be freed */
@@ -347,7 +347,7 @@ rungc(Prog* p) {
 				gce--;
 				h->color = mutator;
 				if (t != NULL)
-					t->mark(t, H2D(void*, h));
+					t->mark(t, HEAP2DPTR(void*, h));
 			} else
 				if (h->color == sweeper) {
 					/* make a queue of heap pointers to be freed */

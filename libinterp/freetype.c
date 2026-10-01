@@ -79,7 +79,7 @@ Face_loadglyph(void *fp)
 		kwerrstr(exNomem);
 		return;
 	}
-	g = H2D(Freetype_Glyph*, h);
+	g = HEAP2DPTR(Freetype_Glyph*, h);
 	n = ftg.width*ftg.height;
 	h = heaparray(&Tbyte, n);
 	if (h == H) {
@@ -87,7 +87,7 @@ Face_loadglyph(void *fp)
 		kwerrstr(exNomem);
 		return;
 	}
-	g->bitmap = H2D(Array*, h);
+	g->bitmap = HEAP2DPTR(Array*, h);
 	g->top = ftg.top;
 	g->left = ftg.left;
 	g->height = ftg.height;
@@ -122,7 +122,7 @@ Freetype_newface(void *fp)
 		return;
 	}
 
-	face = H2D(Face*, h);
+	face = HEAP2DPTR(Face*, h);
 	limboface = (Freetype_Face*)face;
 	*f->ret = limboface;
 	path = HOSTED_API(strdup)(string2c(f->path));	/* string2c() can call error() */
@@ -207,7 +207,7 @@ Face_settransform(void *fp)
 static void
 freeface(Heap *h, int swept)
 {
-	Face *face = H2D(Face*, h);
+	Face *face = HEAP2DPTR(Face*, h);
 
 	if (!swept) {
 		destroy(face->freetypeface.familyname);
@@ -224,7 +224,7 @@ ckface(Freetype_Face *face)
 {
 	if (face == nil || face == H)
 		error("nil Face");
-	if (D2H(face)->t != TFace)
+	if (DPTR2HEAP(face)->t != TFace)
 		error(exType);
 	return (Face*)face;
 }

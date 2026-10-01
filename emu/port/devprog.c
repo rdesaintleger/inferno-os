@@ -430,7 +430,7 @@ progsize(Prog *p)
 	m = p->R.M;
 	size = 0;
 	if(m->MP != H)
-		size += hmsize(D2H(m->MP));
+		size += hmsize(DPTR2HEAP(m->MP));
 	if(m->prog != nil)
 		size += HOSTED_API(msize)(m->prog);
 
@@ -440,7 +440,7 @@ progsize(Prog *p)
 		fp = f->fp;
 		if(f->mr != nil) {
 			if(f->mr->MP != H)
-				size += hmsize(D2H(f->mr->MP));
+				size += hmsize(DPTR2HEAP(f->mr->MP));
 			if(f->mr->prog != nil)
 				size += HOSTED_API(msize)(f->mr->prog);
 		}
@@ -687,7 +687,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			if(addr & 3)
 				return -1;
 			hd = *(List**)addr;
-			if(hd == H || D2H(hd)->t != &Tlist)
+			if(hd == H || DPTR2HEAP(hd)->t != &Tlist)
 				return -1;
 			n += HOSTED_API(snprint)(va+n, count-n, "%lux.%lux\n", (ulong)&hd->tail, (ulong)hd->data);
 			s = sizeof(WORD);
@@ -699,7 +699,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			if(a == H)
 				n += HOSTED_API(snprint)(va+n, count-n, "nil\n");
 			else {
-				if(D2H(a)->t != &Tarray)
+				if(DPTR2HEAP(a)->t != &Tarray)
 					return -1;
 				n += HOSTED_API(snprint)(va+n, count-n, "%d.%lux\n", a->len, (ulong)a->data);
 			}
@@ -712,7 +712,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			if(ss == H)
 				ss = &snil;
 			else
-			if(D2H(ss)->t != &Tstring)
+			if(DPTR2HEAP(ss)->t != &Tstring)
 				return -1;
 			n += HOSTED_API(snprint)(va+n, count-n, "%d.", abs(ss->len));
 			str = string2c(ss);
@@ -739,7 +739,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			if(c == H)
 				n += HOSTED_API(snprint)(va+n, count-n, "nil\n");
 			else{
-				t = D2H(c)->t;
+				t = DPTR2HEAP(c)->t;
 				if(t != &Tchannel && t != Trdchan && t != Twrchan)
 					return -1;
 				if(c->buf == H)

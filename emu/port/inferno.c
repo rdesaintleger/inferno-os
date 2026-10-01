@@ -56,7 +56,7 @@ freeFD(Heap *h, int swept)
 
 	USED(swept);
 
-	handle = H2D(FD*, h);
+	handle = HEAP2DPTR(FD*, h);
 
 	release();
 	if(handle->fd.fd >= 0)
@@ -73,7 +73,7 @@ freeFileIO(Heap *h, int swept)
 	if(swept)
 		return;
 
-	fio = H2D(Sys_FileIO*, h);
+	fio = HEAP2DPTR(Sys_FileIO*, h);
 	destroy(fio->read);
 	destroy(fio->write);
 }
@@ -86,7 +86,7 @@ mkfd(int fd)
 	FD *handle;
 
 	h = heap(TFD);
-	handle = H2D(FD*, h);
+	handle = HEAP2DPTR(FD*, h);
 	handle->fd.fd = fd;
 	fg = up->env->fgrp;
 	handle->grp = fg;
@@ -758,7 +758,7 @@ Sys_file2chan(void *fp)
 
 	h = heap(TFileIO);
 
-	fio = H2D(Sys_FileIO*, h);
+	fio = HEAP2DPTR(Sys_FileIO*, h);
 
 	c = cnewc(FioTread, movtmp, 16);
 	fio->read = c;
@@ -934,13 +934,13 @@ Sys_dirread(void *fp)
 	}
 	h = heaparray(Tdir, n);
 	poperror();
-	d = H2D(Array*, h)->data;
+	d = HEAP2DPTR(Array*, h)->data;
 	for(i = 0; i < n; i++) {
 		unpackdir(b+i, (Sys_Dir*)d);
 		d += Sys_Dir_size;
 	}
 	f->ret->t0 = n;
-	f->ret->t1 = H2D(Array*, h);
+	f->ret->t1 = HEAP2DPTR(Array*, h);
 	HOSTED_API(free)(b);
 }
 

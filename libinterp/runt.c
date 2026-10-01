@@ -148,8 +148,8 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 				c = -1;
 				t = nil;
 				if(ptr != H) {
-					c = D2H(ptr)->ref;
-					t = D2H(ptr)->t;
+					c = DPTR2HEAP(ptr)->ref;
+					t = DPTR2HEAP(ptr)->t;
 				}
 				b += HOSTED_API(snprint)(b, eb-b, "%d.%.8lux", c, (ulong)t);
 				va += IBY2WD;
@@ -457,7 +457,7 @@ mem2array(void *va, int n)
 	h = nheap(sizeof(Array)+n);
 	h->t = &Tarray;
 	h->t->ref++;
-	a = H2D(Array*, h);
+	a = HEAP2DPTR(Array*, h);
 	a->t = &Tbyte;
 	Tbyte.ref++;
 	a->len = n;

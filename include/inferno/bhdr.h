@@ -168,7 +168,7 @@ struct Bwalk {
         void *_dp = (void *)(dp);         \
         Bhdr *_b = (b) = (Bhdr *)((uint8_t *)_dp - offsetof(Bhdr, bha_data));    \
         if (BMAGIC(_b) != MAGIC_A)        \
-            blockfault(_dp, "alloc:D2B"); \
+            blockfault(_dp, "alloc:DATA2BHDR"); \
     } while (0)
 
 #define BHDR2CHKSUCC(b) \

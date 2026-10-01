@@ -1,3 +1,7 @@
+#ifndef _INFERNO_INTERP_OLD_H_
+#define _INFERNO_INTERP_OLD_H_
+
+
 typedef uchar		BYTE;		/* 8  bits */
 typedef int		WORD;		/* 32 bits */
 typedef unsigned int	UWORD;		/* 32 bits */
@@ -361,12 +365,12 @@ struct Handler
 };
 
 // convert from/to heap structure
-#define H2D(t, x)	((t)((struct Heap*)(x))->data)
-#define D2H(x)		(*D2P(x))
+#define HEAP2DPTR(t, x)	((t)((struct Heap*)(x))->data)
+#define DPTR2HEAP(x)		(*DPTR2HPTR(x))
 
 // additional macro which return the raw allocated pointer given the data pointer
-#define D2P(x)		((Heap**)(((uchar*)(x))-sizeof(HeapAlign)))
-#define P2D(x)      ((void*)(((uchar*)(x))+sizeof(HeapAlign)))
+#define DPTR2HPTR(x)		((Heap**)(((uint8_t*)(x))-sizeof(HeapAlign)))
+#define HPTR2DPTR(x)      ((void*)(((uint8_t*)(x))+sizeof(HeapAlign)))
 
 #define H		((void*)(-1))
 #define SEXTYPE(f)	((Stkext*)((uchar*)(f)-OA(Stkext, reg.tos.fu)))
@@ -552,3 +556,5 @@ extern	void		readimagemodinit(void);
 
 #pragma	varargck	type	"D"	Inst*
 #pragma varargck argpos errorf 1
+
+#endif /* #define _INFERNO_INTERP_OLD_H_ */

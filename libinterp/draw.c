@@ -211,7 +211,7 @@ lookupimage(Draw_Image *di)
 	Image *i;
 	int locked;
 
-	if(di == H || D2H(di)->t != TImage)
+	if(di == H || DPTR2HEAP(di)->t != TImage)
 		return nil;
 	i = ((DImage*)di)->image;
 	if(i == nil)
@@ -229,7 +229,7 @@ lookupimage(Draw_Image *di)
 Screen*
 lookupscreen(Draw_Screen *ds)
 {
-	if(ds == H || D2H(ds)->t != TScreen)
+	if(ds == H || DPTR2HEAP(ds)->t != TScreen)
 		return nil;
 	return ((DScreen*)ds)->screen;
 }
@@ -237,7 +237,7 @@ lookupscreen(Draw_Screen *ds)
 Font*
 lookupfont(Draw_Font *df)
 {
-	if(df == H || D2H(df)->t != TFont)
+	if(df == H || DPTR2HEAP(df)->t != TFont)
 		return nil;
 	return ((DFont*)df)->font;
 }
@@ -245,7 +245,7 @@ lookupfont(Draw_Font *df)
 Display*
 lookupdisplay(Draw_Display *dd)
 {
-	if(dd == H || D2H(dd)->t != TDisplay)
+	if(dd == H || DPTR2HEAP(dd)->t != TDisplay)
 		return nil;
 	return ((DDisplay*)dd)->display;
 }
@@ -338,7 +338,7 @@ Display_allocate(void *fp)
 		closedisplay(display);
 		return;
 	}
-	dd = H2D(DDisplay*, h);
+	dd = HEAP2DPTR(DDisplay*, h);
 	dd->display = display;
 	*f->ret = &dd->drawdisplay;
 	dd->dref = dr;
@@ -410,14 +410,14 @@ Display_getwindow(void *fp)
 	if(screen != nil){
 		if(f->screen != H){
 			f->ret->t0 = f->screen;
-			D2H(f->screen)->ref++;
+			DPTR2HEAP(f->screen)->ref++;
 		}else
 			f->ret->t0 = mkdrawscreen(screen, f->d);
 	}
 	if(image != nil){
 		if(f->image != H){
 			f->ret->t1 = f->image;
-			D2H(f->image)->ref++;
+			DPTR2HEAP(f->image)->ref++;
 		}else
 			f->ret->t1 = mkdrawimage(image, f->ret->t0, f->d, nil);
 	}
@@ -466,7 +466,7 @@ freedrawdisplay(Heap *h, int swept)
 	DDisplay *dd;
 	Display *d;
 
-	dd = H2D(DDisplay*, h);
+	dd = HEAP2DPTR(DDisplay*, h);
 
 	if(!swept) {
 		destroy(dd->drawdisplay.image);
@@ -1176,7 +1176,7 @@ Image_name(void *fp)
 		destroy(f->src->iname);
 		if(f->in){
 			f->src->iname = f->name;
-			D2H(f->name)->ref++;
+			DPTR2HEAP(f->name)->ref++;
 		}else
 			f->src->iname = H;
 	}
@@ -1244,7 +1244,7 @@ Display_namedimage(void *fp)
 			unlockdisplay(d);
 	}else{
 		di->iname = f->name;
-		D2H(f->name)->ref++;
+		DPTR2HEAP(f->name)->ref++;
 	}
 }
 
@@ -1306,14 +1306,14 @@ mkdrawscreen(Screen *s, Draw_Display *display)
 	h = heap(TScreen);
 	if(h == H)
 		return nil;
-	ds = H2D(DScreen*, h);
+	ds = HEAP2DPTR(DScreen*, h);
 	ds->screen = s;
 	ds->drawscreen.fill = dfill;
-	D2H(dfill)->ref++;
+	DPTR2HEAP(dfill)->ref++;
 	ds->drawscreen.image = dimage;
-	D2H(dimage)->ref++;
+	DPTR2HEAP(dimage)->ref++;
 	ds->drawscreen.display = dimage->display;
-	D2H(dimage->display)->ref++;
+	DPTR2HEAP(dimage->display)->ref++;
 	ds->drawscreen.id = s->id;
 	ds->dref = s->display->limbo;
 	ds->dref->ref++;
@@ -1336,14 +1336,14 @@ allocdrawscreen(Draw_Image *dimage, Draw_Image *dfill, int public)
 	h = heap(TScreen);
 	if(h == H)
 		return nil;
-	ds = H2D(DScreen*, h);
+	ds = HEAP2DPTR(DScreen*, h);
 	ds->screen = s;
 	ds->drawscreen.fill = dfill;
-	D2H(dfill)->ref++;
+	DPTR2HEAP(dfill)->ref++;
 	ds->drawscreen.image = dimage;
-	D2H(dimage)->ref++;
+	DPTR2HEAP(dimage)->ref++;
 	ds->drawscreen.display = dimage->display;
-	D2H(dimage->display)->ref++;
+	DPTR2HEAP(dimage->display)->ref++;
 	ds->drawscreen.id = s->id;
 	ds->dref = image->display->limbo;
 	ds->dref->ref++;
@@ -1394,13 +1394,13 @@ Display_publicscreen(void *fp)
 	h = heap(TScreen);
 	if(h == H)
 		return;
-	ds = H2D(DScreen*, h);
+	ds = HEAP2DPTR(DScreen*, h);
 	ds->screen = s;
 	ds->drawscreen.fill = H;
 	ds->drawscreen.image =H;
 	ds->drawscreen.id = s->id;
 	ds->drawscreen.display = f->d;
-	D2H(f->d)->ref++;
+	DPTR2HEAP(f->d)->ref++;
 	ds->dref = disp->limbo;
 	ds->dref->ref++;
 	*f->ret = &ds->drawscreen;
@@ -1414,7 +1414,7 @@ freedrawscreen(Heap *h, int swept)
 	Display *disp;
 	int locked;
 
-	ds = H2D(DScreen*, h);
+	ds = HEAP2DPTR(DScreen*, h);
 	if(!swept) {
 		destroy(ds->drawscreen.image);
 		destroy(ds->drawscreen.fill);
@@ -1480,14 +1480,14 @@ Font_build(void *fp)
 	if(h == H)
 		return;
 
-	dfont = H2D(DFont*, h);
+	dfont = HEAP2DPTR(DFont*, h);
 	dfont->font = font;
 	dfont->drawfont.name = f->name;
-	D2H(f->name)->ref++;
+	DPTR2HEAP(f->name)->ref++;
 	dfont->drawfont.height = font->height;
 	dfont->drawfont.ascent = font->ascent;
 	dfont->drawfont.display = f->d;
-	D2H(f->d)->ref++;
+	DPTR2HEAP(f->d)->ref++;
 	dfont->dref = disp->limbo;
 	dfont->dref->ref++;
 
@@ -1638,14 +1638,14 @@ Font_open(void *fp)
 	if(h == H)
 		return;
 
-	df = H2D(DFont*, h);
+	df = HEAP2DPTR(DFont*, h);
 	df->font = font;
 	df->drawfont.name = f->name;
-	D2H(f->name)->ref++;
+	DPTR2HEAP(f->name)->ref++;
 	df->drawfont.height = font->height;
 	df->drawfont.ascent = font->ascent;
 	df->drawfont.display = f->d;
-	D2H(f->d)->ref++;
+	DPTR2HEAP(f->d)->ref++;
 	df->dref = disp->limbo;
 	df->dref->ref++;
 	*f->ret = &df->drawfont;
@@ -1695,7 +1695,7 @@ freedrawfont(Heap*h, int swept)
 {
 	Draw_Font *d;
 	Font *f;
-	d = H2D(Draw_Font*, h);
+	d = HEAP2DPTR(Draw_Font*, h);
 	f = lookupfont(d);
 	if(!swept) {
 		destroy(d->name);
@@ -1868,14 +1868,14 @@ mkdrawimage(Image *i, Draw_Screen *screen, Draw_Display *display, void *ref)
 	if(h == H)
 		return H;
 
-	di = H2D(DImage*, h);
+	di = HEAP2DPTR(DImage*, h);
 	di->image = i;
 	di->drawimage.screen = screen;
 	if(screen != H)
-		D2H(screen)->ref++;
+		DPTR2HEAP(screen)->ref++;
 	di->drawimage.display = display;
 	if(display != H)
-		D2H(display)->ref++;
+		DPTR2HEAP(display)->ref++;
 	di->refreshptr = ref;
 
 	R2R(di->drawimage.r, i->r);
@@ -1980,7 +1980,7 @@ freedrawimage(Heap *h, int swept)
 	Display *disp;
 	Draw_Image *d;
 
-	d = H2D(Draw_Image*, h);
+	d = HEAP2DPTR(Draw_Image*, h);
 	i = lookupimage(d);
 	if(i == nil) {
 		if(!swept)
@@ -2072,14 +2072,14 @@ allocdrawimage(DDisplay *ddisplay, Draw_Rect r, ulong chan, Image *iimage, int r
 		return H;
 	}
 
-	di = H2D(DImage*, h);
+	di = HEAP2DPTR(DImage*, h);
 	di->drawimage.r = r;
 	R2R(di->drawimage.clipr, image->clipr);
 	di->drawimage.chans.desc = chan;
 	di->drawimage.depth = chantodepth(chan);
 	di->drawimage.repl = repl;
 	di->drawimage.display = (Draw_Display*)ddisplay;
-	D2H(di->drawimage.display)->ref++;
+	DPTR2HEAP(di->drawimage.display)->ref++;
 	di->drawimage.screen = H;
 	di->dref = ddisplay->display->limbo;
 	di->dref->ref++;

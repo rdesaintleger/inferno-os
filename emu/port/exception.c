@@ -44,7 +44,7 @@ void
 excinit(void)
 {
 	exstr = newstring(ERRMAX);
-	heapimmutable(D2P(exstr));
+	heapimmutable(DPTR2HPTR(exstr));
 }
 
 static String*
@@ -54,7 +54,7 @@ newestring(char *estr)
 
 	if(waserror()){
 		setstr(exstr, estr);
-		D2H(exstr)->ref++;
+		DPTR2HEAP(exstr)->ref++;
 		return exstr;
 	}
 	s = c2string(estr, strlen(estr));
@@ -101,7 +101,7 @@ handler(char *estr)
 	p = currun();
 	if(*estr == 0 || p == nil)
 		return 0;
-	str = p->exval == H || D2H(p->exval)->t == &Tstring;
+	str = p->exval == H || DPTR2HEAP(p->exval)->t == &Tstring;
 	m = R.M;
 	if(m->compiled)
 		pc = (ulong)R.PC-(ulong)m->prog;
@@ -131,7 +131,7 @@ handler(char *estr)
 		if(!str && fp != R.FP){		/* becomes a string exception in immediate caller */
 			v = p->exval;
 			p->exval = *(String**)v;
-			D2H(p->exval)->ref++;
+			DPTR2HEAP(p->exval)->ref++;
 			destroy(v);
 			str = 1;
 			continue;
@@ -199,7 +199,7 @@ found:
 	if(p->exval == H)
 		*eadr = (uchar*)newestring(estr);	/* might fail */
 	else{
-		D2H(p->exval)->ref++;
+		DPTR2HEAP(p->exval)->ref++;
 		*eadr = p->exval;
 	}
 	if(m->compiled)

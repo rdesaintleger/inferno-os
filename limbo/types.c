@@ -3952,10 +3952,20 @@ ctypeconv(Fmt *f)
 {
 	Type *t;
 	char buf[1024];
+	char *e;
 
 	t = va_arg(f->args, Type*);
 	buf[0] = 0;
-	ctprint(buf, buf+sizeof(buf), t);
+	e = ctprint(buf, buf+sizeof(buf), t);
+	/* %#R: one fewer level of pointer indirection than %R would give -
+	 * String* -> String, String** -> String*, etc. ctprint itself is
+	 * untouched; this only strips its already-rendered output, and
+	 * only when the flag is actually set (%R keeps its current
+	 * behavior unconditionally). */
+	if((f->flags & FmtSharp) && e > buf && e[-1] == '*') {
+		e[-1] = 0;
+	}
+	
 	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 

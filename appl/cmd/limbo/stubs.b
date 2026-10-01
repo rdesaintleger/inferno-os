@@ -89,6 +89,7 @@ modcode(globals: ref Decl)
 		print("#include <lib9.h>\n");
 		print("#include <isa.h>\n");
 		print("#include <interp.h>\n");
+		print("#include <inferno/dptr.h>\n");
 		print("#include \"%smod.h\"\n", emitcode);
 	}
 	print("\n");
@@ -126,8 +127,8 @@ modcode(globals: ref Decl)
 	if(emitdyn){
 		for(id = d.ty.ids; id != nil; id = id.next)
 			if(id.store == Dtype && id.ty.kind == Tadt){
-				print("\n%s_%s*\n%salloc%s(void)\n{\n\tHeap *h;\n\n\th = heap(T_%s);\n\treturn H2D(%s_%s*, h);\n}\n", emitcode, id.sym.name, emitcode, id.sym.name, id.sym.name, emitcode, id.sym.name);
-				print("\nvoid\n%sfree%s(Heap *h, int swept)\n{\n\t%s_%s *d;\n\n\td = H2D(%s_%s*, h);\n\tfreeheap(h, swept);\n}\n", emitcode, id.sym.name, emitcode, id.sym.name, emitcode, id.sym.name);
+				print("\n%s_%s*\n%salloc%s(void)\n{\n\tHeap *h;\n\n\th = heap(T_%s);\n\treturn HEAP2DPTR(%s_%s*, h);\n}\n", emitcode, id.sym.name, emitcode, id.sym.name, id.sym.name, emitcode, id.sym.name);
+				print("\nvoid\n%sfree%s(Heap *h, int swept)\n{\n\t%s_%s *d;\n\n\td = HEAP2DPTR(%s_%s*, h);\n\tfreeheap(h, swept);\n}\n", emitcode, id.sym.name, emitcode, id.sym.name, emitcode, id.sym.name);
 			}
 	}
 
@@ -225,7 +226,7 @@ modstub(globals: ref Decl)
 				s, s, s, s);
 			print("	WORD	regs[NREG-1];\n");
 			if(id.ty.tof != tnone)
-				print("	%s*	ret;\n", ctypeconv(id.ty.tof));
+				print("	DREF(%s, ret);\n", ctypeconv(id.ty.tof));
 			else
 				print("	WORD	noret;\n");
 			print("	uchar	temps[%d];\n", MaxTemp-NREG*IBY2WD);
@@ -245,7 +246,10 @@ modstub(globals: ref Decl)
 				if(offset != m.offset)
 					yyerror("module stub must not contain data objects");
 					# fatal("modstub bad offset");
-				print("	%s	%s;\n", ctypeconv(t), p);
+				if(isptrtype(t))
+					print("	DREF(%s, %s);\n", ctypeconv_unstar(t), p);
+				else
+					print("	%s	%s;\n", ctypeconv(t), p);
 				arg++;
 				offset += t.size;
 #ZZZ need to align?
@@ -262,7 +266,11 @@ modstub(globals: ref Decl)
 
 chanstub(in: string, id: ref Decl)
 {
-	print("typedef %s %s_%s;\n", ctypeconv(id.ty.tof), in, id.sym.name);
+	tt := id.ty.tof;
+	if(isptrtype(tt))
+		print("typedef DREF(%s, %s_%s);\n", ctypeconv_unstar(tt), in, id.sym.name);
+	else
+		print("typedef %s %s_%s;\n", ctypeconv(tt), in, id.sym.name);
 	desc := mktdesc(id.ty.tof);
 	print("#define %s_%s_size %d\n", in, id.sym.name, desc.size);
 	print("#define %s_%s_map %s\n", in, id.sym.name, mapconv(desc));
@@ -275,6 +283,8 @@ adtstub(globals: ref Decl)
 {
 	t, tt: ref Type;
 	m, d, id: ref Decl;
+
+	print("#include <inferno/dptr.h>\n");
 
 	for(m = globals; m != nil; m = m.next){
 		if(m.store != Dtype || m.ty.kind != Tmodule)
@@ -319,7 +329,10 @@ adtstub(globals: ref Decl)
 						(offset, nil) = stubalign(offset, tt.align, nil);
 						if(offset != id.offset)
 							fatal("adtstub bad offset");
-						print("	%s	%s;\n", ctypeconv(tt), id.sym.name);
+						if(isptrtype(tt))
+							print("	DREF(%s, %s);\n", ctypeconv_unstar(tt), id.sym.name);
+						else
+							print("	%s	%s;\n", ctypeconv(tt), id.sym.name);
 						offset += tt.size;
 					}
 				}
@@ -492,10 +505,10 @@ ctypeconv(t: ref Type): string
 			(offset, s) = stubalign(offset, tt.align, s);
 			if(offset != id.offset)
 				fatal("ctypeconv tuple bad offset");
-			s += ctypeconv(tt);
-			s += " ";
-			s += id.sym.name;
-			s += "; ";
+			if(isptrtype(tt))
+				s += sprint("DREF(%s, %s); ", ctypeconv_unstar(tt), id.sym.name);
+			else
+				s += sprint("%s %s; ", ctypeconv(tt), id.sym.name);
 			offset += tt.size;
 		}
 		(offset, s) = stubalign(offset, t.align, s);
@@ -505,6 +518,38 @@ ctypeconv(t: ref Type): string
 	* =>
 		fatal("no C equivalent for type " + string t.kind);
 	}
+	return s;
+}
+
+isptrtype(t: ref Type): int
+{
+	if(t == nil)
+		return 0;
+	if(t.kind == Tref)
+		return 1;
+	if(t.kind == Tadtpick)
+		return isptrtype(t.decl.dot.ty);
+	if(t.kind == Tadt || t.kind == Ttuple)
+		return 0;
+	case t.kind {
+	Tarray or
+	Tlist or
+	Tstring or
+	Tchan or
+	Tmodule or
+	Tpoly or
+	Tany =>
+		return 1;
+	* =>
+		return 0;
+	}
+}
+
+ctypeconv_unstar(t: ref Type): string
+{
+	s := ctypeconv(t);
+	if(len s > 0 && s[len s - 1] == '*')
+		return s[0:len s - 1];
 	return s;
 }
 
@@ -529,7 +574,10 @@ pickadtstub(t: ref Type)
 			(offset, nil) = stubalign(offset, tt.align, nil);
 			if(offset != id.offset)
 				fatal("pickadtstub bad offset");
-			print("	%s	%s;\n", ctypeconv(tt), id.sym.name);
+			if(isptrtype(tt))
+				print("	DREF(%s, %s);\n", ctypeconv_unstar(tt), id.sym.name);
+			else
+				print("	%s	%s;\n", ctypeconv(tt), id.sym.name);
 			offset += tt.size;
 		}
 	}
@@ -543,7 +591,10 @@ pickadtstub(t: ref Type)
 				(tgoffset, nil) = stubalign(tgoffset, tt.align, nil);
 				if(tgoffset != id.offset)
 					fatal("pickadtstub bad offset");
-				print("			%s	%s;\n", ctypeconv(tt), id.sym.name);
+				if(isptrtype(tt))
+					print("			DREF(%s, %s);\n", ctypeconv_unstar(tt), id.sym.name);
+				else
+					print("			%s	%s;\n", ctypeconv(tt), id.sym.name);
 				tgoffset += tt.size;
 			}
 		}

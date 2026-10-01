@@ -112,7 +112,7 @@ newPK(Type *t, int pick)
 	Crypt_PK *sk;
 
 	h = heap(t);
-	sk = H2D(Crypt_PK*, h);
+	sk = HEAP2DPTR(Crypt_PK*, h);
 	sk->pick = pick;
 	return sk;
 }
@@ -124,7 +124,7 @@ newSK(Crypt_SK** ret, Type *t, int pick)
 	Crypt_SK *sk;
 
 	h = heap(t);
-	sk = H2D(Crypt_SK*, h);
+	sk = HEAP2DPTR(Crypt_SK*, h);
 	sk->pick = pick;
 	if(ret != nil)
 		*ret = sk;
@@ -151,7 +151,7 @@ newPKsig(Type *t, int pick)
 	Crypt_PKsig *s;
 
 	h = heap(t);
-	s = H2D(Crypt_PKsig*, h);
+	s = HEAP2DPTR(Crypt_PKsig*, h);
 	s->pick = pick;
 	return s;
 }
@@ -183,7 +183,7 @@ DigestState_copy(void *fp)
 	if(f->d != H){
 		ods = checktype(f->d, TDigestState, "DigestState", 0);
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h); 	
+		ds = HEAP2DPTR(XDigestState*, h); 	
 		memmove(&ds->state, &ods->state, sizeof(ds->state)); 
 		*f->ret = (Crypt_DigestState*)ds;
 	}
@@ -215,7 +215,7 @@ crypt_digest_x(Array *buf, int n, Array *digest, int dlen, Crypt_DigestState *st
 
 	if(state == H){
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h);
+		ds = HEAP2DPTR(XDigestState*, h);
 		memset(&ds->state, 0, sizeof(ds->state));
 	} else
 		ds = checktype(state, TDigestState, "DigestState", 1);
@@ -352,7 +352,7 @@ crypt_hmac_x(Array *data, int n, Array *key, Array *digest, int dlen, Crypt_Dige
 
 	if(state == H){
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h);
+		ds = HEAP2DPTR(XDigestState*, h);
 		memset(&ds->state, 0, sizeof(ds->state));
 	} else
 		ds = checktype(state, TDigestState, "DigestState", 1);
@@ -466,7 +466,7 @@ Crypt_dessetup(void *fp)
 		ivec = nil;
 
 	h = heap(TDESstate);
-	ds = H2D(XDESstate*, h);
+	ds = HEAP2DPTR(XDESstate*, h);
 	setupDESstate(&ds->state, f->key->data, ivec);
 
 	*f->ret = (Crypt_DESstate*)ds;
@@ -565,7 +565,7 @@ Crypt_ideasetup(void *fp)
 		ivec = nil;
 
 	h = heap(TIDEAstate);
-	is = H2D(XIDEAstate*, h);
+	is = HEAP2DPTR(XIDEAstate*, h);
 
 	setupIDEAstate(&is->state, f->key->data, ivec);
 
@@ -665,7 +665,7 @@ Crypt_aessetup(void *fp)
 		ivec = nil;
 
 	h = heap(TAESstate);
-	is = H2D(XAESstate*, h);
+	is = HEAP2DPTR(XAESstate*, h);
 
 	setupAESstate(&is->state, f->key->data, f->key->len, ivec);
 
@@ -721,7 +721,7 @@ Crypt_blowfishsetup(void *fp)
 		ivec = nil;
 
 	h = heap(TBFstate);
-	is = H2D(XBFstate*, h);
+	is = HEAP2DPTR(XBFstate*, h);
 
 	setupBFstate(&is->state, f->key->data, f->key->len, ivec);
 
@@ -770,7 +770,7 @@ Crypt_rc4setup(void *fp)
 		error(exNilref);
 
 	h = heap(TRC4state);
-	is = H2D(XRC4state*, h);
+	is = HEAP2DPTR(XRC4state*, h);
 
 	setupRC4state(&is->state, f->seed->data, f->seed->len);
 
@@ -1222,7 +1222,7 @@ Crypt_sktopk(void *fp)
 	}
 	if(pk == H)
 		return;
-	D2H(pk)->ref++;
+	DPTR2HEAP(pk)->ref++;
 	*f->ret = pk;
 }
 

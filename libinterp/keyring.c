@@ -151,7 +151,7 @@ newthing(Type *t, int add)
 	h = heap(t);
 	if(add)
 		ptradd(h);
-	return H2D(void*, h);
+	return HEAP2DPTR(void*, h);
 }
 
 static Keyring_IPint*
@@ -202,7 +202,7 @@ newSigAlg(SigAlgVec *vec)
 	SigAlg *sa;
 
 	h = heap(TSigAlg);
-	sa = H2D(SigAlg*, h);
+	sa = HEAP2DPTR(SigAlg*, h);
 	retstr(vec->name, &sa->x.name);
 	sa->vec = vec;
 	return sa;
@@ -304,10 +304,10 @@ newSK(SigAlg *sa, String *owner, int increfsa)
 	SK *k;
 
 	h = heap(TSK);
-	k = H2D(SK*, h);
+	k = HEAP2DPTR(SK*, h);
 	k->x.sa = (Keyring_SigAlg*)sa;
 	if(increfsa) {
-		h = D2H(sa);
+		h = DPTR2HEAP(sa);
 		h->ref++;
 		Setmark(h);
 	}
@@ -322,7 +322,7 @@ freeSK(Heap *h, int swept)
 	SK *k;
 	SigAlg *sa;
 
-	k = H2D(SK*, h);
+	k = HEAP2DPTR(SK*, h);
 	sa = checkSigAlg(k->x.sa);
 	if(k->key)
 		(*sa->vec->skfree)(k->key);
@@ -335,7 +335,7 @@ checkSK(Keyring_SK *k)
 	SK *sk;
 
 	sk = (SK*)k;
-	if(sk == H || sk == nil || sk->key == 0 || D2H(sk)->t != TSK){
+	if(sk == H || sk == nil || sk->key == 0 || DPTR2HEAP(sk)->t != TSK){
 		errorf("%s: %s", exType, exBadSK);
 		return nil;
 	}
@@ -524,10 +524,10 @@ newPK(SigAlg *sa, String *owner, int increfsa)
 	PK *k;
 
 	h = heap(TPK);
-	k = H2D(PK*, h);
+	k = HEAP2DPTR(PK*, h);
 	k->x.sa = (Keyring_SigAlg*)sa;
 	if(increfsa) {
-		h = D2H(sa);
+		h = DPTR2HEAP(sa);
 		h->ref++;
 		Setmark(h);
 	}
@@ -539,19 +539,19 @@ newPK(SigAlg *sa, String *owner, int increfsa)
 void
 pkimmutable(PK *k)
 {
-	 heapimmutable(D2P(k));
-	 heapimmutable(D2P(k->x.sa));
-	 heapimmutable(D2P(k->x.sa->name));
-	 heapimmutable(D2P(k->x.owner));
+	 heapimmutable(DPTR2HPTR(k));
+	 heapimmutable(DPTR2HPTR(k->x.sa));
+	 heapimmutable(DPTR2HPTR(k->x.sa->name));
+	 heapimmutable(DPTR2HPTR(k->x.owner));
 }
 
 void
 pkmutable(PK *k)
 {
-	 heapmutable(D2P(k));
-	 heapmutable(D2P(k->x.sa));
-	 heapmutable(D2P(k->x.sa->name));
-	 heapmutable(D2P(k->x.owner));
+	 heapmutable(DPTR2HPTR(k));
+	 heapmutable(DPTR2HPTR(k->x.sa));
+	 heapmutable(DPTR2HPTR(k->x.sa->name));
+	 heapmutable(DPTR2HPTR(k->x.owner));
 }
 
 void
@@ -560,7 +560,7 @@ freePK(Heap *h, int swept)
 	PK *k;
 	SigAlg *sa;
 
-	k = H2D(PK*, h);
+	k = HEAP2DPTR(PK*, h);
 	sa = checkSigAlg(k->x.sa);
 	if(k->key)
 		(*sa->vec->pkfree)(k->key);
@@ -573,7 +573,7 @@ checkPK(Keyring_PK *k)
 	PK *pk;
 
 	pk = (PK*)k;
-	if(pk == H || pk == nil || pk->key == 0 || D2H(pk)->t != TPK){
+	if(pk == H || pk == nil || pk->key == 0 || DPTR2HEAP(pk)->t != TPK){
 		errorf("%s: %s", exType, exBadPK);
 		return nil;
 	}
@@ -707,23 +707,23 @@ Keyring_strtopk(void *fp)
 void
 certimmutable(Certificate *c)
 {
-	 heapimmutable(D2P(c));
-	 heapimmutable(D2P(c->x.signer));
-	 heapimmutable(D2P(c->x.ha));
-	 heapimmutable(D2P(c->x.sa));
-	 heapimmutable(D2P(c->x.sa->name));
+	 heapimmutable(DPTR2HPTR(c));
+	 heapimmutable(DPTR2HPTR(c->x.signer));
+	 heapimmutable(DPTR2HPTR(c->x.ha));
+	 heapimmutable(DPTR2HPTR(c->x.sa));
+	 heapimmutable(DPTR2HPTR(c->x.sa->name));
 }
 
 void
 certmutable(Certificate *c)
 {
-	 heapmutable(D2P(c));
-	 heapmutable(D2P(c->x.signer));
-	 heapmutable(D2P(c->x.ha));
-	Setmark(D2H(c->x.sa));
-	 heapmutable(D2P(c->x.sa));
-	Setmark(D2H(c->x.sa->name));
-	 heapmutable(D2P(c->x.sa->name));
+	 heapmutable(DPTR2HPTR(c));
+	 heapmutable(DPTR2HPTR(c->x.signer));
+	 heapmutable(DPTR2HPTR(c->x.ha));
+	Setmark(DPTR2HEAP(c->x.sa));
+	 heapmutable(DPTR2HPTR(c->x.sa));
+	Setmark(DPTR2HEAP(c->x.sa->name));
+	 heapmutable(DPTR2HPTR(c->x.sa->name));
 }
 
 Certificate*
@@ -733,10 +733,10 @@ newCertificate(SigAlg *sa, String *ha, String *signer, long exp, int increfsa)
 	Certificate *c;
 
 	h = heap(TCertificate);
-	c = H2D(Certificate*, h);
+	c = HEAP2DPTR(Certificate*, h);
 	c->x.sa = (Keyring_SigAlg*)sa;
 	if(increfsa) {
-		h = D2H(sa);
+		h = DPTR2HEAP(sa);
 		h->ref++;
 		Setmark(h);
 	}
@@ -754,7 +754,7 @@ freeCertificate(Heap *h, int swept)
 	Certificate *c;
 	SigAlg *sa;
 
-	c = H2D(Certificate*, h);
+	c = HEAP2DPTR(Certificate*, h);
 	sa = checkSigAlg(c->x.sa);
 	if(c->signa)
 		(*sa->vec->sigfree)(c->signa);
@@ -767,7 +767,7 @@ checkCertificate(Keyring_Certificate *c)
 	Certificate *cert;
 
 	cert = (Certificate*)c;
-	if(cert == H || cert == nil || cert->signa == 0 || D2H(cert)->t != TCertificate){
+	if(cert == H || cert == nil || cert->signa == 0 || DPTR2HEAP(cert)->t != TCertificate){
 		errorf("%s: %s", exType, exBadCert);
 		return nil;
 	}
@@ -1189,7 +1189,7 @@ Keyring_DigestState_copy(void *fp)
 	if(f->d != H){
 		ods = checktype(f->d, TDigestState, "DigestState", 0);
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h); 	
+		ds = HEAP2DPTR(XDigestState*, h); 	
 		memmove(&ds->state, &ods->state, sizeof(ds->state)); 
 		*f->ret = (Keyring_DigestState*)ds;
 	}
@@ -1221,7 +1221,7 @@ keyring_digest_x(Array *buf, int n, Array *digest, int dlen, Keyring_DigestState
 
 	if(state == H){
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h);
+		ds = HEAP2DPTR(XDigestState*, h);
 		memset(&ds->state, 0, sizeof(ds->state));
 	} else
 		ds = checktype(state, TDigestState, "DigestState", 1);
@@ -1358,7 +1358,7 @@ keyring_hmac_x(Array *data, int n, Array *key, Array *digest, int dlen, Keyring_
 
 	if(state == H){
 		h = heap(TDigestState);
-		ds = H2D(XDigestState*, h);
+		ds = HEAP2DPTR(XDigestState*, h);
 		memset(&ds->state, 0, sizeof(ds->state));
 	} else
 		ds = checktype(state, TDigestState, "DigestState", 1);
@@ -1904,7 +1904,7 @@ out:
 static Keyring_Authinfo*
 newAuthinfo(void)
 {
-	return H2D(Keyring_Authinfo*, heap(TAuthinfo));
+	return HEAP2DPTR(Keyring_Authinfo*, heap(TAuthinfo));
 }
 
 void
@@ -2325,7 +2325,7 @@ Keyring_dessetup(void *fp)
 		ivec = nil;
 
 	h = heap(TDESstate);
-	ds = H2D(XDESstate*, h);
+	ds = HEAP2DPTR(XDESstate*, h);
 	setupDESstate(&ds->state, f->key->data, ivec);
 
 	*f->ret = (Keyring_DESstate*)ds;
@@ -2422,7 +2422,7 @@ Keyring_ideasetup(void *fp)
 		ivec = nil;
 
 	h = heap(TIDEAstate);
-	is = H2D(XIDEAstate*, h);
+	is = HEAP2DPTR(XIDEAstate*, h);
 
 	setupIDEAstate(&is->state, f->key->data, ivec);
 
@@ -2521,7 +2521,7 @@ Keyring_aessetup(void *fp)
 		ivec = nil;
 
 	h = heap(TAESstate);
-	is = H2D(XAESstate*, h);
+	is = HEAP2DPTR(XAESstate*, h);
 
 	setupAESstate(&is->state, f->key->data, f->key->len, ivec);
 
@@ -2575,7 +2575,7 @@ Keyring_blowfishsetup(void *fp)
 		ivec = nil;
 
 	h = heap(TBFstate);
-	is = H2D(XBFstate*, h);
+	is = HEAP2DPTR(XBFstate*, h);
 
 	setupBFstate(&is->state, f->key->data, f->key->len, ivec);
 
@@ -2624,7 +2624,7 @@ Keyring_rc4setup(void *fp)
 		return;
 
 	h = heap(TRC4state);
-	is = H2D(XRC4state*, h);
+	is = HEAP2DPTR(XRC4state*, h);
 
 	setupRC4state(&is->state, f->seed->data, f->seed->len);
 

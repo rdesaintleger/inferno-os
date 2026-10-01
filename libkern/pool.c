@@ -600,7 +600,7 @@ void *poolrealloc(Pool* p, void* v, size_t asize) {
 	Bhdr* b, * nb;
 	void* nv;
 	size_t osize, size;
-	uint32_t flags;
+	uint32_t flags = 0;
 
 	/* for sanity and to avoid overflow */
 	if (asize >= p->maxsize) {

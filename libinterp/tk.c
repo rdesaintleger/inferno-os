@@ -47,18 +47,18 @@ tkmarktop(Type *t, void *vw)
 	// XXX do we need to lock context here??
 	for(v = top->vars; v; v = v->link) {
 		if(v->type == TkVchan) {
-			h = D2H(v->value);
+			h = DPTR2HEAP(v->value);
 			Setmark(h);
 		}
 	}
 	for (di = top->panelimages; di != nil; di = di->link) {
-		h = D2H(di->image);
+		h = DPTR2HEAP(di->image);
 		Setmark(h);
 	}
 	for(w = top->windows; w != nil; w = next){
 		tkw = TKobj(TkWin, w);
 		if(tkw->image != nil){
-			h = D2H(tkw->di);
+			h = DPTR2HEAP(tkw->di);
 			Setmark(h);
 		}
 		next = tkw->next;
@@ -95,11 +95,11 @@ Tk_toplevel(void *a)
 	disp = checkdisplay(f->d);
 
 	h = heapz(fakeTkTop);
-	t = H2D(TkTop*, h);
-	heapimmutable(D2P(t));
+	t = HEAP2DPTR(TkTop*, h);
+	heapimmutable(DPTR2HPTR(t));
 
 	t->dd = f->d;
-	D2H(t->dd)->ref++;
+	DPTR2HEAP(t->dd)->ref++;
 
 	t->execdepth = -1;
 	t->display = disp;
@@ -142,7 +142,7 @@ Tk_toplevel(void *a)
 	t->windows = tk;
 	t->root = tk;
 	Setmark(h);
-	 heapmutable(D2P(t));
+	 heapmutable(DPTR2HPTR(t));
 	t->wreq = cnewc(&Tptr, movp, 8);
 	*f->ret = (Tk_Toplevel*)t;
 }
@@ -155,7 +155,7 @@ Tk_cmd(void *a)
 	F_Tk_cmd *f = a;
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop) {
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
@@ -202,7 +202,7 @@ Tk_rect(void *fp)
 	int bd, flags, w, h;
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop){
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop){
 		*(Rectangle*)f->ret = ZR;
 		return;
 	}
@@ -330,7 +330,7 @@ Tk_pointer(void *a)
 	int b, lastb, inside;
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop)
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop)
 		return;
 
 	c = t->ctxt;
@@ -476,7 +476,7 @@ Tk_keyboard(void *a)
 	F_Tk_keyboard *f = a;
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop)
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop)
 		return;
 	c = t->ctxt;
 	if (c == nil)
@@ -559,7 +559,7 @@ Tk_namechan(void *a)
 	F_Tk_namechan *f = a;
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop) {
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
@@ -588,7 +588,7 @@ Tk_namechan(void *a)
 	destroy(v->value);
 	v->value = f->c;
 	unlockctxt(t->ctxt);
-	h = D2H(v->value);
+	h = DPTR2HEAP(v->value);
 	h->ref++;
 	Setmark(h);
 	retstr("", f->ret);
@@ -725,7 +725,7 @@ tkaddpanelimage(TkTop *t, Draw_Image *di, Image **i)
 	if (pi == nil)
 		return TkNomem;
 	pi->image = di;
-	D2H(di)->ref++;
+	DPTR2HEAP(di)->ref++;
 	pi->ref = 1;
 	pi->link = t->panelimages;
 	t->panelimages = pi;
@@ -753,7 +753,7 @@ tkdelpanelimage(TkTop *t, Image *i)
 		prev->link = pi->link;
 	else
 		t->panelimages = pi->link;
-	if (D2H(pi->image)->ref == 1) {		/* don't bother locking if it's not going away */
+	if (DPTR2HEAP(pi->image)->ref == 1) {		/* don't bother locking if it's not going away */
 		locked = lockdisplay(t->display);
 		destroy(pi->image);
 		if (locked)
@@ -784,7 +784,7 @@ Tk_putimage(void *a)
 	destroy(r);
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop) {
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
@@ -918,7 +918,7 @@ Tk_getimage(void *a)
 	destroy(r);
 
 	t = (TkTop*)f->t;
-	if(t == H || D2H(t)->t != fakeTkTop) {
+	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
 		retstr(TkNotop, &f->ret->t2);
 		return;
 	}
@@ -958,7 +958,7 @@ tkfreetop(Heap *h, int swept)
 	void *r;
 	TkPanelimage *pi, *nextpi;
 
-	t = H2D(TkTop*, h);
+	t = HEAP2DPTR(TkTop*, h);
 	lockctxt(t->ctxt);
 
 	if(swept) {
@@ -1048,7 +1048,7 @@ tktopimagedptr(TkTop *top, Draw_Image *di)
 	}
 	if(di == H)
 		return;
-	D2H(di)->ref++;
+	DPTR2HEAP(di)->ref++;
 	top->di = di;
 }
 
@@ -1093,7 +1093,7 @@ tksetwindrawimage(Tk *tk, Draw_Image *di)
 		unlockdisplay(i->display);
 
 	if(!same){
-		D2H(di)->ref++;
+		DPTR2HEAP(di)->ref++;
 		if(tk->name){
 			name = tk->name->name;
 			if(name[0] == '.' && name[1] == '\0')

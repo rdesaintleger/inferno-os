@@ -70,7 +70,7 @@ mklinkmod(Module *m, int n)
 	h = nheap(sizeof(Modlink)+(n-1)*sizeof(ml->links[0]));
 	h->t = &Tmodlink;
 	Tmodlink.ref++;
-	ml = H2D(Modlink*, h);
+	ml = HEAP2DPTR(Modlink*, h);
 	ml->nlinks = n;
 	ml->m = m;
 	ml->prog = m->prog;
@@ -104,7 +104,7 @@ linkmod(Module *m, Import *ldt, int mkmp)
 			h = nheap(t->size);
 			h->t = t;
 			t->ref++;
-			ml->MP = H2D(uchar*, h);
+			ml->MP = HEAP2DPTR(uchar*, h);
 			newmp(ml->MP, m->origmp, t);
 		}
 	}

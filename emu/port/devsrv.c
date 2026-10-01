@@ -445,7 +445,7 @@ freerdchan(Heap *h, int swept)
 
 	release();
 	qlock(&dev.l);
-	sf = H2D(Channel*, h)->aux;
+	sf = HEAP2DPTR(Channel*, h)->aux;
 	sf->read = H;
 	srvfree(sf, SRDCLOSE);
 	qunlock(&dev.l);
@@ -461,7 +461,7 @@ freewrchan(Heap *h, int swept)
 
 	release();
 	qlock(&dev.l);
-	sf = H2D(Channel*, h)->aux;
+	sf = HEAP2DPTR(Channel*, h)->aux;
 	sf->write = H;
 	srvfree(sf, SWRCLOSE);
 	qunlock(&dev.l);
@@ -581,9 +581,9 @@ srvread(Chan *c, void *va, long count, vlong offset)
 		error(Ehungup);
 
 	rc = cnewc(dev.Rread, movtmp, 1);
-	ptradd(D2H(rc));
+	ptradd(DPTR2HEAP(rc));
 	if(waserror()){
-		ptrdel(D2H(rc));
+		ptrdel(DPTR2HEAP(rc));
 		destroy(rc);
 		nexterror();
 	}
@@ -595,7 +595,7 @@ srvread(Chan *c, void *va, long count, vlong offset)
 	csend(rd, &req);
 
 	h = heap(dev.Rread);
-	r = H2D(Sys_Rread *, h);
+	r = HEAP2DPTR(Sys_Rread *, h);
 	ptradd(h);
 	if(waserror()){
 		ptrdel(h);
@@ -632,7 +632,7 @@ srvread(Chan *c, void *va, long count, vlong offset)
 	destroy(r);
 
 	poperror();
-	ptrdel(D2H(rc));
+	ptrdel(DPTR2HEAP(rc));
 	destroy(rc);
 
 	poperror();
@@ -668,9 +668,9 @@ srvwrite(Chan *c, void *va, long count, vlong offset)
 		error(Ehungup);
 
 	wc = cnewc(dev.Rwrite, movtmp, 1);
-	ptradd(D2H(wc));
+	ptradd(DPTR2HEAP(wc));
 	if(waserror()){
-		ptrdel(D2H(wc));
+		ptrdel(DPTR2HEAP(wc));
 		destroy(wc);
 		nexterror();
 	}
@@ -680,10 +680,10 @@ srvwrite(Chan *c, void *va, long count, vlong offset)
 	req.t2 = c->fid;
 	req.t3 = wc;
 
-	ptradd(D2H(req.t1));
+	ptradd(DPTR2HEAP(req.t1));
 
 	if(waserror()){
-		ptrdel(D2H(req.t1));
+		ptrdel(DPTR2HEAP(req.t1));
 		destroy(req.t1);
 		nexterror();
 	}
@@ -691,11 +691,11 @@ srvwrite(Chan *c, void *va, long count, vlong offset)
 	csend(wr, &req);
 
 	poperror();
-	ptrdel(D2H(req.t1));
+	ptrdel(DPTR2HEAP(req.t1));
 	destroy(req.t1);
 
 	h = heap(dev.Rwrite);
-	w = H2D(Sys_Rwrite *, h);
+	w = HEAP2DPTR(Sys_Rwrite *, h);
 	ptradd(h);
 
 	if(waserror()){
@@ -724,7 +724,7 @@ srvwrite(Chan *c, void *va, long count, vlong offset)
 	destroy(w);
 
 	poperror();
-	ptrdel(D2H(wc));
+	ptrdel(DPTR2HEAP(wc));
 	destroy(wc);
 
 	poperror();
@@ -739,7 +739,7 @@ srvretype(Channel *c, SrvFile *f, Type *t)
 {
 	Heap *h;
 
-	h = D2H(c);
+	h = DPTR2HEAP(c);
 	freetype(h->t);
 	h->t = t;
 	t->ref++;
