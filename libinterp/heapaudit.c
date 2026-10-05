@@ -51,7 +51,8 @@ extern Type* TFD;
 extern Type* TFileIO;
 extern Type* Tread;
 extern Type* Twrite;
-extern Type* fakeTkTop;
+extern Type* TTkTop;
+extern Type* TTkWin;
 
 extern Type* TSigAlg;
 extern Type* TCertificate;
@@ -88,7 +89,8 @@ struct Ptyped
 /*	{"Fioread",	&Tread},	*/
 /*	{"Fiowrite",	&Twrite},	*/
 
-	{"TkTop",	&fakeTkTop},
+	{"TkTop",	&TTkTop},
+	{"TkWin",	&TTkWin},
 
 	0
 };

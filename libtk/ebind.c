@@ -890,7 +890,7 @@ tkupdatecmd(TkTop *t, char *arg, char **ret)
 	tkword(t, arg, buf, buf+sizeof(buf), nil);
 	if(strcmp(buf, "-onscreen") == 0){
 		tk = t->root;
-		dr = &t->screenr;
+		dr = &t->bounds;
 		x = tk->act.x;
 		if(x+tk->act.width > dr->max.x)
 			x = dr->max.x - tk->act.width;

@@ -353,7 +353,7 @@ mkchoicemenu(Tk *tkb)
 	tkl = TKobj(TkLabel, tkb);
 	t = tkb->env->top;
 
-	menu = tknewobj(t, TKmenu, sizeof(Tk)+sizeof(TkWin));
+	menu = tknewwinobj(t, TKmenu);
 	if(menu == nil)
 		return nil;
 
@@ -368,7 +368,6 @@ mkchoicemenu(Tk *tkb)
 	menu->geom = tkmoveresize;
 	tkw = TKobj(TkWin, menu);
 	tkw->cbname = HOSTED_API(strdup)(tkb->name->name);
-	tkw->di = (void*)-1;			// XXX
 
 	for(i = tkl->nvalues - 1; i >= 0; i--){
 		tkc = tknewobj(t, TKlabel, sizeof(Tk)+sizeof(TkLabel));
@@ -654,12 +653,11 @@ tkmenu(TkTop *t, char *arg, char **ret)
 	TkName *names;
 	TkOptab tko[3];
 
-	tk = tknewobj(t, TKmenu, sizeof(Tk)+sizeof(TkWin));
+	tk = tknewwinobj(t, TKmenu);
 	if(tk == nil)
 		return TkNomem;
 
 	tkw = TKobj(TkWin, tk);
-	tkw->di = (void*)-1;		// XXX
 	tk->relief = TKraised;
 	tk->flag |= Tknograb;
 	tk->borderwidth = 1;
@@ -993,7 +991,7 @@ tkmpost(Tk *tk, int x, int y, int cascade, int bh, int adjust)
 
 	t = tk->env->top;
 	if(adjust){
-		dr = &t->screenr;
+		dr = &t->bounds;
 		if(x+tk->act.width > dr->max.x)
 			x = dr->max.x - tk->act.width;
 		if(x < 0)
@@ -1604,7 +1602,7 @@ autoscroll(Tk *tk, void *v, int cancelled)
 HOSTED_API(print)("not autoscrolling, act: %P, req: %P\n", tkw->act, tkw->req);
 		return;
 }
-	dr = tk->env->top->screenr;
+	dr = tk->env->top->bounds;
 	delta.x = TKF2I(tkw->delta.x * tkw->speed);
 	delta.y = TKF2I(tkw->delta.y * tkw->speed);
 	r = rectaddpt(tkrect(tk, 1), Pt(tk->borderwidth + tkw->act.x, tk->borderwidth + tkw->act.y));
@@ -1650,7 +1648,7 @@ startautoscroll(Tk *tk, TkMouse *m)
 	Point d;
 	TkWin *tkw;
 	tkw = TKobj(TkWin, tk);
-	dr = tk->env->top->screenr;
+	dr = tk->env->top->bounds;
 	r = rectaddpt(tkrect(tk, 1), Pt(tk->borderwidth + tkw->act.x, tk->borderwidth + tkw->act.y));
 	d = Pt(0, 0);
 	if(m->x <= 0 && r.min.x < dr.min.x)

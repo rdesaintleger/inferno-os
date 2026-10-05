@@ -25,6 +25,99 @@ tknewctxt(Display *d)
 	c->display = d;
 	return c;
 }
+ 
+/*
+ * Allocate an object that is a window.
+ */
+Tk*
+tknewwinobj(TkTop *t, int type)
+{
+	Tk *tk;
+
+	tk = tknewobj(t, type, sizeof(Tk)+sizeof(TkWin));
+	if(tk != nil)
+		TKobj(TkWin, tk)->host = nil;
+	return tk;
+}
+
+/*
+ * Set the rectangle the windows of a toplevel must stay in (normally the
+ * screen). The embedder calls this whenever the rectangle changes.
+ */
+void
+tksetbounds(TkTop *t, int minx, int miny, int maxx, int maxy)
+{
+	t->bounds.min.x = minx;
+	t->bounds.min.y = miny;
+	t->bounds.max.x = maxx;
+	t->bounds.max.y = maxy;
+}
+
+/*
+ * Create a toplevel with its root window ".". The caller owns the result
+ * and attaches whatever it needs through TkTop.host.
+ */
+TkTop*
+tknewtop(Display *disp, char *opts)
+{
+	Tk *tk;
+	TkTop *t;
+	TkWin *tkw;
+	TkCtxt *ctxt;
+
+	t = HOSTED_API(mallocz)(sizeof(TkTop), 1);
+	if(t == nil)
+		return nil;
+
+	t->execdepth = -1;
+	t->display = disp;
+
+	tk = tknewwinobj(t, TKframe);
+	if(tk == nil) {
+		HOSTED_API(free)(t);
+		return nil;
+	}
+
+	tk->act.x = 0;
+	tk->act.y = 0;
+	tk->act.width = 1;		/* XXX why not zero? */
+	tk->act.height = 1;
+	tk->flag |= Tkwindow;
+
+	tkw = TKobj(TkWin, tk);
+
+	tktopopt(tk, opts);
+
+	tk->geom = tkmoveresize;
+	tk->name = tkmkname(".");
+	if(tk->name == nil) {
+		tkfreeobj(tk);
+		HOSTED_API(free)(t);
+		return nil;
+	}
+
+	ctxt = tknewctxt(disp);
+	if(ctxt == nil) {
+		tkfreeobj(tk);
+		HOSTED_API(free)(t);
+		return nil;
+	}
+	t->ctxt = ctxt;
+	tksetbounds(t, disp->image->r.min.x, disp->image->r.min.y,
+		disp->image->r.max.x, disp->image->r.max.y);
+
+	tkw->next = t->windows;
+	t->windows = tk;
+	t->root = tk;
+	return t;
+}
+
+/* Release the memory of a toplevel once everything in it has been freed. */
+void
+tkdeltop(TkTop *t)
+{
+	HOSTED_API(free)(t);
+}
 
 void
 tkfreectxt(TkCtxt *c)

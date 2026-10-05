@@ -12,13 +12,74 @@
 #include "kernel.h"
 
 extern	void	tkfreetop(Heap*, int);
-Type*	fakeTkTop;
+Type*	TTkTop;
+Type*	TTkWin;
 static	uchar	TktypeMap[] = Tk_Toplevel_map;
+static	uchar	TkWinMap[] = Tk_WindowImage_map;
 int	tkstylus;
 void	(*tkwiretap)(void*, char*, char*, void*, Rectangle*);
 
 static void tktopimagedptr(TkTop*, Draw_Image*);
 static char*tkputwinimage(Tk*, Draw_Image*, int);
+static void tkfreewin(Heap*, int);
+
+/*
+ * The Dis side of a toplevel and of a window.
+ *
+ * libtk is independent of Dis: it allocates TkTop and TkWin itself and only
+ * keeps an opaque host pointer in each. Here every one of them is paired with
+ * an object of the Dis heap, the way draw.c pairs Draw_Display with a native
+ * Display (DDisplay): the D* structure points to the native one, and the host
+ * pointer of the native one points back to the D* structure.
+ */
+typedef struct DTkTop DTkTop;
+struct DTkTop
+{
+	Tk_Toplevel	tk;		/* what Limbo holds, must come first */
+	TkTop*		top;		/* nil if libtk could not create it */
+};
+
+/* only exists while a window holds an image */
+typedef struct DTkWin DTkWin;
+struct DTkWin
+{
+	Tk_WindowImage di;		/* image given by the window manager, H if none */
+	TkWin*		win;
+};
+
+static DTkTop*
+tkdistop(TkTop *t)
+{
+	return t->host;
+}
+
+static DTkWin*
+tkdiswin(TkWin *w)
+{
+	return w->host;
+}
+
+/* the TkTop of a Limbo Tk->Toplevel, nil if it is not one */
+static TkTop*
+tktopof(Tk_Toplevel *tt)
+{
+	if(tt == H || DPTR2HEAP(tt)->t != TTkTop)
+		return nil;
+	return ((DTkTop*)tt)->top;
+}
+
+/*
+ * Limbo owns the screen rectangle (tkclient sets Toplevel.screenr) and libtk
+ * keeps its own copy: refresh it on the way into libtk.
+ */
+static void
+tkloadbounds(DTkTop *dt)
+{
+	Draw_Rect *r;
+
+	r = &dt->tk.screenr;
+	tksetbounds(dt->top, r->min.x, r->min.y, r->max.x, r->max.y);
+}
 
 static void
 lockctxt(TkCtxt *ctxt)
@@ -38,12 +99,17 @@ tkmarktop(Type *t, void *vw)
 	Heap *h;
 	TkVar *v;
 	TkPanelimage *di;
+	DTkTop *dt;
+	DTkWin *dw;
 	TkTop *top;
 	Tk *w, *next;
 	TkWin *tkw;
 
 	markheap(t, vw);
-	top = vw;
+	dt = vw;
+	top = dt->top;
+	if(top == nil)
+		return;
 	// XXX do we need to lock context here??
 	for(v = top->vars; v; v = v->link) {
 		if(v->type == TkVchan) {
@@ -57,9 +123,10 @@ tkmarktop(Type *t, void *vw)
 	}
 	for(w = top->windows; w != nil; w = next){
 		tkw = TKobj(TkWin, w);
-		if(tkw->image != nil){
-			h = DPTR2HEAP(tkw->di);
-			Setmark(h);
+		dw = tkdiswin(tkw);
+		if(dw != nil){
+			h = DPTR2HEAP(dw);
+			Setmark(h);		/* the type's map marks di */
 		}
 		next = tkw->next;
 	}
@@ -71,8 +138,9 @@ tkmodinit(void)
 	builtinmod("$Tk", Tkmodtab, Tkmodlen);
 	HOSTED_API(fmtinstall)('v', tkeventfmt);			/* XXX */
 
-	fakeTkTop = dtype(tkfreetop, sizeof(TkTop), TktypeMap, sizeof(TktypeMap));
-	fakeTkTop->mark = tkmarktop;
+	TTkTop = dtype(tkfreetop, sizeof(DTkTop), TktypeMap, sizeof(TktypeMap));
+	TTkTop->mark = tkmarktop;
+	TTkWin = dtype(tkfreewin, sizeof(DTkWin), TkWinMap, sizeof(TkWinMap));
 
 	tksorttable();
 }
@@ -82,9 +150,8 @@ Tk_toplevel(void *a)
 {
 	Tk *tk;
 	Heap *h;
+	DTkTop *dt;
 	TkTop *t;
-	TkWin *tkw;
-	TkCtxt *ctxt;
 	Display *disp;
 	F_Tk_toplevel *f = a;
 	void *r;
@@ -94,57 +161,30 @@ Tk_toplevel(void *a)
 	destroy(r);
 	disp = checkdisplay(f->d);
 
-	h = heapz(fakeTkTop);
-	t = HEAP2DPTR(TkTop*, h);
-	heapimmutable(DPTR2HPTR(t));
+	h = heapz(TTkTop);
+	dt = HEAP2DPTR(DTkTop*, h);
+	heapimmutable(DPTR2HPTR(dt));
 
-	t->dd = f->d;
-	DPTR2HEAP(t->dd)->ref++;
+	dt->tk.display = f->d;
+	DPTR2HEAP(dt->tk.display)->ref++;
 
-	t->execdepth = -1;
-	t->display = disp;
-
-	tk = tknewobj(t, TKframe, sizeof(Tk)+sizeof(TkWin));
-	if(tk == nil) {
-		destroy(t);
+	t = tknewtop(disp, string2c(f->arg));
+	if(t == nil) {
+		destroy(&dt->tk);
 		return;
 	}
 
-	tk->act.x = 0;
-	tk->act.y = 0;
-	tk->act.width = 1;		/* XXX why not zero? */
-	tk->act.height = 1;
-	tk->flag |= Tkwindow;
+	dt->top = t;
+	t->host = dt;
 
-	tkw = TKobj(TkWin, tk);
-	tkw->di = H;
+	dt->tk.screenr.min.x = disp->image->r.min.x;
+	dt->tk.screenr.min.y = disp->image->r.min.y;
+	dt->tk.screenr.max.x = disp->image->r.max.x;
+	dt->tk.screenr.max.y = disp->image->r.max.y;
 
-	tktopopt(tk, string2c(f->arg));
-	
-	tk->geom = tkmoveresize;
-	tk->name = tkmkname(".");
-	if(tk->name == nil) {
-		tkfreeobj(tk);
-		destroy(t);
-		return;
-	}
-
-	ctxt = tknewctxt(disp);
-	if(ctxt == nil) {
-		tkfreeobj(tk);
-		destroy(t);
-		return;
-	}
-	t->ctxt = ctxt;
-	t->screenr = disp->image->r;
-
-	tkw->next = t->windows;
-	t->windows = tk;
-	t->root = tk;
-	Setmark(h);
-	 heapmutable(DPTR2HPTR(t));
-	t->wreq = cnewc(&Tptr, movp, 8);
-	*f->ret = (Tk_Toplevel*)t;
+	heapmutable(DPTR2HPTR(dt));
+	dt->tk.wreq = cnewc(&Tptr, movp, 8);
+	*f->ret = &dt->tk;
 }
 
 void
@@ -154,12 +194,13 @@ Tk_cmd(void *a)
 	char *val, *e;
 	F_Tk_cmd *f = a;
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
+	t = tktopof(f->t);
+	if(t == nil) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
 	lockctxt(t->ctxt);
+	tkloadbounds(tkdistop(t));
 	val = nil;
 	e = tkexec(t, string2c(f->arg), &val);
 	unlockctxt(t->ctxt);
@@ -201,8 +242,8 @@ Tk_rect(void *fp)
 	Point o;
 	int bd, flags, w, h;
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop){
+	t = tktopof(f->t);
+	if(t == nil){
 		*(Rectangle*)f->ret = ZR;
 		return;
 	}
@@ -329,8 +370,8 @@ Tk_pointer(void *a)
 	F_Tk_pointer *f = a;
 	int b, lastb, inside;
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop)
+	t = tktopof(f->t);
+	if(t == nil)
 		return;
 
 	c = t->ctxt;
@@ -340,6 +381,7 @@ Tk_pointer(void *a)
 		return;
 
 	lockctxt(c);
+	tkloadbounds(tkdistop(t));
 //if (f->p.buttons != 0 || c->mstate.b != 0)
 //HOSTED_API(print)("tkmouse %d [%d %d], focused %d[%s], grab %s, entered %s\n",
 //	f->p.buttons, f->p.xy.x, f->p.xy.y, c->focused, tkname(c->mfocus), tkname(c->mgrab), tkname(c->entered));
@@ -475,13 +517,14 @@ Tk_keyboard(void *a)
 	TkCtxt *c;
 	F_Tk_keyboard *f = a;
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop)
+	t = tktopof(f->t);
+	if(t == nil)
 		return;
 	c = t->ctxt;
 	if (c == nil)
 		return;
 	lockctxt(c);
+	tkloadbounds(tkdistop(t));
 	if (c->tkmenu != nil)
 		grab = c->tkmenu;
 	else
@@ -558,8 +601,8 @@ Tk_namechan(void *a)
 	char *name;
 	F_Tk_namechan *f = a;
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
+	t = tktopof(f->t);
+	if(t == nil) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
@@ -783,8 +826,8 @@ Tk_putimage(void *a)
 	*f->ret = H;
 	destroy(r);
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
+	t = tktopof(f->t);
+	if(t == nil) {
 		retstr(TkNotop, f->ret);
 		return;
 	}
@@ -884,7 +927,7 @@ tkimgcopy(TkTop *t, Image *cimg)
 	if(tkwiretap != nil)
 		tkwiretap(t, "imgcopy", nil, cimg, &cimg->r);
 
-	i = mkdrawimage(new, H, t->dd, nil);
+	i = mkdrawimage(new, H, tkdistop(t)->tk.display, nil);
 	if(i == H)
 		freeimage(new);
 
@@ -917,8 +960,8 @@ Tk_getimage(void *a)
 	f->ret->t2 = H;
 	destroy(r);
 
-	t = (TkTop*)f->t;
-	if(t == H || DPTR2HEAP(t)->t != fakeTkTop) {
+	t = tktopof(f->t);
+	if(t == nil) {
 		retstr(TkNotop, &f->ret->t2);
 		return;
 	}
@@ -946,6 +989,29 @@ Tk_getimage(void *a)
 		unlockdisplay(d);
 	unlockctxt(t->ctxt);
 }
+ 
+static void
+tkreleasetopdis(DTkTop *dt)
+{
+	void *r;
+
+	r = dt->tk.image;
+	dt->tk.image = H;
+	destroy(r);
+
+	r = dt->tk.display;
+	dt->tk.display = H;
+	destroy(r);
+
+	r = dt->tk.wreq;
+	dt->tk.wreq = H;
+	destroy(r);
+
+	r = dt->tk.ctxt;
+	dt->tk.ctxt = H;
+	destroy(r);
+}
+
 
 void
 tkfreetop(Heap *h, int swept)
@@ -955,17 +1021,24 @@ tkfreetop(Heap *h, int swept)
 	TkImg *i, *nexti;
 	TkVar *v, *nextv;
 	int wgtype;
-	void *r;
 	TkPanelimage *pi, *nextpi;
+	DTkTop *dt;
 
-	t = HEAP2DPTR(TkTop*, h);
+	dt = HEAP2DPTR(DTkTop*, h);
+	t = dt->top;
+	if(t == nil) {
+		/* libtk could not create the toplevel: only the Dis side exists */
+		if(!swept)
+			tkreleasetopdis(dt);
+		return;
+	}
 	lockctxt(t->ctxt);
 
 	if(swept) {
-		t->di = H;
-		t->dd = H;
-		t->wreq = H;
-		t->wmctxt = H;
+		dt->tk.image = H;
+		dt->tk.display = H;
+		dt->tk.wreq = H;
+		dt->tk.ctxt = H;
 	}
 
 	t->windows = nil;
@@ -1020,75 +1093,110 @@ tkfreetop(Heap *h, int swept)
 	unlockctxt(t->ctxt);
 	/* XXX should we leave it locked for this bit? */
 	tkfreectxt(t->ctxt);
-	if(!swept) {
-		r = t->di;
-		t->di = H;
-		destroy(r);
-
-		r = t->dd;
-		t->dd = H;
-		destroy(r);
-
-		r = t->wreq;
-		t->wreq = H;
-		destroy(r);
-
-		r = t->wmctxt;
-		t->wmctxt = H;
-		destroy(r);
-	}
+	dt->top = nil;
+	tkdeltop(t);
+	if(!swept)
+		tkreleasetopdis(dt);
 }
 
 static void
 tktopimagedptr(TkTop *top, Draw_Image *di)
 {
-	if(top->di != H){
-		destroy(top->di);
-		top->di = H;
+	DTkTop *dt;
+
+	dt = tkdistop(top);
+	if(dt->tk.image != H){
+		destroy(dt->tk.image);
+		dt->tk.image = H;
 	}
 	if(di == H)
 		return;
 	DPTR2HEAP(di)->ref++;
-	top->di = di;
+	dt->tk.image = di;
+}
+
+static DTkWin*
+tknewdiswin(TkWin *w)
+{
+	Heap *h;
+	DTkWin *dw;
+
+	h = heapz(TTkWin);		/* di is H */
+	dw = HEAP2DPTR(DTkWin*, h);
+	dw->win = w;
+	w->host = dw;
+	return dw;
+}
+
+static void
+tkfreewin(Heap *h, int swept)
+{
+	DTkWin *dw;
+
+	dw = HEAP2DPTR(DTkWin*, h);
+	dw->win = nil;
+	if(!swept)
+		freeptrs(dw, TTkWin);
 }
 
 static void
 tkfreewinimage(TkWin *w)
 {
-	destroy(w->di);
+	DTkWin *dw;
+
+	dw = tkdiswin(w);
+	if(dw != nil){
+		w->host = nil;
+		destroy(dw);
+	}
 	w->image = nil;
-	w->di = H;
 }
 
 static int
 tksetwindrawimage(Tk *tk, Draw_Image *di)
 {
 	TkWin *tkw;
+	DTkWin *dw;
+	Draw_Image *odi;
 	char *name;
 	Image *i;
 	int locked;
 	int same;
 
 	tkw = TKobj(TkWin, tk);
+	dw = tkdiswin(tkw);
 
-	same = tkw->di == di;
+	odi = dw != nil ? dw->di.image : H;
+	same = odi == di;
 	if(!same)
 		if(tkw->image != nil)
-			destroy(tkw->di);
+			destroy(odi);
 	if(di == H){
-		tkw->di = H;
+		if(dw != nil)
+			dw->di.image = H;
 		tkw->image = nil;
 		return same;
 	}
-	tkw->di = di;
+	if(dw == nil)
+		dw = tknewdiswin(tkw);
+	dw->di.image = di;
 	i = lookupimage(di);
 	tkw->image = i;
 
 	locked = lockdisplay(i->display);
 	if(originwindow(i, ZP, i->r.min) == -1)
 		HOSTED_API(print)("tk originwindow failed: %r\n");
-	di->r = DRECT(i->r);
-	di->clipr = DRECT(i->clipr);
+
+	di->r.min.x = i->r.min.x;
+	di->r.min.y = i->r.min.y;
+	di->r.max.x = i->r.max.x;
+	di->r.max.y = i->r.max.y;
+
+	di->clipr.min.x = i->clipr.min.x;
+	di->clipr.min.y = i->clipr.min.y;
+	di->clipr.max.x = i->clipr.max.x;
+	di->clipr.max.y = i->clipr.max.y;
+
 	if(locked)
 		unlockdisplay(i->display);
 
@@ -1097,7 +1205,7 @@ tksetwindrawimage(Tk *tk, Draw_Image *di)
 		if(tk->name){
 			name = tk->name->name;
 			if(name[0] == '.' && name[1] == '\0')
-				tktopimagedptr(tk->env->top, tkw->di);
+				tktopimagedptr(tk->env->top, dw->di.image);
 		}
 	}
 	return same;
@@ -1107,16 +1215,20 @@ void
 tkdestroywinimage(Tk *tk)
 {
 	TkWin *tkw;
+	DTkWin *dw;
 	TkTop *top;
 	char *name;
 
 	assert(tk->flag & Tkwindow);
 	tkw = TKobj(TkWin, tk);
+	dw = tkdiswin(tkw);
 	top = tk->env->top;
 
-	if(tkw->image != nil && !(tk->flag & Tkswept))
-		destroy(tkw->di);
-	tkw->di = H;
+	if(dw != nil){
+		tkw->host = nil;
+		if(!(tk->flag & Tkswept))
+			destroy(dw);		/* its free function releases the image */
+	}
 	tkw->image = nil;
 	if(tk->name == nil)
 		name = tkw->cbname;
@@ -1208,7 +1320,7 @@ tkwreq(TkTop *top, char *fmt, ...)
 	va_start(arg, fmt);
 	buf = HOSTED_API(vsmprint)(fmt, arg);
 	va_end(arg);
-	tktolimbo(top->wreq, buf);
+	tktolimbo(tkdistop(top)->tk.wreq, buf);
 	HOSTED_API(free)(buf);
 }
 
@@ -1251,13 +1363,13 @@ tkcursorswitch(TkTop *top, Image *i, TkImg *img)
 	int n, maxb, nb;
 
 	if(i == nil && img == nil){
-		tktolimbo(top->wreq, "cursor");
+		tktolimbo(tkdistop(top)->tk.wreq, "cursor");
 		return nil;
 	}
 
 	if(img != nil){
 		if(img->cursor){
-			tktolimbo(top->wreq, img->cursor);
+			tktolimbo(tkdistop(top)->tk.wreq, img->cursor);
 			return nil;
 		}
 		i = img->img;
@@ -1289,7 +1401,7 @@ tkcursorswitch(TkTop *top, Image *i, TkImg *img)
 	n = HOSTED_API(sprint)(buf, "cursor %d %d %d %d ", i->r.min.x, i->r.min.y, ci->r.max.x, ci->r.max.y);
 	unloadimage(ci, ci->r, (uchar*)buf+n, maxb-n);
 	hexify(buf+n, nb);
-	tktolimbo(top->wreq, buf);
+	tktolimbo(tkdistop(top)->tk.wreq, buf);
 	if(img != nil){
 		HOSTED_API(free)(img->cursor);
 		img->cursor = buf;

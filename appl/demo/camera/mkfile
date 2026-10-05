@@ -31,6 +31,7 @@ DISBIN=$ROOT/dis/demo/camera
 <$ROOT/mkfiles/mkdis
 
 $DISBIN/%.bit:		%.bit
+	mkdir -p `dirname $target`
 	rm -f $target && cp $stem.bit $target
 
 SHFILES=${SHTARG:%.sh=$DISBIN/%}

@@ -481,7 +481,7 @@ struct TkWin
 	Tk*		next;
 	Point		act;
 	Point		req;
-	void*	di;		/* !=H if it's been set externally */
+	void*	host;		/* opaque, owned by the embedder; nil until it sets it */
 	int		changed;	/* requested rect has changed since request sent */
 	int		reqid;	/* id of request most recently sent out; replies to earlier requests are ignored */
 
@@ -558,11 +558,12 @@ struct TkCtxt
 
 struct TkTop
 {
-	void*	dd;	/* really Draw_Display */
-	void*	wreq;	/* really chan of string */
-	void*	di;		/* really Draw_Image* */
-	void*	wmctxt;	/* really Draw_Wmcontext */
-	Rectangle	screenr;	/* XXX sleazy equiv to Draw_Rect, but what else? */
+	/*
+	 * Supplied by the embedder. libtk reads bounds and never looks inside host.
+	 */
+	Rectangle	bounds;		/* area the windows must stay in (the screen), see tksetbounds() */
+	void*	host;		/* opaque, owned by the embedder */
+
 
 	/* Private from here on */
 	TkCtxt*		ctxt;
@@ -730,6 +731,10 @@ extern	TkEnv*		tkdefaultenv(TkTop*);
 extern	void		tkputenv(TkEnv*);
 extern	TkEnv*		tkdupenv(TkEnv**);
 extern	Tk*		tknewobj(TkTop*, int, int);
+extern	Tk*		tknewwinobj(TkTop*, int);
+extern	TkTop*		tknewtop(Display*, char*);
+extern	void		tkdeltop(TkTop*);
+extern	void		tksetbounds(TkTop*, int, int, int, int);
 extern	Tk*		tkfindsub(Tk*);
 extern	void		tkfreebind(TkAction*);
 extern	void		tkfreename(TkName*);

@@ -10,6 +10,11 @@ Tk: module
 		ctxt:		ref Draw->Wmcontext;	# placeholder, not used by tk
 		screenr:	Draw->Rect;			# writable
 	};
+	WindowImage: adt
+	{
+		image:	ref Draw->Image;
+	};
+	
 	Border, Required, Local: con 1<<iota;
 	rect:			fn(t: ref Toplevel, name: string, flags: int): Draw->Rect;
 
