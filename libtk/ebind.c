@@ -2,7 +2,6 @@
 #include "draw.h"
 #include "tk.h"
 #include <kernel.h>
-#include <interp.h>
 
 enum
 {
@@ -41,11 +40,11 @@ struct
 static
 TkOption tkcurop[] =
 {
-	"x",		OPTdist,	O(TkCursor, p.x),	nil,
-	"y",		OPTdist,	O(TkCursor, p.y),	nil,
-	"bitmap",	OPTbmap,	O(TkCursor, bit),	nil,
-	"image",	OPTimag,	O(TkCursor, img),	nil,
-	"default",	OPTbool,	O(TkCursor, def),	nil,
+	"x",		OPTdist,	offsetof(TkCursor, p.x),	nil,
+	"y",		OPTdist,	offsetof(TkCursor, p.y),	nil,
+	"bitmap",	OPTbmap,	offsetof(TkCursor, bit),	nil,
+	"image",	OPTimag,	offsetof(TkCursor, img),	nil,
+	"default",	OPTbool,	offsetof(TkCursor, def),	nil,
 	nil
 };
 

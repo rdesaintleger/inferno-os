@@ -23,6 +23,15 @@ static void tktopimagedptr(TkTop*, Draw_Image*);
 static char*tkputwinimage(Tk*, Draw_Image*, int);
 static void tkfreewin(Heap*, int);
 
+typedef struct DTkPanelimage DTkPanelimage;
+
+struct DTkPanelimage
+{
+	Draw_Image*		image;		/* Image paired with Draw_Image: see lookupimage in libinterp/draw.c */
+	int			ref;
+	DTkPanelimage*	link;
+};
+
 /*
  * The Dis side of a toplevel and of a window.
  *
@@ -37,6 +46,7 @@ struct DTkTop
 {
 	Tk_Toplevel	tk;		/* what Limbo holds, must come first */
 	TkTop*		top;		/* nil if libtk could not create it */
+	DTkPanelimage*	panelimages;
 };
 
 /* only exists while a window holds an image */
@@ -98,7 +108,7 @@ tkmarktop(Type *t, void *vw)
 {
 	Heap *h;
 	TkVar *v;
-	TkPanelimage *di;
+	DTkPanelimage *pi;
 	DTkTop *dt;
 	DTkWin *dw;
 	TkTop *top;
@@ -117,8 +127,8 @@ tkmarktop(Type *t, void *vw)
 			Setmark(h);
 		}
 	}
-	for (di = top->panelimages; di != nil; di = di->link) {
-		h = DPTR2HEAP(di->image);
+	for (pi = dt->panelimages; pi != nil; pi = pi->link) {
+		h = DPTR2HEAP(pi->image);
 		Setmark(h);
 	}
 	for(w = top->windows; w != nil; w = next){
@@ -748,7 +758,8 @@ tkreplimg(TkTop *t, Draw_Image *f, Draw_Image *m, Image **ximg)
 static char*
 tkaddpanelimage(TkTop *t, Draw_Image *di, Image **i)
 {
-	TkPanelimage *pi;
+	DTkPanelimage *pi;
+	DTkTop *dt;
 
 	if (di == H) {
 		*i = 0;
@@ -759,35 +770,40 @@ tkaddpanelimage(TkTop *t, Draw_Image *di, Image **i)
 	if (*i == nil || (*i)->display != t->display)
 		return TkNotwm;
 
-	for (pi = t->panelimages; pi != nil; pi = pi->link) {
+	dt = tkdistop(t);
+
+	for (pi = dt->panelimages; pi != nil; pi = pi->link) {
 		if (pi->image == di) {
 			pi->ref++;
 			return nil;
 		}
 	}
 
-	pi = HOSTED_API(malloc)(sizeof(TkPanelimage));
+	pi = HOSTED_API(malloc)(sizeof(DTkPanelimage));
 	if (pi == nil)
 		return TkNomem;
 	pi->image = di;
 	DPTR2HEAP(di)->ref++;
 	pi->ref = 1;
-	pi->link = t->panelimages;
-	t->panelimages = pi;
+	pi->link = dt->panelimages;
+	dt->panelimages = pi;
 	return nil;
 }
 
 void
 tkdelpanelimage(TkTop *t, Image *i)
 {
-	TkPanelimage *pi, *prev;
+	DTkPanelimage *pi, *prev;
+	DTkTop *dt;
 	int locked;
 
 	if (i == nil)
 		return;
 
+	dt = tkdistop(t);
 	prev = nil;
-	for (pi = t->panelimages; pi != nil; pi = pi->link) {
+
+	for (pi = dt->panelimages; pi != nil; pi = pi->link) {
 		if (lookupimage(pi->image) == i)
 			break;
 		prev = pi;
@@ -797,7 +813,7 @@ tkdelpanelimage(TkTop *t, Image *i)
 	if (prev)
 		prev->link = pi->link;
 	else
-		t->panelimages = pi->link;
+		dt->panelimages = pi->link;
 	if (DPTR2HEAP(pi->image)->ref == 1) {		/* don't bother locking if it's not going away */
 		locked = lockdisplay(t->display);
 		destroy(pi->image);
@@ -1023,7 +1039,7 @@ tkfreetop(Heap *h, int swept)
 	TkImg *i, *nexti;
 	TkVar *v, *nextv;
 	int wgtype;
-	TkPanelimage *pi, *nextpi;
+	DTkPanelimage *pi, *nextpi;
 	DTkTop *dt;
 
 	dt = HEAP2DPTR(DTkTop*, h);
@@ -1073,7 +1089,7 @@ tkfreetop(Heap *h, int swept)
 		HOSTED_API(free)(v);
 	}
 
-	for (pi = t->panelimages; pi; pi = nextpi) {
+	for (pi = dt->panelimages; pi; pi = nextpi) {
 		if (!swept)
 			destroy(pi->image);
 		nextpi = pi->link;

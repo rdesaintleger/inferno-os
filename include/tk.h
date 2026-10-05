@@ -159,7 +159,6 @@ typedef struct TkVar TkVar;
 typedef struct TkMsg TkMsg;
 typedef struct TkEbind TkEbind;
 typedef struct TkImg TkImg;
-typedef struct TkPanelimage TkPanelimage;
 typedef struct TkWinfo TkWinfo;
 typedef struct TkCursor TkCursor;
 typedef struct TkGrid TkGrid;
@@ -215,13 +214,6 @@ struct TkVar
 	TkVar*	link;
 	void*	value;
 	char	name[];
-};
-
-struct TkPanelimage
-{
-	void*		image;		/* Image paired with Draw_Image: see lookupimage in libinterp/draw.c */
-	int			ref;
-	TkPanelimage*	link;
 };
 
 struct TkMouse
@@ -576,7 +568,6 @@ struct TkTop
 	TkTop*		link;
 	TkVar*		vars;
 	TkImg*		imgs;
-	TkPanelimage*	panelimages;
 	TkAction*	binds[TKwidgets];
 	int		debug;
 	int		execdepth;

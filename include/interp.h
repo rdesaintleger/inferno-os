@@ -551,7 +551,6 @@ extern	String*		addstring(String*, String*, int);
 extern	int		brpatch(Inst*, Module*);
 extern	void		readimagemodinit(void);
 
-#define	O(t,e)		((long)(&((t*)0)->e))
 #define	OA(t,e)		((long)(((t*)0)->e))
 
 #pragma	varargck	type	"D"	Inst*
