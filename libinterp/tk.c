@@ -182,6 +182,8 @@ Tk_toplevel(void *a)
 	dt->tk.screenr.max.x = disp->image->r.max.x;
 	dt->tk.screenr.max.y = disp->image->r.max.y;
 
+	Setmark(h);
+
 	heapmutable(DPTR2HPTR(dt));
 	dt->tk.wreq = cnewc(&Tptr, movp, 8);
 	*f->ret = &dt->tk;
