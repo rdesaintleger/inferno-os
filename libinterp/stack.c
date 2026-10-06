@@ -18,6 +18,15 @@ void freestack(Stkext *sx) {
 	poolfree(mainmem, sx);
 }
 
+/*
+ * Stack segments come straight from the pool, without the padding that
+ * HOSTED_API(malloc) puts in front of its blocks, so HOSTED_API(msize)
+ * cannot be used on them.
+ */
+size_t sizestack(Stkext *sx) {
+	return poolmsize(mainmem, sx);
+}
+
 void
 newstack(Prog *p)
 {

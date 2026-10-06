@@ -445,7 +445,7 @@ progsize(Prog *p)
 				size += HOSTED_API(msize)(f->mr->prog);
 		}
 		if(f->t == nil)
-			size += HOSTED_API(msize)(SEXTYPE(f));
+			size += sizestack(SEXTYPE(f));
 	}
 	return size/1024;
 }
