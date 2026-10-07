@@ -25,6 +25,7 @@ DISBIN=$ROOT/dis/demo/lego
 <$ROOT/mkfiles/mkdis
 
 $DISBIN/%.srec:	%.srec
+	mkdir -p `dirname $target`
 	rm -f $target && cp $stem.srec $target
 
 SHFILES=${SHTARG:%.sh=$DISBIN/%}
