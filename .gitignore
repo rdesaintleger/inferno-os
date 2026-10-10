@@ -3,6 +3,7 @@
 *.obj
 [8qkv965o].out
 [8qkv965o].emu
+[8qkv965o].emu-t
 obj.out
 obj.map
 vc*.pdb
@@ -26,6 +27,8 @@ y.debug
 
 /appl/**/*.dis
 /appl/**/*.sbl
+/emu/test/**/*.dis
+/emu/test/**/*.sbl
 
 # generated C headers for built-in modules
 /libinterp/cryptmod.h
