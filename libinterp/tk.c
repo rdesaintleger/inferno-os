@@ -63,6 +63,44 @@ tkdistop(TkTop *t)
 	return t->host;
 }
 
+/* Dis side of a channel variable: TkVar.value points to it, libtk never looks inside */
+typedef struct DTkVar DTkVar;
+struct DTkVar
+{
+	Channel*	chan;		/* H if none; one reference held, see Tk_namechan */
+};
+
+static int	tktolimbo(Channel*, char*);
+
+static void
+tkchanfree(TkTop *t, TkVar *v)
+{
+	DTkVar *d;
+
+	USED(t);
+	d = v->value;
+	if(d == nil)
+		return;
+	destroy(d->chan);	/* no-op once tkfreetop has forgotten it (swept) */
+	HOSTED_API(free)(d);
+}
+
+static int
+tkchansend(TkVar *v, char *msg)
+{
+	DTkVar *d;
+
+	d = v->value;
+	if(d == nil)
+		return 0;
+	return tktolimbo(d->chan, msg);
+}
+
+static const TkVarOps tkchanvar = {
+	tkchanfree,
+	tkchansend,
+};
+
 static DTkWin*
 tkdiswin(TkWin *w)
 {
@@ -108,6 +146,7 @@ tkmarktop(Type *t, void *vw)
 {
 	Heap *h;
 	TkVar *v;
+	DTkVar *d;
 	DTkPanelimage *pi;
 	DTkTop *dt;
 	DTkWin *dw;
@@ -122,9 +161,12 @@ tkmarktop(Type *t, void *vw)
 		return;
 	// XXX do we need to lock context here??
 	for(v = top->vars; v; v = v->link) {
-		if(v->type == TkVchan) {
-			h = DPTR2HEAP(v->value);
-			Setmark(h);
+		if(v->ops == &tkchanvar && v->value != nil) {
+			d = v->value;
+			if(d->chan != H) {
+				h = DPTR2HEAP(d->chan);
+				Setmark(h);
+			}
 		}
 	}
 	for (pi = dt->panelimages; pi != nil; pi = pi->link) {
@@ -552,63 +594,12 @@ Tk_keyboard(void *a)
 	unlockctxt(c);
 }
 
-TkVar*
-tkmkvar(TkTop *t, char *name, int type)
-{
-	TkVar *v;
-
-	for(v = t->vars; v; v = v->link)
-		if(strcmp(v->name, name) == 0)
-			return v;
-
-	if(type == 0)
-		return nil;
-
-	v = HOSTED_API(malloc)(sizeof(TkVar)+strlen(name)+1);
-	if(v == nil)
-		return nil;
-	strcpy(v->name, name);
-	v->link = t->vars;
-	t->vars = v;
-	v->type = type;
-	v->value = nil;
-	if(type == TkVchan)
-		v->value = H;
-	return v;
-}
-
-void
-tkfreevar(TkTop *t, char *name, int swept)
-{
-	TkVar **l, *p;
-
-	if(name == nil)
-		return;
-	l = &t->vars;
-	for(p = *l; p != nil; p = p->link) {
-		if(strcmp(p->name, name) == 0) {
-			*l = p->link;
-			switch(p->type) {
-			default:
-				HOSTED_API(free)(p->value);
-				break;
-			case TkVchan:
-				if(!swept)
-					destroy(p->value);
-				break;
-			}
-			HOSTED_API(free)(p);
-			return;
-		}
-		l = &p->link;
-	}
-}
-
 void
 Tk_namechan(void *a)
 {
 	Heap *h;
 	TkVar *v;
+	DTkVar *d;
 	TkTop *t;
 	char *name;
 	F_Tk_namechan *f = a;
@@ -629,21 +620,32 @@ Tk_namechan(void *a)
 	}
 
 	lockctxt(t->ctxt);
-	v = tkmkvar(t, name, TkVchan);
+	v = tkmkvar(t, name, &tkchanvar);
 	if(v == nil) {
 		unlockctxt(t->ctxt);
 		retstr(TkNomem, f->ret);
 		return;
 	}
-	if(v->type != TkVchan) {
+	if(v->ops != &tkchanvar) {
 		unlockctxt(t->ctxt);
 		retstr(TkNotvt, f->ret);
 		return;
 	}
-	destroy(v->value);
-	v->value = f->c;
+	d = v->value;
+	if(d == nil) {
+		d = HOSTED_API(malloc)(sizeof(DTkVar));
+		if(d == nil) {
+			unlockctxt(t->ctxt);
+			retstr(TkNomem, f->ret);
+			return;
+		}
+		d->chan = H;
+		v->value = d;
+	}
+	destroy(d->chan);
+	d->chan = DREF2DPTR(Channel, f->c);
 	unlockctxt(t->ctxt);
-	h = DPTR2HEAP(v->value);
+	h = DPTR2HEAP(DREF2DPTR(Channel, f->c));
 	h->ref++;
 	Setmark(h);
 	retstr("", f->ret);
@@ -1037,7 +1039,7 @@ tkfreetop(Heap *h, int swept)
 	TkTop *t;
 	Tk *f;
 	TkImg *i, *nexti;
-	TkVar *v, *nextv;
+	TkVar *v;
 	int wgtype;
 	DTkPanelimage *pi, *nextpi;
 	DTkTop *dt;
@@ -1053,10 +1055,22 @@ tkfreetop(Heap *h, int swept)
 	lockctxt(t->ctxt);
 
 	if(swept) {
+		/*
+		 * The sweeper frees the Dis objects we refer to in the same pass:
+		 * forget them so that the release below does not touch their counts.
+		 */
 		dt->tk.image = H;
 		dt->tk.display = H;
 		dt->tk.wreq = H;
 		dt->tk.ctxt = H;
+		for(v = t->vars; v; v = v->link) {
+			if(v->ops == &tkchanvar && v->value != nil)
+				((DTkVar*)v->value)->chan = H;
+		}
+		for(pi = dt->panelimages; pi; pi = pi->link)
+			pi->image = H;
+		for(f = t->windows; f; f = TKobj(TkWin, f)->next)
+			TKobj(TkWin, f)->host = nil;
 	}
 
 	t->windows = nil;
@@ -1070,28 +1084,13 @@ tkfreetop(Heap *h, int swept)
 
 	for(f = t->root; f; f = t->root) {
 		t->root = f->siblings;
-		if(swept)
-			f->flag |= Tkswept;
 		tkfreeobj(f);
 	}
 
-	for(v = t->vars; v; v = nextv) {
-		nextv = v->link;
-		switch(v->type) {
-		default:
-			HOSTED_API(free)(v->value);
-			break;
-		case TkVchan:
-			if(!swept)
-				destroy(v->value);
-			break;
-		}
-		HOSTED_API(free)(v);
-	}
+	tkfreevars(t);
 
 	for (pi = dt->panelimages; pi; pi = nextpi) {
-		if (!swept)
-			destroy(pi->image);
+		destroy(pi->image);
 		nextpi = pi->link;
 		HOSTED_API(free)(pi);
 	}
@@ -1244,15 +1243,14 @@ tkdestroywinimage(Tk *tk)
 
 	if(dw != nil){
 		tkw->host = nil;
-		if(!(tk->flag & Tkswept))
-			destroy(dw);		/* its free function releases the image */
+		destroy(dw);		/* its free function releases the image */
 	}
 	tkw->image = nil;
 	if(tk->name == nil)
 		name = tkw->cbname;
 	else
 		name = tk->name->name;
-	if(name[0] == '.' && name[1] == '\0' && !(tk->flag & Tkswept))
+	if(name[0] == '.' && name[1] == '\0')
 		tktopimagedptr(top, H);
 	tkw->reqid++;
 	tkwreq(top, "delete %s", name);
@@ -1342,17 +1340,17 @@ tkwreq(TkTop *top, char *fmt, ...)
 	HOSTED_API(free)(buf);
 }
 
-int
-tktolimbo(void *var, char *msg)
+static int
+tktolimbo(Channel *c, char *msg)
 {
 	void *ptrs[1];
 	int r;
 
-	if(var==H)
+	if(c == H)
 		return 0;
 	ptrs[0] = H;
 	retstr(msg, (String**) &ptrs[0]);
-	r = csendalt((Channel *)var, ptrs, &Tptr, TkMaxmsgs);
+	r = csendalt(c, ptrs, &Tptr, TkMaxmsgs);
 	return r;
 }
 

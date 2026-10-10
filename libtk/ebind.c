@@ -491,15 +491,15 @@ tksend(TkTop *t, char *arg, char **ret)
 		return TkNomem;
 
 	arg = tkword(t, arg, var, var+Tkmaxitem, nil);
-	v = tkmkvar(t, var, 0);
+	v = tkfindvar(t, var);
 	HOSTED_API(free)(var);
 	if(v == nil)
 		return TkBadvr;
-	if(v->type != TkVchan)
+	if(v->ops->send == nil)
 		return TkNotvt;
 
 	arg = tkskip(arg, " \t");
-	if(tktolimbo(v->value, arg) == 0)
+	if(v->ops->send(v, arg) == 0)
 		return TkMovfw;
 
 	return nil;

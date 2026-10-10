@@ -156,6 +156,7 @@ typedef struct TkCmdtab TkCmdtab;
 typedef struct TkMemimage TkMemimage;
 typedef struct TkMouse TkMouse;
 typedef struct TkVar TkVar;
+typedef struct TkVarOps TkVarOps;
 typedef struct TkMsg TkMsg;
 typedef struct TkEbind TkEbind;
 typedef struct TkImg TkImg;
@@ -202,17 +203,22 @@ struct TkMsg
 	char	msg[];
 };
 
-enum
+/*
+ * Operations of a variable, set when it is created.  The ops pointer also
+ * tells what kind of variable it is: callers compare it to a known table
+ * (tkstringvar) or test for the operation they need (send).
+ */
+struct TkVarOps
 {
-	TkVchan		= 1,
-	TkVstring,
+	void	(*free)(TkTop*, TkVar*);	/* release value (not the TkVar itself) */
+	int	(*send)(TkVar*, char*);		/* nil: not a message sink; 0 if it could not be delivered */
 };
 
 struct TkVar
 {
-	int	type;
+	const TkVarOps*	ops;
 	TkVar*	link;
-	void*	value;
+	void*	value;			/* owned by ops */
 	char	name[];
 };
 
@@ -309,7 +315,6 @@ enum
 	Tksetwidth	= (1<<28),
 	Tksetheight	= (1<<29),
 	Tksubsub	= (1<<30),
-	Tkswept		= (1<<31),
 
 	/* Supported Event Types 		*/
 	/*
@@ -730,6 +735,11 @@ extern	Tk*		tkfindsub(Tk*);
 extern	void		tkfreebind(TkAction*);
 extern	void		tkfreename(TkName*);
 extern	void		tkfreeobj(Tk*);
+extern	TkVar*		tkfindvar(TkTop*, char*);
+extern	TkVar*		tkmkvar(TkTop*, char*, const TkVarOps*);
+extern	void		tkfreevar(TkTop*, char*);
+extern	void		tkfreevars(TkTop*);
+extern	const TkVarOps	tkstringvar;
 extern	char*		tkaddchild(TkTop*, Tk*, TkName**);
 extern	Tk*		tklook(TkTop*, char*, int);
 extern	void		tktextsdraw(Image*, Rectangle, TkEnv*, int);
@@ -814,9 +824,6 @@ extern	char*	tkextnparseseq(char*, char*, int*);
 extern	void		tkenterleave(TkTop*);
 extern	void		tksetwinimage(Tk*, Image*);
 extern	void		tkdestroywinimage(Tk*);
-extern	void		tkfreevar(TkTop*, char*, int);
-extern	TkVar*		tkmkvar(TkTop*, char*, int);
-extern	int		tktolimbo(void*, char*);
 extern	void		tkwreq(TkTop*, char*, ...);
 extern	void		tkdelpanelimage(TkTop*, Image*);
 

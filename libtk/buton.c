@@ -158,14 +158,14 @@ newbutton(TkTop *t, int btype, char *arg, char **ret)
 		tkl->value = HOSTED_API(strdup)(tk->name->name);
 
 	if (tkl->variable != nil) {
-		v = tkmkvar(t, tkl->variable, 0);
+		v = tkfindvar(t, tkl->variable);
 		if (v == nil){
 			if(btype == TKcheckbutton){
 				e = tksetvar(t, tkl->variable, tkl->offvalue ? tkl->offvalue : "0");
 				if (e != nil)
 					goto err;
 			}
-		} else if(v->type != TkVstring){
+		} else if(v->ops != &tkstringvar){
 			e = TkNotvt;
 			goto err;
 		} else
@@ -175,7 +175,11 @@ newbutton(TkTop *t, int btype, char *arg, char **ret)
 	return tkvalue(ret, "%s", tk->name->name);
 
 err:
-	tkfreeobj(tk);
+	/*
+	 * tk is already linked in t->root (tkaddchild): destroy it properly,
+	 * tkfreeobj() alone would leave a dangling pointer in the list.
+	 */
+	tkdestroy(t, tk->name->name, nil);
 	return e;
 }
 
@@ -500,9 +504,9 @@ tkbuttonconf(Tk *tk, char *arg, char **val)
 	 * active state before?
 	 */
 	if (tkl->variable != nil) {
-		v = tkmkvar(tk->env->top, tkl->variable, 0);
+		v = tkfindvar(tk->env->top, tkl->variable);
 		if (v != nil) {
-			if (v->type != TkVstring) {
+			if (v->ops != &tkstringvar) {
 				e = TkNotvt;
 				HOSTED_API(free)(tkl->variable);
 				tkl->variable = nil;

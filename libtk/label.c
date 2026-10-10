@@ -195,7 +195,7 @@ tkfreelabel(Tk *tk)
 	if(tkl->value != nil)
 		HOSTED_API(free)(tkl->value);
 	if(tkl->variable != nil) {
-		tkfreevar(tk->env->top, tkl->variable, tk->flag & Tkswept);
+		tkfreevar(tk->env->top, tkl->variable);
 		HOSTED_API(free)(tkl->variable);
 	}
 	if(tkl->img != nil)

@@ -58,7 +58,7 @@ tkfreeframe(Tk *tk)
 		HOSTED_API(free)(tkw->cbname);
 	}
 
-	tkunmap(tk);		/* XXX do this only if (tk->flag&Tkswept)==0 ?? */
+	tkunmap(tk);		/* XXX could be skipped when the toplevel is freed by the sweeper? */
 }
 
 char*

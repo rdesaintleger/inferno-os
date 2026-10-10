@@ -15,10 +15,10 @@ tksetvar(TkTop *top, char *c, char *newval)
 	if (c == nil || c[0] == '\0')
 		return nil;
 
-	v = tkmkvar(top, c, TkVstring);
+	v = tkmkvar(top, c, &tkstringvar);
 	if(v == nil)
 		return TkNomem;
-	if(v->type != TkVstring)
+	if(v->ops != &tkstringvar)
 		return TkNotvt;
 
 	if(newval == nil)
@@ -75,11 +75,11 @@ tkvariable(TkTop *t, char *arg, char **ret)
 			t->err = nil;
 			return e;
 		}
-		v = tkmkvar(t, buf, 0);
+		v = tkfindvar(t, buf);
 		HOSTED_API(free)(buf);
 		if(v == nil || v->value == nil)
 			return nil;
-		if(v->type != TkVstring)
+		if(v->ops != &tkstringvar)
 			return TkNotvt;
 		return tkvalue(ret, "%s", v->value);
 	}
@@ -88,4 +88,92 @@ tkvariable(TkTop *t, char *arg, char **ret)
 	e = tksetvar(t, buf, val);
 	HOSTED_API(free)(buf);
 	return e;
+}
+
+/*
+ * Variables.  A variable belongs to the toplevel's list; its ops say how
+ * to release the value and whether it can receive messages.  libtk only
+ * knows string variables (tkstringvar); a host may create others by passing
+ * its own ops to tkmkvar.
+ */
+static void
+tkstringfree(TkTop *t, TkVar *v)
+{
+	USED(t);
+	HOSTED_API(free)(v->value);
+}
+
+const TkVarOps tkstringvar = {
+	tkstringfree,
+	nil,
+};
+
+/* the variable called name, or nil */
+TkVar*
+tkfindvar(TkTop *t, char *name)
+{
+	TkVar *v;
+
+	for(v = t->vars; v; v = v->link)
+		if(strcmp(v->name, name) == 0)
+			return v;
+	return nil;
+}
+
+/* the variable called name, created with ops if it does not exist (its kind is then ops) */
+TkVar*
+tkmkvar(TkTop *t, char *name, const TkVarOps *ops)
+{
+	TkVar *v;
+
+	v = tkfindvar(t, name);
+	if(v != nil)
+		return v;
+
+	v = HOSTED_API(malloc)(sizeof(TkVar)+strlen(name)+1);
+	if(v == nil)
+		return nil;
+	strcpy(v->name, name);
+	v->link = t->vars;
+	t->vars = v;
+	v->ops = ops;
+	v->value = nil;
+	return v;
+}
+
+static void
+tkdelvar(TkTop *t, TkVar *v)
+{
+	v->ops->free(t, v);
+	HOSTED_API(free)(v);
+}
+
+void
+tkfreevar(TkTop *t, char *name)
+{
+	TkVar **l, *p;
+
+	if(name == nil)
+		return;
+	l = &t->vars;
+	for(p = *l; p != nil; p = p->link) {
+		if(strcmp(p->name, name) == 0) {
+			*l = p->link;
+			tkdelvar(t, p);
+			return;
+		}
+		l = &p->link;
+	}
+}
+
+void
+tkfreevars(TkTop *t)
+{
+	TkVar *v, *next;
+
+	for(v = t->vars; v; v = next) {
+		next = v->link;
+		tkdelvar(t, v);
+	}
+	t->vars = nil;
 }
