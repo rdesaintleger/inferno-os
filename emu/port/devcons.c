@@ -561,7 +561,7 @@ sysconwrite(void *va, ulong count)
 			e = atoi(cb->f[1]);
 		else
 			e = 0;
-		cleanexit(e);		/* XXX ignored for the time being (and should be a string anyway) */
+		cleanexit(e);		/* exit status; XXX should be a string */
 	}else if(strcmp(cb->f[0], "broken") == 0)
 		keepbroken = 1;
 	else if(strcmp(cb->f[0], "nobroken") == 0)

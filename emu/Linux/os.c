@@ -132,8 +132,6 @@ termrestore(void)
 void
 cleanexit(int x)
 {
-	USED(x);
-
 	if(up->intwait) {
 		up->intwait = 0;
 		return;
@@ -142,8 +140,12 @@ cleanexit(int x)
 	if(dflag == 0)
 		termrestore();
 
-	kill(0, SIGKILL);
-	exit(0);
+	/*
+	 * Host threads are pthreads (kproc-pthreads.c), so exit() ends them all;
+	 * the children of /cmd run in their own process group and were never
+	 * reached by the kill(0, SIGKILL) that used to be here.
+	 */
+	exit(x);
 }
 
 void
