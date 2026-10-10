@@ -5,7 +5,7 @@ SYSTARG=Linux
 #Configurable parameters
 
 CONF=emu			#default configuration
-CONFLIST=emu
+CONFLIST=emu emu-t
 CLEANCONFLIST=
 
 INSTALLDIR=$ROOT/$SYSTARG/$OBJTYPE/bin	#path of directory where kernel is installed
@@ -52,3 +52,12 @@ install:V: $O.$CONF
 
 devfs.$O:	../port/devfs-posix.c
 devds.$O:	../port/devds.c
+
+# Regression tests, on the headless configuration (no X server needed):
+#	mk test
+# builds emu-t and the tests in ../test, then runs ../test/run.sh in it; the exit
+# status of mk is that of emu-t (0 when every test passed).
+test:V:
+	mk CONF=emu-t install
+	(cd ../test; mk install)
+	env -u DISPLAY $INSTALLDIR/emu-t -r$ROOT -c1 -g1024x768 /dis/sh.dis /dis/test/run.sh

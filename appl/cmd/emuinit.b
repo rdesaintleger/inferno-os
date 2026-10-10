@@ -16,6 +16,7 @@ init()
 	sys = load Sys Sys->PATH;
 	sys->bind("#e", "/env", sys->MREPL|sys->MCREATE);	# if #e not configured, that's fine
 	args := getenv("emuargs");
+	wm := 0;
 	arg = load Arg Arg->PATH;
 	if (arg == nil)
 		sys->fprint(sys->fildes(2), "emuinit: cannot load %s: %r\n", Arg->PATH);
@@ -25,12 +26,28 @@ init()
 			case c {
 			'g' or 'c' or 'C' or 'm' or 'p' or 'f' or 'r' or 'd' =>
 				arg->arg();
+			'w' =>
+				wm = 1;
 	                  }
 		args = arg->argv();
 	}
+	if(wm)
+		startwm();
 	mod: Command;
 	(mod, args) = loadmod(args);
 	mod->init(nil, args);
+}
+
+# -w: the window manager runs in this instance of emu, next to what is started
+# below (the console shell when no program is given)
+startwm()
+{
+	w := load Command "/dis/wm/wm.dis";
+	if(w == nil){
+		sys->fprint(sys->fildes(2), "emuinit: cannot load /dis/wm/wm.dis: %r\n");
+		return;
+	}
+	spawn w->init(nil, "wm" :: nil);
 }
 
 loadmod(args: list of string): (Command, list of string)

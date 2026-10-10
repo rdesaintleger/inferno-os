@@ -1,0 +1,8 @@
+behaviour: send after destroying the radiobutton: !variable does not exist
+behaviour: message after destroying the radiobutton: (timeout)
+behaviour: namechan on a string variable: !variable is wrong type
+behaviour: send to a string variable: !variable is wrong type
+behaviour: namechan on a string variable: !variable is wrong type
+behaviour: send to a string variable: !variable is wrong type
+functional checks: 0 failure(s)
+done n=50

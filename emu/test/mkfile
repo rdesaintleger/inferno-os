@@ -1,0 +1,31 @@
+<../../mkconfig
+
+# Regression tests for emu on the headless configuration (emu-t, no X server).
+# Run them with `mk test` in emu/Linux.
+
+DISBIN=$ROOT/dis/test
+
+TARG=\
+	chn.dis\
+	lblv.dis\
+	clash.dis\
+
+DATA=\
+	run.sh\
+	ui.sh\
+	chn.exp\
+	lblv.exp\
+	clash.exp\
+	ui.exp\
+
+<$ROOT/mkfiles/mkdis
+
+install:V:	${DATA:%=$DISBIN/%}
+
+$DISBIN/%.sh:	%.sh
+	mkdir -p $DISBIN
+	rm -f $DISBIN/$stem.sh && cp $stem.sh $DISBIN/$stem.sh
+
+$DISBIN/%.exp:	%.exp
+	mkdir -p $DISBIN
+	rm -f $DISBIN/$stem.exp && cp $stem.exp $DISBIN/$stem.exp

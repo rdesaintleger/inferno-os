@@ -1,0 +1,7 @@
+shot start 60251575f293da8ec3f7698fe578c348 /dev/snapshot.ppm
+shot menu 568b9a7f0380730f29980d9d4b2e5d18 /dev/snapshot.ppm
+shot cascade 526a2ee9e42f80e50f677a1a6166fc9f /dev/snapshot.ppm
+shot closed 60251575f293da8ec3f7698fe578c348 /dev/snapshot.ppm
+shot after 60251575f293da8ec3f7698fe578c348 /dev/snapshot.ppm
+shot menu2 568b9a7f0380730f29980d9d4b2e5d18 /dev/snapshot.ppm
+done

@@ -10,6 +10,8 @@
 #include <memdraw.h>
 #include <cursor.h>
 
+int	virtualpointer;
+
 #define	cursorenable()
 #define	cursordisable()
 
@@ -152,7 +154,8 @@ static Chan*
 pointeropen(Chan* c, int omode)
 {
 	c = devopen(c, omode, pointertab, nelem(pointertab), devgen);
-	if((ulong)c->qid.path == Qpointer){
+	/* only a reader consumes the events and claims the pointer: writers may be several */
+	if((ulong)c->qid.path == Qpointer && (c->mode & 3) != OWRITE){
 		if(waserror()){
 			c->flag &= ~COPEN;
 			nexterror();
@@ -177,6 +180,8 @@ pointerclose(Chan* c)
 		return;
 	switch((ulong)c->qid.path){
 	case Qpointer:
+		if((c->mode & 3) == OWRITE)
+			break;
 		qlock(&mouse.q);
 		if(decref(&mouse.ref) == 0){
 			cursordisable();
@@ -241,9 +246,10 @@ pointerwrite(Chan* c, void* va, long n, vlong off)
 			b = strtoul(a, 0, 0);
 		else
 			b = mouse.v.b;
-		/*mousetrack(b, x, y, msec);*/
-		setpointer(x, y);
-		USED(b);
+		if(virtualpointer)
+			mousetrack(b, x, y, 0);
+		else
+			setpointer(x, y);
 		break;
 	case Qcursor:
 		/* TO DO: perhaps interpret data as an Image */

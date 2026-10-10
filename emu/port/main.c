@@ -43,7 +43,8 @@ usage(void)
 		"\t-7\n"
 		"\t-B\n"
 		"\t-C<channel string>\n"
-		"\t-S\n");
+		"\t-S\n"
+		"\t-w\n");
 
 	exits("usage");
 }
@@ -173,6 +174,8 @@ option(int argc, char *argv[], void (*badusage)(void))
 		break;
 	case 'S':
 		tkstylus = 1;
+		break;
+	case 'w':		/* start the window manager too: see emuinit.b */
 		break;
 	case 'v':
 		vflag++;	/* print startup messages */

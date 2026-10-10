@@ -452,6 +452,7 @@ extern	Queue*	kbdq;
 extern	Queue*	gkbdq;
 extern	Queue*	gkscanq;
 extern	int	Xsize;
+extern	int	virtualpointer;	/* set by a backend with no pointer of its own: /dev/pointer writes are the input */
 extern	int	Ysize;
 extern	Pool*	mainmem;
 extern	char	rootdir[MAXROOT];		/* inferno root */
