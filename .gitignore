@@ -25,6 +25,9 @@ y.debug
 /keydb/signed
 /keydb/signerkey
 
+/acme/**/*.dis
+/acme/**/*.sbl
+
 /appl/**/*.dis
 /appl/**/*.sbl
 /emu/test/**/*.dis
@@ -48,6 +51,7 @@ y.debug
 # emu build artifacts
 /emu/*/*.root.[ch]
 /emu/*/emu.c
+/emu/*/emu-t.c
 /emu/*/errstr.h
 /emu/*/srv.h
 /emu/*/srvm.h
