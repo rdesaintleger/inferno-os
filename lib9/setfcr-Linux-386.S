@@ -6,6 +6,7 @@
 	.file	"setfcr-Linux-386.S"
 FN(setfcr):
 	ENT
+	movl	20(%esp), %eax	/* the argument is on the stack (cdecl), not in %eax */
 	xorb	$0x3f, %al
 	movl	%eax, (%esp)
 	fwait

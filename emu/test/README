@@ -1,0 +1,27 @@
+Regression tests for emu, run on the headless configuration (emu-t, no X server).
+
+	mk test			at the root (builds and installs everything first), or in emu/Linux
+	mk coverage		(here) what has no test yet
+
+A test is either
+  - a Limbo program (name.b -> /dis/test/name.dis), run as `t name [args]` in run.sh, or
+  - an Inferno shell script (name.sh), run as `s name` in run.sh.
+Its output, minus the pool-size lines ("start ..." and "end ..."), must be exactly name.exp;
+run.sh prints PASS or FAIL (with the diff) for each and emu exits with 0 or 1.
+
+Conventions
+  - Self-checking: a test asserts what it expects and prints FAIL lines, so name.exp is
+    mostly "functional checks: 0 failure(s)" or a list of "ok ..." lines.  Never record
+    an output you have not checked against the documentation (man/ or the source).
+  - "behaviour: ..." lines record what the system does today where that is surprising
+    or disputed (they are in name.exp, so a change is noticed).  If one is fixed, update
+    the .exp in the same commit.
+  - A comment "covers: Sys.open dev:env ..." declares what a test covers; mk coverage
+    compares it with the list derived from the sources (inventory.sh): the functions of the
+    modules built into the emulator (libinterp/runt.h) and the devices of emu/Linux/emu-t.
+  - Tests are hermetic: they write under /tmp (the Inferno root's tmp, created by mk mkdirs),
+    use no network and no host command, and do not depend on timing beyond a sleep.
+  - The window manager test (ui.sh) drives /dev/pointer and compares /dev/snapshot.ppm.
+
+Adding a test: write name.b or name.sh, add it to TARG/DATA in mkfile and to run.sh, run
+`mk test`, check the output, copy it to name.exp.

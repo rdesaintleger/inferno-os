@@ -40,4 +40,5 @@ install:V:	$SHFILES
 %.installall:V:	$DISBIN/%
 
 $DISBIN/%:	%.sh
+	mkdir -p $DISBIN
 	cp $stem.sh $target && chmod a+rx $target

@@ -9,6 +9,12 @@ load std
 bind -a '#T' /dev			# snapshot device of the headless backend
 failed=
 
+# the tests write in /tmp, which mk mkdirs creates (mk install does it)
+if {! ftest -d /tmp} {
+	echo 'no /tmp in the Inferno root: run mk mkdirs' >[1=2]
+	echo halt 1 > /dev/sysctl
+}
+
 fn compare {
 	name=$1
 	grep -v '^(start|end) ' /tmp/$name.out > /tmp/$name.got
@@ -38,6 +44,11 @@ fn s {
 t chn 200
 t lblv 50
 t clash
+t sys
+t math
+s dev-env
+s dev-dup
+s dev-prog
 s ui						# last: leaves the window manager running
 
 if {~ $#failed 0} {

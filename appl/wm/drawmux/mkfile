@@ -34,4 +34,5 @@ nuke-lib:V:
 	cd $DISLIB; rm -f $LIBTARG
 
 $DISLIB/%.dis:	%.dis
+	mkdir -p $DISLIB
 	rm -f $DISLIB/$stem.dis && cp $stem.dis $DISLIB/$stem.dis

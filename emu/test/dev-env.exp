@@ -1,0 +1,8 @@
+ok create-read
+ok append
+ok truncate
+ok listed
+ok one-entry
+ok removed
+ok dash
+done

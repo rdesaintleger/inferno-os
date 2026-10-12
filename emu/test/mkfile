@@ -9,14 +9,24 @@ TARG=\
 	chn.dis\
 	lblv.dis\
 	clash.dis\
+	sys.dis\
+	math.dis\
 
 DATA=\
 	run.sh\
 	ui.sh\
+	dev-env.sh\
+	dev-dup.sh\
+	dev-prog.sh\
 	chn.exp\
 	lblv.exp\
 	clash.exp\
+	sys.exp\
+	math.exp\
 	ui.exp\
+	dev-env.exp\
+	dev-dup.exp\
+	dev-prog.exp\
 
 <$ROOT/mkfiles/mkdis
 
@@ -29,3 +39,7 @@ $DISBIN/%.sh:	%.sh
 $DISBIN/%.exp:	%.exp
 	mkdir -p $DISBIN
 	rm -f $DISBIN/$stem.exp && cp $stem.exp $DISBIN/$stem.exp
+
+# mk coverage: which functions of the built-in modules and which devices have a test
+coverage:V:
+	ROOT=$ROOT sh coverage.sh -u

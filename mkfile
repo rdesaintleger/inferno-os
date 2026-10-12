@@ -41,13 +41,19 @@ foo:QV:
 
 all:V:		all-$HOSTMODEL
 clean:V:	clean-$HOSTMODEL
-install:V:	install-$HOSTMODEL appl/install-$HOSTMODEL
+install:V:	mkdirs install-$HOSTMODEL appl/install-$HOSTMODEL
+test:V:		test-$HOSTMODEL
 installall:V:	installall-$HOSTMODEL
 emu:V:	emu/all-$HOSTMODEL
 emuinstall:V:	emu/install-$HOSTMODEL
 emuclean:V:	emu/clean-$HOSTMODEL appl/clean-$HOSTMODEL
 emunuke:V:	emu/nuke-$HOSTMODEL appl/nuke-$HOSTMODEL
 nuke:V:		nuke-$HOSTMODEL
+
+# mk test: build and install everything, then run the regression tests (emu/test)
+test-Posix:QV:	install
+	echo "(cd emu; mk $MKFLAGS test)"
+	(cd emu; mk $MKFLAGS test) || exit 1
 
 cleandist:V: clean
 	rm -f $ROOT/$OBJDIR/lib/lib*.a

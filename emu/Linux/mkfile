@@ -58,6 +58,7 @@ devds.$O:	../port/devds.c
 # builds emu-t and the tests in ../test, then runs ../test/run.sh in it; the exit
 # status of mk is that of emu-t (0 when every test passed).
 test:V:
+	mkdir -p $ROOT/tmp
 	mk CONF=emu-t install
 	(cd ../test; mk install)
 	env -u DISPLAY $INSTALLDIR/emu-t -r$ROOT -c1 -g1024x768 /dis/sh.dis /dis/test/run.sh

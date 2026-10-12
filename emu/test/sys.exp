@@ -1,0 +1,3 @@
+behaviour: create in a directory after bind+unmount: mounted directory forbids creation
+functional checks: 0 failure(s)
+done

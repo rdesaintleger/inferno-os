@@ -1,0 +1,3 @@
+behaviour: nan != nan is 0, nan == nan is 1
+functional checks: 0 failure(s)
+done
