@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_atanh.c 1.3 95/01/18 */
 /*
@@ -33,11 +32,20 @@
 
 #include "fdlibm.h"
 
-static const double one = 1.0, Huge = 1e300;
+#ifdef __STDC__
+static const double one = 1.0, huge = 1e300;
+#else
+static double one = 1.0, huge = 1e300;
+#endif
 
 static double zero = 0.0;
 
+#ifdef __STDC__
 	double __ieee754_atanh(double x)
+#else
+	double __ieee754_atanh(x)
+	double x;
+#endif
 {
 	double t;
 	int hx,ix;
@@ -49,7 +57,7 @@ static double zero = 0.0;
 	    return (x-x)/(x-x);
 	if(ix==0x3ff00000) 
 	    return x/zero;
-	if(ix<0x3e300000&&(Huge+x)>zero) return x;	/* x<2**-28 */
+	if(ix<0x3e300000&&(huge+x)>zero) return x;	/* x<2**-28 */
 	__HI(x) = ix;		/* x <- |x| */
 	if(ix<0x3fe00000) {		/* x < 0.5 */
 	    t = x+x;

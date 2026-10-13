@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_acosh.c 1.3 95/01/18 */
 /*
@@ -29,11 +28,20 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double 
+#else
+static double 
+#endif
 one	= 1.0,
 ln2	= 6.93147180559945286227e-01;  /* 0x3FE62E42, 0xFEFA39EF */
 
+#ifdef __STDC__
 	double __ieee754_acosh(double x)
+#else
+	double __ieee754_acosh(x)
+	double x;
+#endif
 {	
 	double t;
 	int hx;
@@ -44,7 +52,7 @@ ln2	= 6.93147180559945286227e-01;  /* 0x3FE62E42, 0xFEFA39EF */
 	    if(hx >=0x7ff00000) {	/* x is inf of NaN */
 	        return x+x;
 	    } else 
-		return __ieee754_log(x)+ln2;	/* acosh(Huge)=log(2x) */
+		return __ieee754_log(x)+ln2;	/* acosh(huge)=log(2x) */
 	} else if(((hx-0x3ff00000)|__LO(x))==0) {
 	    return 0.0;			/* acosh(1) = 0 */
 	} else if (hx > 0x40000000) {	/* 2**28 > x > 2 */

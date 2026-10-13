@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_isnan.c 1.3 95/01/18 */
 /*
@@ -19,7 +18,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	int isnan(double x)
+#else
+	int isnan(x)
+	double x;
+#endif
 {
 	int hx,lx;
 	hx = (__HI(x)&0x7fffffff);

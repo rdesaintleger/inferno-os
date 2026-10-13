@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_sinh.c 1.3 95/01/18 */
 /*
@@ -23,7 +22,7 @@
  *
  *	    22       <= x <= lnovft :  sinh(x) := exp(x)/2 
  *	    lnovft   <= x <= ln2ovft:  sinh(x) := exp(x/2)/2 * exp(x/2)
- *	    ln2ovft  <  x	    :  sinh(x) := x*sHuge (overflow)
+ *	    ln2ovft  <  x	    :  sinh(x) := x*shuge (overflow)
  *
  * Special cases:
  *	sinh(x) is |x| if x is +INF, -INF, or NaN.
@@ -32,9 +31,18 @@
 
 #include "fdlibm.h"
 
-static const double one = 1.0, sHuge = 1.0e307;
+#ifdef __STDC__
+static const double one = 1.0, shuge = 1.0e307;
+#else
+static double one = 1.0, shuge = 1.0e307;
+#endif
 
+#ifdef __STDC__
 	double __ieee754_sinh(double x)
+#else
+	double __ieee754_sinh(x)
+	double x;
+#endif
 {	
 	double t,w,h;
 	int ix,jx;
@@ -52,7 +60,7 @@ static const double one = 1.0, sHuge = 1.0e307;
     /* |x| in [0,22], return sign(x)*0.5*(E+E/(E+1))) */
 	if (ix < 0x40360000) {		/* |x|<22 */
 	    if (ix<0x3e300000) 		/* |x|<2**-28 */
-		if(sHuge+x>one) return x;/* sinh(tiny) = tiny with inexact */
+		if(shuge+x>one) return x;/* sinh(tiny) = tiny with inexact */
 	    t = expm1(fabs(x));
 	    if(ix<0x3ff00000) return h*(2.0*t-t*t/(t+one));
 	    return h*(t+t/(t+one));
@@ -70,5 +78,5 @@ static const double one = 1.0, sHuge = 1.0e307;
 	}
 
     /* |x| > overflowthresold, sinh(x) overflow */
-	return x*sHuge;
+	return x*shuge;
 }

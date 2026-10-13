@@ -1,11 +1,9 @@
-/* derived from /netlib/fdlibm */
 
-/* @(#)e_exp.c 1.3 95/01/18 */
+/* @(#)e_exp.c 1.6 04/04/22 */
 /*
  * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
  *
- * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
  * software is freely granted, provided that this notice 
  * is preserved.
@@ -29,7 +27,7 @@
  *	the interval [0,0.34658]:
  *	Write
  *	    R(r**2) = r*(exp(r)+1)/(exp(r)-1) = 2 + r*r/6 - r**4/360 + ...
- *      We use a special Reme algorithm on [0,0.34658] to generate 
+ *      We use a special Remes algorithm on [0,0.34658] to generate 
  * 	a polynomial of degree 5 to approximate R. The maximum error 
  *	of this polynomial approximation is bounded by 2**-59. In
  *	other words,
@@ -77,10 +75,14 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double
+#else
+static double
+#endif
 one	= 1.0,
 halF[2]	= {0.5,-0.5,},
-Huge	= 1.0e+300,
+huge	= 1.0e+300,
 twom1000= 9.33263618503218878990e-302,     /* 2**-1000=0x01700000,0*/
 o_threshold=  7.09782712893383973096e+02,  /* 0x40862E42, 0xFEFA39EF */
 u_threshold= -7.45133219101941108420e+02,  /* 0xc0874910, 0xD52D3051 */
@@ -96,7 +98,12 @@ P4   = -1.65339022054652515390e-06, /* 0xBEBBBD41, 0xC5D26BF1 */
 P5   =  4.13813679705723846039e-08; /* 0x3E663769, 0x72BEA4D0 */
 
 
+#ifdef __STDC__
 	double __ieee754_exp(double x)	/* default IEEE double exp */
+#else
+	double __ieee754_exp(x)	/* default IEEE double exp */
+	double x;
+#endif
 {
 	double y,hi,lo,c,t;
 	int k,xsb;
@@ -113,7 +120,7 @@ P5   =  4.13813679705723846039e-08; /* 0x3E663769, 0x72BEA4D0 */
 		     return x+x; 		/* NaN */
 		else return (xsb==0)? x:0.0;	/* exp(+-inf)={inf,0} */
 	    }
-	    if(x > o_threshold) return Huge*Huge; /* overflow */
+	    if(x > o_threshold) return huge*huge; /* overflow */
 	    if(x < u_threshold) return twom1000*twom1000; /* underflow */
 	}
 
@@ -122,7 +129,7 @@ P5   =  4.13813679705723846039e-08; /* 0x3E663769, 0x72BEA4D0 */
 	    if(hx < 0x3FF0A2B2) {	/* and |x| < 1.5 ln2 */
 		hi = x-ln2HI[xsb]; lo=ln2LO[xsb]; k = 1-xsb-xsb;
 	    } else {
-		k  = invln2*x+halF[xsb];
+		k  = (int)(invln2*x+halF[xsb]);
 		t  = k;
 		hi = x - t*ln2HI[0];	/* t*ln2HI is exact here */
 		lo = t*ln2LO[0];
@@ -130,7 +137,7 @@ P5   =  4.13813679705723846039e-08; /* 0x3E663769, 0x72BEA4D0 */
 	    x  = hi - lo;
 	} 
 	else if(hx < 0x3e300000)  {	/* when |x|<2**-28 */
-	    if(Huge+x>one) return one+x;/* trigger inexact */
+	    if(huge+x>one) return one+x;/* trigger inexact */
 	}
 	else k = 0;
 

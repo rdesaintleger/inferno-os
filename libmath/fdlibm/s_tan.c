@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_tan.c 1.3 95/01/18 */
 /*
@@ -44,7 +43,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	double tan(double x)
+#else
+	double tan(x)
+	double x;
+#endif
 {
 	double y[2],z=0.0;
 	int n, ix;

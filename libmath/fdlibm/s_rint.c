@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_rint.c 1.3 95/01/18 */
 /*
@@ -12,16 +11,6 @@
  * ====================================================
  */
 
-/* dummy routine to get around over-eager arm compiler optimization.
-  * Calling this causes a store and reload of floating point numbers
-  */
-
-void
-dummy(void)
-{
-}
-
-
 /*
  * rint(x)
  * Return x rounded to integral value according to the prevailing
@@ -34,13 +23,22 @@ dummy(void)
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double
+#else
+static double 
+#endif
 TWO52[2]={
   4.50359962737049600000e+15, /* 0x43300000, 0x00000000 */
  -4.50359962737049600000e+15, /* 0xC3300000, 0x00000000 */
 };
 
+#ifdef __STDC__
 	double rint(double x)
+#else
+	double rint(x)
+	double x;
+#endif
 {
 	int i0,j0,sx;
 	unsigned i,i1;
@@ -57,7 +55,6 @@ TWO52[2]={
 		i0 |= ((i1|-i1)>>12)&0x80000;
 		__HI(x)=i0;
 	        w = TWO52[sx]+x;
-                 dummy();			/* fix optimiser */
 	        t =  w-TWO52[sx];
 	        i0 = __HI(t);
 	        __HI(t) = (i0&0x7fffffff)|(sx<<31);
@@ -83,6 +80,5 @@ TWO52[2]={
 	__HI(x) = i0;
 	__LO(x) = i1;
 	w = TWO52[sx]+x;
-	dummy();			/* fix optimiser */
 	return w-TWO52[sx];
 }

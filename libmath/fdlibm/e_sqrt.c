@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 /* @(#)e_sqrt.c 1.3 95/01/18 */
 /*
  * ====================================================
@@ -68,8 +67,8 @@
  *	result is exact, bigger than 1/2ulp, or less than 1/2ulp
  *	(it will never equal to 1/2ulp).
  *	The rounding mode can be detected by checking whether
- *	Huge + tiny is equal to Huge, and whether Huge - tiny is
- *	equal to Huge for some floating point number "Huge" and "tiny".
+ *	huge + tiny is equal to huge, and whether huge - tiny is
+ *	equal to huge for some floating point number "huge" and "tiny".
  *		
  * Special cases:
  *	sqrt(+-0) = +-0 	... exact
@@ -83,9 +82,18 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static	const double	one	= 1.0, tiny=1.0e-300;
+#else
+static	double	one	= 1.0, tiny=1.0e-300;
+#endif
 
+#ifdef __STDC__
 	double __ieee754_sqrt(double x)
+#else
+	double __ieee754_sqrt(x)
+	double x;
+#endif
 {
 	double z;
 	int 	sign = (int)0x80000000; 

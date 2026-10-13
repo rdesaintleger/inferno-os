@@ -1,11 +1,12 @@
-/* derived from /netlib/fdlibm */
 
-/* @(#)e_pow.c 1.3 95/01/18 */
+#ifndef lint
+static  char sccsid[] = "@(#)e_pow.c 1.5 04/04/22 SMI"; 
+#endif
+
 /*
  * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
  *
- * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
  * software is freely granted, provided that this notice 
  * is preserved.
@@ -59,7 +60,11 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double 
+#else
+static double 
+#endif
 bp[] = {1.0, 1.5,},
 dp_h[] = { 0.0, 5.84962487220764160156e-01,}, /* 0x3FE2B803, 0x40000000 */
 dp_l[] = { 0.0, 1.35003920212974897128e-08,}, /* 0x3E4CFDEB, 0x43CFD006 */
@@ -67,7 +72,7 @@ zero    =  0.0,
 one	=  1.0,
 two	=  2.0,
 two53	=  9007199254740992.0,	/* 0x43400000, 0x00000000 */
-Huge	=  1.0e300,
+huge	=  1.0e300,
 tiny    =  1.0e-300,
 	/* poly coefs for (3/2)*(log(x)-2s-2/3*s**3 */
 L1  =  5.99999999999994648725e-01, /* 0x3FE33333, 0x33333303 */
@@ -92,14 +97,20 @@ ivln2    =  1.44269504088896338700e+00, /* 0x3FF71547, 0x652B82FE =1/ln2 */
 ivln2_h  =  1.44269502162933349609e+00, /* 0x3FF71547, 0x60000000 =24b 1/ln2*/
 ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
+#ifdef __STDC__
 	double __ieee754_pow(double x, double y)
+#else
+	double __ieee754_pow(x,y)
+	double x, y;
+#endif
 {
 	double z,ax,z_h,z_l,p_h,p_l;
 	double y1,t1,t2,r,s,t,u,v,w;
-	int i,j,k,yisint,n;
+	int i0,i1,i,j,k,yisint,n;
 	int hx,hy,ix,iy;
 	unsigned lx,ly;
 
+	i0 = ((*(int*)&one)>>29)^1; i1=1-i0;
 	hx = __HI(x); lx = __LO(x);
 	hy = __HI(y); ly = __LO(y);
 	ix = hx&0x7fffffff;  iy = hy&0x7fffffff;
@@ -168,21 +179,26 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    }
 	}
     
-    /* (x<0)**(non-int) is NaN */
-	if((((hx>>31)+1)|yisint)==0) return (x-x)/(x-x);
+	n = (hx>>31)+1;
 
-    /* |y| is Huge */
+    /* (x<0)**(non-int) is NaN */
+	if((n|yisint)==0) return (x-x)/(x-x);
+
+	s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
+	if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
+
+    /* |y| is huge */
 	if(iy>0x41e00000) { /* if |y| > 2**31 */
 	    if(iy>0x43f00000){	/* if |y| > 2**64, must o/uflow */
-		if(ix<=0x3fefffff) return (hy<0)? Huge*Huge:tiny*tiny;
-		if(ix>=0x3ff00000) return (hy>0)? Huge*Huge:tiny*tiny;
+		if(ix<=0x3fefffff) return (hy<0)? huge*huge:tiny*tiny;
+		if(ix>=0x3ff00000) return (hy>0)? huge*huge:tiny*tiny;
 	    }
 	/* over/underflow if x is not close to one */
-	    if(ix<0x3fefffff) return (hy<0)? Huge*Huge:tiny*tiny;
-	    if(ix>0x3ff00000) return (hy>0)? Huge*Huge:tiny*tiny;
+	    if(ix<0x3fefffff) return (hy<0)? s*huge*huge:s*tiny*tiny;
+	    if(ix>0x3ff00000) return (hy>0)? s*huge*huge:s*tiny*tiny;
 	/* now |1-x| is tiny <= 2**-20, suffice to compute 
 	   log(x) by x-x^2/2+x^3/3-x^4/4 */
-	    t = x-1;		/* t has 20 trailing zeros */
+	    t = ax-one;		/* t has 20 trailing zeros */
 	    w = (t*t)*(0.5-t*(0.3333333333333333333333-t*0.25));
 	    u = ivln2_h*t;	/* ivln2_h has 21 sig. bits */
 	    v = t*ivln2_l-w*ivln2;
@@ -190,7 +206,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    __LO(t1) = 0;
 	    t2 = v-(t1-u);
 	} else {
-	    double s2,s_h,s_l,t_h,t_l;
+	    double ss,s2,s_h,s_l,t_h,t_l;
 	    n = 0;
 	/* take care subnormal number */
 	    if(ix<0x00100000)
@@ -204,11 +220,11 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    else {k=0;n+=1;ix -= 0x00100000;}
 	    __HI(ax) = ix;
 
-	/* compute s = s_h+s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5) */
+	/* compute ss = s_h+s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5) */
 	    u = ax-bp[k];		/* bp[0]=1.0, bp[1]=1.5 */
 	    v = one/(ax+bp[k]);
-	    s = u*v;
-	    s_h = s;
+	    ss = u*v;
+	    s_h = ss;
 	    __LO(s_h) = 0;
 	/* t_h=ax+bp[k] High */
 	    t_h = zero;
@@ -216,31 +232,28 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    t_l = ax - (t_h-bp[k]);
 	    s_l = v*((u-s_h*t_h)-s_h*t_l);
 	/* compute log(ax) */
-	    s2 = s*s;
+	    s2 = ss*ss;
 	    r = s2*s2*(L1+s2*(L2+s2*(L3+s2*(L4+s2*(L5+s2*L6)))));
-	    r += s_l*(s_h+s);
+	    r += s_l*(s_h+ss);
 	    s2  = s_h*s_h;
 	    t_h = 3.0+s2+r;
 	    __LO(t_h) = 0;
 	    t_l = r-((t_h-3.0)-s2);
-	/* u+v = s*(1+...) */
+	/* u+v = ss*(1+...) */
 	    u = s_h*t_h;
-	    v = s_l*t_h+t_l*s;
-	/* 2/(3log2)*(s+...) */
+	    v = s_l*t_h+t_l*ss;
+	/* 2/(3log2)*(ss+...) */
 	    p_h = u+v;
 	    __LO(p_h) = 0;
 	    p_l = v-(p_h-u);
 	    z_h = cp_h*p_h;		/* cp_h+cp_l = 2/(3*log2) */
 	    z_l = cp_l*p_h+p_l*cp+dp_l[k];
-	/* log2(ax) = (s+..)*2/(3*log2) = n + dp_h + z_h + z_l */
+	/* log2(ax) = (ss+..)*2/(3*log2) = n + dp_h + z_h + z_l */
 	    t = (double)n;
 	    t1 = (((z_h+z_l)+dp_h[k])+t);
 	    __LO(t1) = 0;
 	    t2 = z_l-(((t1-t)-dp_h[k])-z_h);
 	}
-
-	s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
-	if((((hx>>31)+1)|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
 
     /* split up y into y1+y2 and compute (y1+y2)*(t1+t2) */
 	y1  = y;
@@ -252,9 +265,9 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	i = __LO(z);
 	if (j>=0x40900000) {				/* z >= 1024 */
 	    if(((j-0x40900000)|i)!=0)			/* if z > 1024 */
-		return s*Huge*Huge;			/* overflow */
+		return s*huge*huge;			/* overflow */
 	    else {
-		if(p_l+ovt>z-p_h) return s*Huge*Huge;	/* overflow */
+		if(p_l+ovt>z-p_h) return s*huge*huge;	/* overflow */
 	    }
 	} else if((j&0x7fffffff)>=0x4090cc00 ) {	/* z <= -1075 */
 	    if(((j-0xc090cc00)|i)!=0) 		/* z < -1075 */

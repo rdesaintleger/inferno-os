@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_finite.c 1.3 95/01/18 */
 /*
@@ -19,7 +18,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	int finite(double x)
+#else
+	int finite(x)
+	double x;
+#endif
 {
 	int hx; 
 	hx = __HI(x);

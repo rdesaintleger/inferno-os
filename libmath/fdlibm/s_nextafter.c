@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_nextafter.c 1.3 95/01/18 */
 /*
@@ -21,7 +20,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	double nextafter(double x, double y)
+#else
+	double nextafter(x,y)
+	double x,y;
+#endif
 {
 	int	hx,hy,ix,iy;
 	unsigned lx,ly;

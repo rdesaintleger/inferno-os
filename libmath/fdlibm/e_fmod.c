@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_fmod.c 1.3 95/01/18 */
 /*
@@ -20,9 +19,18 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double one = 1.0, Zero[] = {0.0, -0.0,};
+#else
+static double one = 1.0, Zero[] = {0.0, -0.0,};
+#endif
 
+#ifdef __STDC__
 	double __ieee754_fmod(double x, double y)
+#else
+	double __ieee754_fmod(x,y)
+	double x,y ;
+#endif
 {
 	int n,hx,hy,hz,ix,iy,sx,i;
 	unsigned lx,ly,lz;

@@ -1,11 +1,9 @@
-/* derived from /netlib/fdlibm */
 
-/* @(#)s_expm1.c 1.3 95/01/18 */
+/* @(#)s_expm1.c 1.5 04/04/22 */
 /*
  * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
  *
- * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
  * software is freely granted, provided that this notice 
  * is preserved.
@@ -34,7 +32,7 @@
  *	    R1(r**2) = 6/r *((exp(r)+1)/(exp(r)-1) - 2/r)
  *		     = 6/r * ( 1 + 2.0*(1/(exp(r)-1) - 1/r))
  *		     = 1 - r^2/60 + r^4/2520 - r^6/100800 + ...
- *      We use a special Reme algorithm on [0,0.347] to generate 
+ *      We use a special Remes algorithm on [0,0.347] to generate 
  * 	a polynomial of degree 5 in r*r to approximate R1. The 
  *	maximum error of this polynomial approximation is bounded 
  *	by 2**-61. In other words,
@@ -109,9 +107,13 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double
+#else
+static double
+#endif
 one		= 1.0,
-Huge		= 1.0e+300,
+huge		= 1.0e+300,
 tiny		= 1.0e-300,
 o_threshold	= 7.09782712893383973096e+02,/* 0x40862E42, 0xFEFA39EF */
 ln2_hi		= 6.93147180369123816490e-01,/* 0x3fe62e42, 0xfee00000 */
@@ -124,7 +126,12 @@ Q3  =  -7.93650757867487942473e-05, /* BF14CE19 9EAADBB7 */
 Q4  =   4.00821782732936239552e-06, /* 3ED0CFCA 86E65239 */
 Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
 
+#ifdef __STDC__
 	double expm1(double x)
+#else
+	double expm1(x)
+	double x;
+#endif
 {
 	double y,hi,lo,c,t,e,hxs,hfx,r1;
 	int k,xsb;
@@ -135,7 +142,7 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
 	if(xsb==0) y=x; else y= -x;	/* y = |x| */
 	hx &= 0x7fffffff;		/* high word of |x| */
 
-    /* filter out Huge and non-finite argument */
+    /* filter out huge and non-finite argument */
 	if(hx >= 0x4043687A) {			/* if |x|>=56*ln2 */
 	    if(hx >= 0x40862E42) {		/* if |x|>=709.78... */
                 if(hx>=0x7ff00000) {
@@ -143,7 +150,7 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
 		         return x+x; 	 /* NaN */
 		    else return (xsb==0)? x:-1.0;/* exp(+-inf)={inf,-1} */
 	        }
-	        if(x > o_threshold) return Huge*Huge; /* overflow */
+	        if(x > o_threshold) return huge*huge; /* overflow */
 	    }
 	    if(xsb!=0) { /* x < -56*ln2, return -1.0 with inexact */
 		if(x+tiny<0.0)		/* raise inexact */
@@ -168,8 +175,8 @@ Q5  =  -2.01099218183624371326e-07; /* BE8AFDB7 6E09C32D */
 	    c  = (hi-x)-lo;
 	} 
 	else if(hx < 0x3c900000) {  	/* when |x|<2**-54, return x */
-	    t = Huge+x;	/* return x with inexact flags when x!=0 */
-	    return x - (t-(Huge+x));	
+	    t = huge+x;	/* return x with inexact flags when x!=0 */
+	    return x - (t-(huge+x));	
 	}
 	else k = 0;
 

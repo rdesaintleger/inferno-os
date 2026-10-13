@@ -58,9 +58,9 @@ OFILES=\
 
 HFILES=\
 	$ROOT/include/mathi.h\
-	fdlibm/fdlibm.h\
+	fdlibm-old/fdlibm.h\
 	
 <$ROOT/mkfiles/mksyslib-$SHELLTYPE
 
-%.$O:	fdlibm/%.c
-	$CC $CFLAGS -o $target -Ifdlibm fdlibm/$stem.c
+%.$O:	fdlibm-old/%.c
+	$CC $CFLAGS -o $target -Ifdlibm-old fdlibm-old/$stem.c

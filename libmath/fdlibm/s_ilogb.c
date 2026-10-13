@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)s_ilogb.c 1.3 95/01/18 */
 /*
@@ -20,7 +19,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	int ilogb(double x)
+#else
+	int ilogb(x)
+	double x;
+#endif
 {
 	int hx,lx,ix;
 

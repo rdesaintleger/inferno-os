@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_hypot.c 1.3 95/01/18 */
 /*
@@ -46,7 +45,12 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 	double __ieee754_hypot(double x, double y)
+#else
+	double __ieee754_hypot(x,y)
+	double x, y;
+#endif
 {
 	double a=x,b=y,t1,t2,y1,y2,w;
 	int j,k,ha,hb;

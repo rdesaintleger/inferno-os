@@ -1,4 +1,3 @@
-/* derived from /netlib/fdlibm */
 
 /* @(#)e_jn.c 1.4 95/01/18 */
 /*
@@ -40,14 +39,23 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double
+#else
+static double
+#endif
 invsqrtpi=  5.64189583547756279280e-01, /* 0x3FE20DD7, 0x50429B6D */
 two   =  2.00000000000000000000e+00, /* 0x40000000, 0x00000000 */
 one   =  1.00000000000000000000e+00; /* 0x3FF00000, 0x00000000 */
 
 static double zero  =  0.00000000000000000000e+00;
 
+#ifdef __STDC__
 	double __ieee754_jn(int n, double x)
+#else
+	double __ieee754_jn(n,x)
+	int n; double x;
+#endif
 {
 	int i,hx,ix,lx, sgn;
 	double a, b, temp, di;
@@ -203,7 +211,12 @@ static double zero  =  0.00000000000000000000e+00;
 	if(sgn==1) return -b; else return b;
 }
 
+#ifdef __STDC__
 	double __ieee754_yn(int n, double x) 
+#else
+	double __ieee754_yn(n,x) 
+	int n; double x;
+#endif
 {
 	int i,hx,ix,lx;
 	int sign;

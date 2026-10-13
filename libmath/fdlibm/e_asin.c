@@ -1,6 +1,5 @@
-/* derived from /netlib/fdlibm */
 
-/* @(#)e_asin.c 1.3 95/01/18 */
+/* @(#)e_asin.c 1.4 96/03/07 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -19,7 +18,7 @@
  *		asin(x) = x + x*x^2*R(x^2)
  *	where
  *		R(x^2) is a rational approximation of (asin(x)-x)/x^3 
- *	and its remez error is bounded by
+ *	and its Remes error is bounded by
  *		|(asin(x)-x)/x^3 - R(x^2)| < 2^(-58.75)
  *
  *	For x in [0.5,1]
@@ -45,9 +44,13 @@
 
 #include "fdlibm.h"
 
+#ifdef __STDC__
 static const double 
+#else
+static double 
+#endif
 one =  1.00000000000000000000e+00, /* 0x3FF00000, 0x00000000 */
-Huge =  1.000e+300,
+huge =  1.000e+300,
 pio2_hi =  1.57079632679489655800e+00, /* 0x3FF921FB, 0x54442D18 */
 pio2_lo =  6.12323399573676603587e-17, /* 0x3C91A626, 0x33145C07 */
 pio4_hi =  7.85398163397448278999e-01, /* 0x3FE921FB, 0x54442D18 */
@@ -63,7 +66,12 @@ qS2 =  2.02094576023350569471e+00, /* 0x40002AE5, 0x9C598AC8 */
 qS3 = -6.88283971605453293030e-01, /* 0xBFE6066C, 0x1B8D0159 */
 qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
 
+#ifdef __STDC__
 	double __ieee754_asin(double x)
+#else
+	double __ieee754_asin(x)
+	double x;
+#endif
 {
 	double t,w,p,q,c,r,s;
 	int hx,ix;
@@ -76,8 +84,8 @@ qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
 	    return (x-x)/(x-x);		/* asin(|x|>1) is NaN */   
 	} else if (ix<0x3fe00000) {	/* |x|<0.5 */
 	    if(ix<0x3e400000) {		/* if |x| < 2**-27 */
-		if(Huge+x>one) return x;/* return x with inexact if x!=0*/
-	    } 
+		if(huge+x>one) return x;/* return x with inexact if x!=0*/
+	    } else 
 		t = x*x;
 		p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
 		q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));
