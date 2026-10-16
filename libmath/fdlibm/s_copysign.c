@@ -20,9 +20,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	double copysign(double x, double y)
+	double fd_copysign(double x, double y)
 #else
-	double copysign(x,y)
+	double fd_copysign(x,y)
 	double x,y;
 #endif
 {

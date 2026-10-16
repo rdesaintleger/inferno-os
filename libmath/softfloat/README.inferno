@@ -1,0 +1,81 @@
+Inferno copy of Berkeley SoftFloat 3
+====================================
+
+This is John R. Hauser's Berkeley SoftFloat 3 (BSD licence, see COPYING.txt;
+the sources are those of the Berkeley mirror, which include additions such
+as bfloat16 made after Release 3e), reduced to what Inferno needs.  The upstream README
+is kept as README.txt and the upstream documentation in doc/.
+
+SoftFloat is an IEEE 754 implementation written in portable C.  Inferno
+uses it so that `real' arithmetic, constants and elementary functions give
+the same bits on every machine, whatever its floating-point hardware.
+
+What was kept
+-------------
+
+  float64_t  add, sub, mul, div, rem, sqrt, roundToInt, comparisons
+             (quiet and signaling), conversions to and from 32 and 64 bit
+             integers (signed and unsigned), and f32 <-> f64
+  float32_t  the same operations: single precision is kept so that the
+             single precision libraries of the Amiga (mathieeesingbas and
+             mathieeesingtrans) do not have to go through double
+  extFloat80_t  the same operations plus conversions to and from f32, f64
+             and integers; not used by Dis, reserved for the 68881 FPU of
+             the 68k emulation
+
+123 source files remain (54 for f64, 30 more for f32, 39 more for extF80).
+Removed: half precision and bfloat16 (f16, bf16), 128-bit floats, the fused
+multiply-add (the real arithmetic of Dis never contracts operations), the
+"M" (pointer argument) interface and everything it needs, the other NaN
+specialisations, and the Makefiles and build directories.  Anything removed can be brought
+back from the git history.
+
+What was resolved once and for all
+----------------------------------
+
+The configuration macros of the upstream sources were resolved with
+unifdef(1) and are gone, together with the code of the branches not taken:
+
+  - SOFTFLOAT_FAST_INT64 is always on: 64-bit integers are required;
+  - SOFTFLOAT_INTRINSIC_INT128, SOFTFLOAT_BUILTIN_CLZ and opts-GCC.h are
+    gone: no compiler extension, no __int128, no builtin;
+  - SOFTFLOAT_FAST_DIV32TO16 and FAST_DIV64TO32 are off (plain C division
+    is not used);
+  - SOFTFLOAT_ROUND_ODD is off: round-to-odd is not supported;
+  - LITTLEENDIAN is gone: the order of the fields of the multiword types is
+    fixed, most significant word first (`struct uint128 { v64, v0 }',
+    `struct extFloat80M { signExp, signif }').  It is a matter of
+    declaration only: the arithmetic never depends on the byte order of the
+    host, and these structures must be accessed by field name, never as
+    raw memory.  The results are the same with either order.
+
+The only platform file left is source/include/platform.h, which defines how
+functions defined in headers are declared (INLINE).  It replaces the
+build/<target>/platform.h of the upstream distribution.
+
+NaN policy
+----------
+
+The RISCV specialisation is used (source/RISCV): the default NaN is the
+positive quiet NaN (0x7FF8000000000000 for float64_t), any operation with a
+NaN operand returns it (the payload is not propagated) and the invalid
+exception is raised for a signaling NaN.  Tininess is detected after
+rounding.  This choice does not depend on any CPU: it is the one with the
+simplest rules.
+
+State
+-----
+
+softfloat_roundingMode, softfloat_exceptionFlags, softfloat_detectTininess
+and extF80_roundingPrecision are global.  Inferno saves and restores them
+for each process; SoftFloat itself raises flags and never traps (traps are
+emulated by the caller, from the flags).
+
+Testing
+-------
+
+test/regress.c runs deterministic pseudo-random vectors through every
+operation and prints a hash of all results and flags.  The value expected
+(e8f3b4a677c83197) is the one of the unmodified upstream sources and is
+identical on 32 and 64 bit builds, at -O0, -O2 and -Os, and in strict C99.
+Any change to this directory must keep it.

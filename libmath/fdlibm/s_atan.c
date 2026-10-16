@@ -83,9 +83,9 @@ one   = 1.0,
 huge   = 1.0e300;
 
 #ifdef __STDC__
-	double atan(double x)
+	double fd_atan(double x)
 #else
-	double atan(x)
+	double fd_atan(x)
 	double x;
 #endif
 {
@@ -106,7 +106,7 @@ huge   = 1.0e300;
 	    }
 	    id = -1;
 	} else {
-	x = fabs(x);
+	x = fd_fabs(x);
 	if (ix < 0x3ff30000) {		/* |x| < 1.1875 */
 	    if (ix < 0x3fe60000) {	/* 7/16 <=|x|<11/16 */
 		id = 0; x = (2.0*x-one)/(2.0+x); 

@@ -44,9 +44,9 @@ static double one=1.0, two=2.0, tiny = 1.0e-300;
 #endif
 
 #ifdef __STDC__
-	double tanh(double x)
+	double fd_tanh(double x)
 #else
-	double tanh(x)
+	double fd_tanh(x)
 	double x;
 #endif
 {
@@ -68,10 +68,10 @@ static double one=1.0, two=2.0, tiny = 1.0e-300;
 	    if (ix<0x3c800000) 		/* |x|<2**-55 */
 		return x*(one+x);    	/* tanh(small) = small */
 	    if (ix>=0x3ff00000) {	/* |x|>=1  */
-		t = expm1(two*fabs(x));
+		t = fd_expm1(two*fd_fabs(x));
 		z = one - two/(t+two);
 	    } else {
-	        t = expm1(-two*fabs(x));
+	        t = fd_expm1(-two*fd_fabs(x));
 	        z= -t/(t+two);
 	    }
     /* |x| > 22, return +-1 */

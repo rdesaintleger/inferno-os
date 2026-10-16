@@ -44,9 +44,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	double tan(double x)
+	double fd_tan(double x)
 #else
-	double tan(x)
+	double fd_tan(x)
 	double x;
 #endif
 {
@@ -58,15 +58,15 @@
 
     /* |x| ~< pi/4 */
 	ix &= 0x7fffffff;
-	if(ix <= 0x3fe921fb) return __kernel_tan(x,z,1);
+	if(ix <= 0x3fe921fb) return fd_kernel_tan(x,z,1);
 
     /* tan(Inf or NaN) is NaN */
 	else if (ix>=0x7ff00000) return x-x;		/* NaN */
 
     /* argument reduction needed */
 	else {
-	    n = __ieee754_rem_pio2(x,y);
-	    return __kernel_tan(y[0],y[1],1-((n&1)<<1)); /*   1 -- n even
+	    n = fd_rem_pio2(x,y);
+	    return fd_kernel_tan(y[0],y[1],1-((n&1)<<1)); /*   1 -- n even
 							-1 -- n odd */
 	}
 }

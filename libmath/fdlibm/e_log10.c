@@ -59,9 +59,9 @@ log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
 static double zero   =  0.0;
 
 #ifdef __STDC__
-	double __ieee754_log10(double x)
+	double fd_log10(double x)
 #else
-	double __ieee754_log10(x)
+	double fd_log10(x)
 	double x;
 #endif
 {
@@ -86,6 +86,6 @@ static double zero   =  0.0;
         hx = (hx&0x000fffff)|((0x3ff-i)<<20);
         y  = (double)(k+i);
         __HI(x) = hx;
-	z  = y*log10_2lo + ivln10*__ieee754_log(x);
+	z  = y*log10_2lo + ivln10*fd_log(x);
 	return  z+y*log10_2hi;
 }

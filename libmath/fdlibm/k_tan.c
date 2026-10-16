@@ -71,7 +71,7 @@ static const double xxx[] = {
 /* INDENT ON */
 
 double
-__kernel_tan(double x, double y, int iy) {
+fd_kernel_tan(double x, double y, int iy) {
 	double z, r, v, w, s;
 	int ix, hx;
 
@@ -80,7 +80,7 @@ __kernel_tan(double x, double y, int iy) {
 	if (ix < 0x3e300000) {			/* x < 2**-28 */
 		if ((int) x == 0) {		/* generate inexact */
 			if (((ix | __LO(x)) | (iy + 1)) == 0)
-				return one / fabs(x);
+				return one / fd_fabs(x);
 			else {
 				if (iy == 1)
 					return x;

@@ -97,9 +97,9 @@ Lp7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
 static double zero = 0.0;
 
 #ifdef __STDC__
-	double log1p(double x)
+	double fd_log1p(double x)
 #else
-	double log1p(x)
+	double fd_log1p(x)
 	double x;
 #endif
 {

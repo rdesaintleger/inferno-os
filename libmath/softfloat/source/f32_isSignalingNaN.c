@@ -48,4 +48,3 @@ bool f32_isSignalingNaN( float32_t a )
     return softfloat_isSigNaNF32UI( uA.ui );
 
 }
-

@@ -1,0 +1,28 @@
+Inferno copy of fdlibm 5.3
+==========================
+
+Imported unmodified from the Sun/netlib fdlibm 5.3 distribution, then
+reduced to what Inferno needs.  The upstream README is kept as README.
+
+Changes made for Inferno (see the git history for the exact steps):
+
+  - removed the build system (Makefile*, configure*), the SVID/X-Open error
+    wrappers (w_*.c, k_standard.c, s_matherr.c, s_lib_version.c,
+    s_signgam.c) and the functions Inferno does not use (gamma, scalb,
+    significand, logb, frexp, ldexp, isnan, lgamma without _r);
+    errors are reported through IEEE exceptions only;
+
+  - every external symbol carries the fd_ prefix, so that it cannot clash
+    with the host's libm:
+
+	__ieee754_NAME   ->  fd_NAME           (fd_exp, fd_pow, fd_lgamma_r ...)
+	__kernel_NAME    ->  fd_kernel_NAME    (fd_kernel_sin ...)
+	NAME             ->  fd_NAME           (fd_sin, fd_floor, fd_modf ...)
+
+    The calls that the original code made to the public sqrt() now go to
+    fd_sqrt(), i.e. fdlibm's own square root; before, they were resolved
+    by the host's libm.
+
+fdlibm is written for IEEE 754 binary64 `double'; porting it on top of the
+softfloat library (so that it no longer depends on the host's floating
+point unit) is done in later steps.

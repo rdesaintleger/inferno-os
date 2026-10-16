@@ -56,13 +56,8 @@ float32_t f32_div( float32_t a, float32_t b )
     bool signZ;
     struct exp16_sig32 normExpSig;
     int_fast16_t expZ;
-#ifdef SOFTFLOAT_FAST_DIV64TO32
-    uint_fast64_t sig64A;
-    uint_fast32_t sigZ;
-#else
     uint_fast32_t sigZ;
     uint_fast64_t rem;
-#endif
     uint_fast32_t uiZ;
     union ui32_f32 uZ;
 
@@ -116,16 +111,6 @@ float32_t f32_div( float32_t a, float32_t b )
     expZ = expA - expB + 0x7E;
     sigA |= 0x00800000;
     sigB |= 0x00800000;
-#ifdef SOFTFLOAT_FAST_DIV64TO32
-    if ( sigA < sigB ) {
-        --expZ;
-        sig64A = (uint_fast64_t) sigA<<31;
-    } else {
-        sig64A = (uint_fast64_t) sigA<<30;
-    }
-    sigZ = sig64A / sigB;
-    if ( ! (sigZ & 0x3F) ) sigZ |= ((uint_fast64_t) sigB * sigZ != sig64A);
-#else
     if ( sigA < sigB ) {
         --expZ;
         sigA <<= 8;
@@ -139,18 +124,13 @@ float32_t f32_div( float32_t a, float32_t b )
     sigZ += 2;
     if ( (sigZ & 0x3F) < 2 ) {
         sigZ &= ~3;
-#ifdef SOFTFLOAT_FAST_INT64
         rem = ((uint_fast64_t) sigA<<31) - (uint_fast64_t) sigZ * sigB;
-#else
-        rem = ((uint_fast64_t) sigA<<32) - (uint_fast64_t) (sigZ<<1) * sigB;
-#endif
         if ( rem & UINT64_C( 0x8000000000000000 ) ) {
             sigZ -= 4;
         } else {
             if ( rem ) sigZ |= 1;
         }
     }
-#endif
     return softfloat_roundPackToF32( signZ, expZ, sigZ );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -177,4 +157,3 @@ float32_t f32_div( float32_t a, float32_t b )
     return uZ.f;
 
 }
-

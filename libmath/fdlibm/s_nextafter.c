@@ -21,9 +21,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	double nextafter(double x, double y)
+	double fd_nextafter(double x, double y)
 #else
-	double nextafter(x,y)
+	double fd_nextafter(x,y)
 	double x,y;
 #endif
 {

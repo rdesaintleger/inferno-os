@@ -31,9 +31,9 @@ huge   = 1.0e+300,
 tiny   = 1.0e-300;
 
 #ifdef __STDC__
-	double scalbn (double x, int n)
+	double fd_scalbn (double x, int n)
 #else
-	double scalbn (x,n)
+	double fd_scalbn (x,n)
 	double x; int n;
 #endif
 {
@@ -50,13 +50,13 @@ tiny   = 1.0e-300;
 	    }
         if (k==0x7ff) return x+x;		/* NaN or Inf */
         k = k+n; 
-        if (k >  0x7fe) return huge*copysign(huge,x); /* overflow  */
+        if (k >  0x7fe) return huge*fd_copysign(huge,x); /* overflow  */
         if (k > 0) 				/* normal result */
 	    {__HI(x) = (hx&0x800fffff)|(k<<20); return x;}
         if (k <= -54)
             if (n > 50000) 	/* in case integer overflow in n+k */
-		return huge*copysign(huge,x);	/*overflow*/
-	    else return tiny*copysign(tiny,x); 	/*underflow*/
+		return huge*fd_copysign(huge,x);	/*overflow*/
+	    else return tiny*fd_copysign(tiny,x); 	/*underflow*/
         k += 54;				/* subnormal result */
         __HI(x) = (hx&0x800fffff)|(k<<20);
         return x*twom54;

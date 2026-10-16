@@ -89,9 +89,9 @@ static	double	one	= 1.0, tiny=1.0e-300;
 #endif
 
 #ifdef __STDC__
-	double __ieee754_sqrt(double x)
+	double fd_sqrt(double x)
 #else
-	double __ieee754_sqrt(x)
+	double fd_sqrt(x)
 	double x;
 #endif
 {

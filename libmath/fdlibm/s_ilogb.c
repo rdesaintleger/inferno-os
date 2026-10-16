@@ -20,9 +20,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	int ilogb(double x)
+	int fd_ilogb(double x)
 #else
-	int ilogb(x)
+	int fd_ilogb(x)
 	double x;
 #endif
 {

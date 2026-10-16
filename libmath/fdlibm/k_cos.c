@@ -62,9 +62,9 @@ C5  =  2.08757232129817482790e-09, /* 0x3E21EE9E, 0xBDB4B1C4 */
 C6  = -1.13596475577881948265e-11; /* 0xBDA8FAE9, 0xBE8838D4 */
 
 #ifdef __STDC__
-	double __kernel_cos(double x, double y)
+	double fd_kernel_cos(double x, double y)
 #else
-	double __kernel_cos(x, y)
+	double fd_kernel_cos(x, y)
 	double x,y;
 #endif
 {

@@ -46,9 +46,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	double __ieee754_hypot(double x, double y)
+	double fd_hypot(double x, double y)
 #else
-	double __ieee754_hypot(x,y)
+	double fd_hypot(x,y)
 	double x, y;
 #endif
 {
@@ -96,7 +96,7 @@
 	    t1 = 0;
 	    __HI(t1) = ha;
 	    t2 = a-t1;
-	    w  = sqrt(t1*t1-(b*(-b)-t2*(a+t1)));
+	    w  = fd_sqrt(t1*t1-(b*(-b)-t2*(a+t1)));
 	} else {
 	    a  = a+a;
 	    y1 = 0;
@@ -105,7 +105,7 @@
 	    t1 = 0;
 	    __HI(t1) = ha+0x00100000;
 	    t2 = a - t1;
-	    w  = sqrt(t1*y1-(w*(-w)-(t1*y2+t2*b)));
+	    w  = fd_sqrt(t1*y1-(w*(-w)-(t1*y2+t2*b)));
 	}
 	if(k!=0) {
 	    t1 = 1.0;

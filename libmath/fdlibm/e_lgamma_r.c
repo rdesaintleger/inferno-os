@@ -167,17 +167,17 @@ static double zero=  0.00000000000000000000e+00;
 
 	ix = 0x7fffffff&__HI(x);
 
-	if(ix<0x3fd00000) return __kernel_sin(pi*x,zero,0);
+	if(ix<0x3fd00000) return fd_kernel_sin(pi*x,zero,0);
 	y = -x;		/* x is assume negative */
 
     /*
      * argument reduction, make sure inexact flag not raised if input
      * is an integer
      */
-	z = floor(y);
+	z = fd_floor(y);
 	if(z!=y) {				/* inexact anyway */
 	    y  *= 0.5;
-	    y   = 2.0*(y - floor(y));		/* y = |x| mod 2.0 */
+	    y   = 2.0*(y - fd_floor(y));		/* y = |x| mod 2.0 */
 	    n   = (int) (y*4.0);
 	} else {
             if(ix>=0x43400000) {
@@ -190,23 +190,23 @@ static double zero=  0.00000000000000000000e+00;
             }
         }
 	switch (n) {
-	    case 0:   y =  __kernel_sin(pi*y,zero,0); break;
+	    case 0:   y =  fd_kernel_sin(pi*y,zero,0); break;
 	    case 1:   
-	    case 2:   y =  __kernel_cos(pi*(0.5-y),zero); break;
+	    case 2:   y =  fd_kernel_cos(pi*(0.5-y),zero); break;
 	    case 3:  
-	    case 4:   y =  __kernel_sin(pi*(one-y),zero,0); break;
+	    case 4:   y =  fd_kernel_sin(pi*(one-y),zero,0); break;
 	    case 5:
-	    case 6:   y = -__kernel_cos(pi*(y-1.5),zero); break;
-	    default:  y =  __kernel_sin(pi*(y-2.0),zero,0); break;
+	    case 6:   y = -fd_kernel_cos(pi*(y-1.5),zero); break;
+	    default:  y =  fd_kernel_sin(pi*(y-2.0),zero,0); break;
 	    }
 	return -y;
 }
 
 
 #ifdef __STDC__
-	double __ieee754_lgamma_r(double x, int *signgamp)
+	double fd_lgamma_r(double x, int *signgamp)
 #else
-	double __ieee754_lgamma_r(x,signgamp)
+	double fd_lgamma_r(x,signgamp)
 	double x; int *signgamp;
 #endif
 {
@@ -224,15 +224,15 @@ static double zero=  0.00000000000000000000e+00;
 	if(ix<0x3b900000) {	/* |x|<2**-70, return -log(|x|) */
 	    if(hx<0) {
 	        *signgamp = -1;
-	        return -__ieee754_log(-x);
-	    } else return -__ieee754_log(x);
+	        return -fd_log(-x);
+	    } else return -fd_log(x);
 	}
 	if(hx<0) {
 	    if(ix>=0x43300000) 	/* |x|>=2**52, must be -integer */
 		return one/zero;
 	    t = sin_pi(x);
 	    if(t==zero) return one/zero; /* -integer */
-	    nadj = __ieee754_log(pi/fabs(t*x));
+	    nadj = fd_log(pi/fd_fabs(t*x));
 	    if(t<zero) *signgamp = -1;
 	    x = -x;
 	}
@@ -242,7 +242,7 @@ static double zero=  0.00000000000000000000e+00;
     /* for x < 2.0 */
 	else if(ix<0x40000000) {
 	    if(ix<=0x3feccccc) { 	/* lgamma(x) = lgamma(x+1)-log(x) */
-		r = -__ieee754_log(x);
+		r = -fd_log(x);
 		if(ix>=0x3FE76944) {y = one-x; i= 0;}
 		else if(ix>=0x3FCDA661) {y= x-(tc-one); i=1;}
 	  	else {y = x; i=2;}
@@ -287,18 +287,18 @@ static double zero=  0.00000000000000000000e+00;
 	    case 5: z *= (y+4.0);	/* FALLTHRU */
 	    case 4: z *= (y+3.0);	/* FALLTHRU */
 	    case 3: z *= (y+2.0);	/* FALLTHRU */
-		    r += __ieee754_log(z); break;
+		    r += fd_log(z); break;
 	    }
     /* 8.0 <= x < 2**58 */
 	} else if (ix < 0x43900000) {
-	    t = __ieee754_log(x);
+	    t = fd_log(x);
 	    z = one/x;
 	    y = z*z;
 	    w = w0+z*(w1+y*(w2+y*(w3+y*(w4+y*(w5+y*w6)))));
 	    r = (x-half)*(t-one)+w;
 	} else 
     /* 2**58 <= x <= inf */
-	    r =  x*(__ieee754_log(x)-one);
+	    r =  x*(fd_log(x)-one);
 	if(hx<0) r = nadj - r;
 	return r;
 }

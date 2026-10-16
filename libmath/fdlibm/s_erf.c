@@ -188,9 +188,9 @@ sb6  =  4.74528541206955367215e+02, /* 0x407DA874, 0xE79FE763 */
 sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 
 #ifdef __STDC__
-	double erf(double x) 
+	double fd_erf(double x)
 #else
-	double erf(x) 
+	double fd_erf(x)
 	double x;
 #endif
 {
@@ -216,7 +216,7 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	    return x + x*y;
 	}
 	if(ix < 0x3ff40000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = fabs(x)-one;
+	    s = fd_fabs(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) return erx + P/Q; else return -erx - P/Q;
@@ -224,7 +224,7 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	if (ix >= 0x40180000) {		/* inf>|x|>=6 */
 	    if(hx>=0) return one-tiny; else return tiny-one;
 	}
-	x = fabs(x);
+	x = fd_fabs(x);
  	s = one/(x*x);
 	if(ix< 0x4006DB6E) {	/* |x| < 1/0.35 */
 	    R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(
@@ -239,14 +239,14 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	}
 	z  = x;  
 	__LO(z) = 0;
-	r  =  __ieee754_exp(-z*z-0.5625)*__ieee754_exp((z-x)*(z+x)+R/S);
+	r  =  fd_exp(-z*z-0.5625)*fd_exp((z-x)*(z+x)+R/S);
 	if(hx>=0) return one-r/x; else return  r/x-one;
 }
 
 #ifdef __STDC__
-	double erfc(double x) 
+	double fd_erfc(double x)
 #else
-	double erfc(x) 
+	double fd_erfc(x)
 	double x;
 #endif
 {
@@ -275,7 +275,7 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	    }
 	}
 	if(ix < 0x3ff40000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = fabs(x)-one;
+	    s = fd_fabs(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) {
@@ -285,7 +285,7 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	    }
 	}
 	if (ix < 0x403c0000) {		/* |x|<28 */
-	    x = fabs(x);
+	    x = fd_fabs(x);
  	    s = one/(x*x);
 	    if(ix< 0x4006DB6D) {	/* |x| < 1/.35 ~ 2.857143*/
 	        R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(
@@ -301,8 +301,8 @@ sb7  = -2.24409524465858183362e+01; /* 0xC03670E2, 0x42712D62 */
 	    }
 	    z  = x;
 	    __LO(z)  = 0;
-	    r  =  __ieee754_exp(-z*z-0.5625)*
-			__ieee754_exp((z-x)*(z+x)+R/S);
+	    r  =  fd_exp(-z*z-0.5625)*
+			fd_exp((z-x)*(z+x)+R/S);
 	    if(hx>0) return r/x; else return two-r/x;
 	} else {
 	    if(hx>0) return tiny*tiny; else return two-tiny;

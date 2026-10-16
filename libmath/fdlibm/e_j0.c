@@ -86,9 +86,9 @@ S04  =  1.16614003333790000205e-09; /* 0x3E1408BC, 0xF4745D8F */
 static double zero = 0.0;
 
 #ifdef __STDC__
-	double __ieee754_j0(double x) 
+	double fd_j0(double x)
 #else
-	double __ieee754_j0(x) 
+	double fd_j0(x)
 	double x;
 #endif
 {
@@ -98,14 +98,14 @@ static double zero = 0.0;
 	hx = __HI(x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7ff00000) return one/(x*x);
-	x = fabs(x);
+	x = fd_fabs(x);
 	if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-		s = sin(x);
-		c = cos(x);
+		s = fd_sin(x);
+		c = fd_cos(x);
 		ss = s-c;
 		cc = s+c;
 		if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-		    z = -cos(x+x);
+		    z = -fd_cos(x+x);
 		    if ((s*c)<zero) cc = z/ss;
 		    else 	    ss = z/cc;
 		}
@@ -113,10 +113,10 @@ static double zero = 0.0;
 	 * j0(x) = 1/sqrt(pi) * (P(0,x)*cc - Q(0,x)*ss) / sqrt(x)
 	 * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
 	 */
-		if(ix>0x48000000) z = (invsqrtpi*cc)/sqrt(x);
+		if(ix>0x48000000) z = (invsqrtpi*cc)/fd_sqrt(x);
 		else {
 		    u = pzero(x); v = qzero(x);
-		    z = invsqrtpi*(u*cc-v*ss)/sqrt(x);
+		    z = invsqrtpi*(u*cc-v*ss)/fd_sqrt(x);
 		}
 		return z;
 	}
@@ -155,9 +155,9 @@ v03  =  2.59150851840457805467e-07, /* 0x3E91642D, 0x7FF202FD */
 v04  =  4.41110311332675467403e-10; /* 0x3DFE5018, 0x3BD6D9EF */
 
 #ifdef __STDC__
-	double __ieee754_y0(double x) 
+	double fd_y0(double x)
 #else
-	double __ieee754_y0(x) 
+	double fd_y0(x)
 	double x;
 #endif
 {
@@ -183,8 +183,8 @@ v04  =  4.41110311332675467403e-10; /* 0x3DFE5018, 0x3BD6D9EF */
          *              sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
          * to compute the worse one.
          */
-                s = sin(x);
-                c = cos(x);
+                s = fd_sin(x);
+                c = fd_cos(x);
                 ss = s-c;
                 cc = s+c;
 	/*
@@ -192,24 +192,24 @@ v04  =  4.41110311332675467403e-10; /* 0x3DFE5018, 0x3BD6D9EF */
 	 * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
 	 */
                 if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-                    z = -cos(x+x);
+                    z = -fd_cos(x+x);
                     if ((s*c)<zero) cc = z/ss;
                     else            ss = z/cc;
                 }
-                if(ix>0x48000000) z = (invsqrtpi*ss)/sqrt(x);
+                if(ix>0x48000000) z = (invsqrtpi*ss)/fd_sqrt(x);
                 else {
                     u = pzero(x); v = qzero(x);
-                    z = invsqrtpi*(u*ss+v*cc)/sqrt(x);
+                    z = invsqrtpi*(u*ss+v*cc)/fd_sqrt(x);
                 }
                 return z;
 	}
 	if(ix<=0x3e400000) {	/* x < 2**-27 */
-	    return(u00 + tpi*__ieee754_log(x));
+	    return(u00 + tpi*fd_log(x));
 	}
 	z = x*x;
 	u = u00+z*(u01+z*(u02+z*(u03+z*(u04+z*(u05+z*u06)))));
 	v = one+z*(v01+z*(v02+z*(v03+z*v04)));
-	return(u/v + tpi*(__ieee754_j0(x)*__ieee754_log(x)));
+	return(u/v + tpi*(fd_j0(x)*fd_log(x)));
 }
 
 /* The asymptotic expansions of pzero is

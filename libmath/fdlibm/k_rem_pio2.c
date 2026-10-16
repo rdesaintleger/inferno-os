@@ -161,9 +161,9 @@ two24   =  1.67772160000000000000e+07, /* 0x41700000, 0x00000000 */
 twon24  =  5.96046447753906250000e-08; /* 0x3E700000, 0x00000000 */
 
 #ifdef __STDC__
-	int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2) 
+	int fd_kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2)
 #else
-	int __kernel_rem_pio2(x,y,e0,nx,prec,ipio2) 	
+	int fd_kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
 	double x[], y[]; int e0,nx,prec; int ipio2[];
 #endif
 {
@@ -198,8 +198,8 @@ recompute:
 	}
 
     /* compute n */
-	z  = scalbn(z,q0);		/* actual value of z */
-	z -= 8.0*floor(z*0.125);		/* trim off integer >= 8 */
+	z  = fd_scalbn(z,q0);		/* actual value of z */
+	z -= 8.0*fd_floor(z*0.125);		/* trim off integer >= 8 */
 	n  = (int) z;
 	z -= (double)n;
 	ih = 0;
@@ -231,7 +231,7 @@ recompute:
 	    }
 	    if(ih==2) {
 		z = one - z;
-		if(carry!=0) z -= scalbn(one,q0);
+		if(carry!=0) z -= fd_scalbn(one,q0);
 	    }
 	}
 
@@ -257,7 +257,7 @@ recompute:
 	    jz -= 1; q0 -= 24;
 	    while(iq[jz]==0) { jz--; q0-=24;}
 	} else { /* break z into 24-bit if necessary */
-	    z = scalbn(z,-q0);
+	    z = fd_scalbn(z,-q0);
 	    if(z>=two24) { 
 		fw = (double)((int)(twon24*z));
 		iq[jz] = (int)(z-two24*fw);
@@ -267,7 +267,7 @@ recompute:
 	}
 
     /* convert integer "bit" chunk to floating-point value */
-	fw = scalbn(one,q0);
+	fw = fd_scalbn(one,q0);
 	for(i=jz;i>=0;i--) {
 	    q[i] = fw*(double)iq[i]; fw*=twon24;
 	}

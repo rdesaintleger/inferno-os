@@ -81,9 +81,9 @@ pio2_3  =  2.02226624871116645580e-21, /* 0x3BA3198A, 0x2E000000 */
 pio2_3t =  8.47842766036889956997e-32; /* 0x397B839A, 0x252049C1 */
 
 #ifdef __STDC__
-	int __ieee754_rem_pio2(double x, double *y)
+	int fd_rem_pio2(double x, double *y)
 #else
-	int __ieee754_rem_pio2(x,y)
+	int fd_rem_pio2(x,y)
 	double x,y[];
 #endif
 {
@@ -121,7 +121,7 @@ pio2_3t =  8.47842766036889956997e-32; /* 0x397B839A, 0x252049C1 */
 	    }
 	}
 	if(ix<=0x413921fb) { /* |x| ~<= 2^19*(pi/2), medium size */
-	    t  = fabs(x);
+	    t  = fd_fabs(x);
 	    n  = (int) (t*invpio2+half);
 	    fn = (double)n;
 	    r  = t-fn*pio2_1;
@@ -169,7 +169,7 @@ pio2_3t =  8.47842766036889956997e-32; /* 0x397B839A, 0x252049C1 */
 	tx[2] = z;
 	nx = 3;
 	while(tx[nx-1]==zero) nx--;	/* skip zero term */
-	n  =  __kernel_rem_pio2(tx,y,e0,nx,2,two_over_pi);
+	n  =  fd_kernel_rem_pio2(tx,y,e0,nx,2,two_over_pi);
 	if(hx<0) {y[0] = -y[0]; y[1] = -y[1]; return -n;}
 	return n;
 }

@@ -51,9 +51,9 @@ one   =  1.00000000000000000000e+00; /* 0x3FF00000, 0x00000000 */
 static double zero  =  0.00000000000000000000e+00;
 
 #ifdef __STDC__
-	double __ieee754_jn(int n, double x)
+	double fd_jn(int n, double x)
 #else
-	double __ieee754_jn(n,x)
+	double fd_jn(n,x)
 	int n; double x;
 #endif
 {
@@ -74,10 +74,10 @@ static double zero  =  0.00000000000000000000e+00;
 		x = -x;
 		hx ^= 0x80000000;
 	}
-	if(n==0) return(__ieee754_j0(x));
-	if(n==1) return(__ieee754_j1(x));
+	if(n==0) return(fd_j0(x));
+	if(n==1) return(fd_j1(x));
 	sgn = (n&1)&(hx>>31);	/* even n -- 0, odd n -- sign(x) */
-	x = fabs(x);
+	x = fd_fabs(x);
 	if((ix|lx)==0||ix>=0x7ff00000) 	/* if x is 0 or inf */
 	    b = zero;
 	else if((double)n<=x) {   
@@ -97,15 +97,15 @@ static double zero  =  0.00000000000000000000e+00;
      *		   3	 s+c		 c-s
      */
 		switch(n&3) {
-		    case 0: temp =  cos(x)+sin(x); break;
-		    case 1: temp = -cos(x)+sin(x); break;
-		    case 2: temp = -cos(x)-sin(x); break;
-		    case 3: temp =  cos(x)-sin(x); break;
+		    case 0: temp =  fd_cos(x)+fd_sin(x); break;
+		    case 1: temp = -fd_cos(x)+fd_sin(x); break;
+		    case 2: temp = -fd_cos(x)-fd_sin(x); break;
+		    case 3: temp =  fd_cos(x)-fd_sin(x); break;
 		}
-		b = invsqrtpi*temp/sqrt(x);
+		b = invsqrtpi*temp/fd_sqrt(x);
 	    } else {	
-	        a = __ieee754_j0(x);
-	        b = __ieee754_j1(x);
+	        a = fd_j0(x);
+	        b = fd_j1(x);
 	        for(i=1;i<n;i++){
 		    temp = b;
 		    b = b*((double)(i+i)/x) - a; /* avoid underflow */
@@ -181,7 +181,7 @@ static double zero  =  0.00000000000000000000e+00;
 		 */
 		tmp = n;
 		v = two/x;
-		tmp = tmp*__ieee754_log(fabs(v*tmp));
+		tmp = tmp*fd_log(fd_fabs(v*tmp));
 		if(tmp<7.09782712893383973096e+02) {
 	    	    for(i=n-1,di=(double)(i+i);i>0;i--){
 		        temp = b;
@@ -205,16 +205,16 @@ static double zero  =  0.00000000000000000000e+00;
 			}
 	     	    }
 		}
-	    	b = (t*__ieee754_j0(x)/b);
+		b = (t*fd_j0(x)/b);
 	    }
 	}
 	if(sgn==1) return -b; else return b;
 }
 
 #ifdef __STDC__
-	double __ieee754_yn(int n, double x) 
+	double fd_yn(int n, double x)
 #else
-	double __ieee754_yn(n,x) 
+	double fd_yn(n,x)
 	int n; double x;
 #endif
 {
@@ -234,8 +234,8 @@ static double zero  =  0.00000000000000000000e+00;
 		n = -n;
 		sign = 1 - ((n&1)<<1);
 	}
-	if(n==0) return(__ieee754_y0(x));
-	if(n==1) return(sign*__ieee754_y1(x));
+	if(n==0) return(fd_y0(x));
+	if(n==1) return(sign*fd_y1(x));
 	if(ix==0x7ff00000) return zero;
 	if(ix>=0x52D00000) { /* x > 2**302 */
     /* (x >> n**2) 
@@ -252,15 +252,15 @@ static double zero  =  0.00000000000000000000e+00;
      *		   3	 s+c		 c-s
      */
 		switch(n&3) {
-		    case 0: temp =  sin(x)-cos(x); break;
-		    case 1: temp = -sin(x)-cos(x); break;
-		    case 2: temp = -sin(x)+cos(x); break;
-		    case 3: temp =  sin(x)+cos(x); break;
+		    case 0: temp =  fd_sin(x)-fd_cos(x); break;
+		    case 1: temp = -fd_sin(x)-fd_cos(x); break;
+		    case 2: temp = -fd_sin(x)+fd_cos(x); break;
+		    case 3: temp =  fd_sin(x)+fd_cos(x); break;
 		}
-		b = invsqrtpi*temp/sqrt(x);
+		b = invsqrtpi*temp/fd_sqrt(x);
 	} else {
-	    a = __ieee754_y0(x);
-	    b = __ieee754_y1(x);
+	    a = fd_y0(x);
+	    b = fd_y1(x);
 	/* quit if b is -inf */
 	    for(i=1;i<n&&(__HI(b) != 0xfff00000);i++){ 
 		temp = b;

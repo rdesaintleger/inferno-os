@@ -96,12 +96,6 @@ float64_t
     sig = (sig + roundIncrement)>>10;
     if ( roundBits ) {
         softfloat_exceptionFlags |= softfloat_flag_inexact;
-#ifdef SOFTFLOAT_ROUND_ODD
-        if ( roundingMode == softfloat_round_odd ) {
-            sig |= 1;
-            goto packReturn;
-        }
-#endif
     }
     sig &= ~(uint_fast64_t) (! (roundBits ^ 0x200) & roundNearEven);
     if ( ! sig ) exp = 0;

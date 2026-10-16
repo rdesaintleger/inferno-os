@@ -134,11 +134,7 @@ float64_t f64_rem( float64_t a, float64_t b )
             q64 = (uint32_t) (rem>>32) * (uint_fast64_t) recip32;
             if ( expDiff < 0 ) break;
             q = (q64 + 0x80000000)>>32;
-#ifdef SOFTFLOAT_FAST_INT64
             rem <<= 29;
-#else
-            rem = (uint_fast64_t) (uint32_t) (rem>>3)<<32;
-#endif
             rem -= q * (uint64_t) sigB;
             if ( rem & UINT64_C( 0x8000000000000000 ) ) rem += sigB;
             expDiff -= 29;

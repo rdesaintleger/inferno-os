@@ -85,4 +85,3 @@ uint_fast32_t f32_to_ui32_r_minMag( float32_t a, bool exact )
     return z;
 
 }
-

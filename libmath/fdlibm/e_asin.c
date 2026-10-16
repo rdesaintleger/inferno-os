@@ -67,9 +67,9 @@ qS3 = -6.88283971605453293030e-01, /* 0xBFE6066C, 0x1B8D0159 */
 qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
 
 #ifdef __STDC__
-	double __ieee754_asin(double x)
+	double fd_asin(double x)
 #else
-	double __ieee754_asin(x)
+	double fd_asin(x)
 	double x;
 #endif
 {
@@ -93,11 +93,11 @@ qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
 		return x+x*w;
 	}
 	/* 1> |x|>= 0.5 */
-	w = one-fabs(x);
+	w = one-fd_fabs(x);
 	t = w*0.5;
 	p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
 	q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));
-	s = sqrt(t);
+	s = fd_sqrt(t);
 	if(ix>=0x3FEF3333) { 	/* if |x| > 0.975 */
 	    w = p/q;
 	    t = pio2_hi-(2.0*(s+s*w)-pio2_lo);

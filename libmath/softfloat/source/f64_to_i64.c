@@ -49,11 +49,7 @@ int_fast64_t f64_to_i64( float64_t a, uint_fast8_t roundingMode, bool exact )
     int_fast16_t exp;
     uint_fast64_t sig;
     int_fast16_t shiftDist;
-#ifdef SOFTFLOAT_FAST_INT64
     struct uint64_extra sigExtra;
-#else
-    uint32_t extSig[3];
-#endif
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -66,7 +62,6 @@ int_fast64_t f64_to_i64( float64_t a, uint_fast8_t roundingMode, bool exact )
     *------------------------------------------------------------------------*/
     if ( exp ) sig |= UINT64_C( 0x0010000000000000 );
     shiftDist = 0x433 - exp;
-#ifdef SOFTFLOAT_FAST_INT64
     if ( shiftDist <= 0 ) {
         if ( shiftDist < -11 ) goto invalid;
         sigExtra.v = sig<<-shiftDist;
@@ -77,20 +72,6 @@ int_fast64_t f64_to_i64( float64_t a, uint_fast8_t roundingMode, bool exact )
     return
         softfloat_roundToI64(
             sign, sigExtra.v, sigExtra.extra, roundingMode, exact );
-#else
-    extSig[indexWord( 3, 0 )] = 0;
-    if ( shiftDist <= 0 ) {
-        if ( shiftDist < -11 ) goto invalid;
-        sig <<= -shiftDist;
-        extSig[indexWord( 3, 2 )] = sig>>32;
-        extSig[indexWord( 3, 1 )] = sig;
-    } else {
-        extSig[indexWord( 3, 2 )] = sig>>32;
-        extSig[indexWord( 3, 1 )] = sig;
-        softfloat_shiftRightJam96M( extSig, shiftDist, extSig );
-    }
-    return softfloat_roundMToI64( sign, extSig, roundingMode, exact );
-#endif
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:

@@ -1,0 +1,43 @@
+<../../mkconfig
+
+#
+#	fdconst: build-time generator of float64 constant headers.
+#	It uses standard C only, so that it can be built before every
+#	library; for that reason this mkfile does not use mkone, which
+#	always expects libraries to link with.
+#
+
+TARG=fdconst
+
+OFILES=	fdconst.$O\
+
+BIN=$ROOT/$OBJDIR/bin
+
+all:V:	$O.out
+
+install:V:	$BIN/$TARG
+
+installall:V:
+	for objtype in $CPUS
+	do
+		mk $MKFLAGS install
+	done
+
+clean:V:
+	rm -f core [$OS].out *.$O
+
+nuke:V:	clean
+
+$O.out:	$OFILES
+	$LD $LDFLAGS -o $target $OFILES $SYSLIBS
+
+%.$O:	%.c
+	$CC $CFLAGS -o $target $stem.c
+
+$BIN/%:	$O.out
+	rm -f $BIN/$stem && cp $O.out $BIN/$stem
+
+# regression test of the decimal -> binary64 conversion
+test:V:	$O.out
+	./$O.out -s < test.in | cmp - test.exp
+	echo fdconst: conversion test OK

@@ -91,4 +91,3 @@ int_fast64_t f32_to_i64_r_minMag( float32_t a, bool exact )
     return sign ? -absZ : absZ;
 
 }
-

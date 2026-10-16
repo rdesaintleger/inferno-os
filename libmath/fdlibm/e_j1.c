@@ -87,9 +87,9 @@ s05  =  1.23542274426137913908e-11; /* 0x3DAB2ACF, 0xCFB97ED8 */
 static double zero    = 0.0;
 
 #ifdef __STDC__
-	double __ieee754_j1(double x) 
+	double fd_j1(double x)
 #else
-	double __ieee754_j1(x) 
+	double fd_j1(x)
 	double x;
 #endif
 {
@@ -99,14 +99,14 @@ static double zero    = 0.0;
 	hx = __HI(x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7ff00000) return one/x;
-	y = fabs(x);
+	y = fd_fabs(x);
 	if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-		s = sin(y);
-		c = cos(y);
+		s = fd_sin(y);
+		c = fd_cos(y);
 		ss = -s-c;
 		cc = s-c;
 		if(ix<0x7fe00000) {  /* make sure y+y not overflow */
-		    z = cos(y+y);
+		    z = fd_cos(y+y);
 		    if ((s*c)>zero) cc = z/ss;
 		    else 	    ss = z/cc;
 		}
@@ -114,10 +114,10 @@ static double zero    = 0.0;
 	 * j1(x) = 1/sqrt(pi) * (P(1,x)*cc - Q(1,x)*ss) / sqrt(x)
 	 * y1(x) = 1/sqrt(pi) * (P(1,x)*ss + Q(1,x)*cc) / sqrt(x)
 	 */
-		if(ix>0x48000000) z = (invsqrtpi*cc)/sqrt(y);
+		if(ix>0x48000000) z = (invsqrtpi*cc)/fd_sqrt(y);
 		else {
 		    u = pone(y); v = qone(y);
-		    z = invsqrtpi*(u*cc-v*ss)/sqrt(y);
+		    z = invsqrtpi*(u*cc-v*ss)/fd_sqrt(y);
 		}
 		if(hx<0) return -z;
 		else  	 return  z;
@@ -156,9 +156,9 @@ static double V0[5] = {
 };
 
 #ifdef __STDC__
-	double __ieee754_y1(double x) 
+	double fd_y1(double x)
 #else
-	double __ieee754_y1(x) 
+	double fd_y1(x)
 	double x;
 #endif
 {
@@ -173,12 +173,12 @@ static double V0[5] = {
         if((ix|lx)==0) return -one/zero;
         if(hx<0) return zero/zero;
         if(ix >= 0x40000000) {  /* |x| >= 2.0 */
-                s = sin(x);
-                c = cos(x);
+                s = fd_sin(x);
+                c = fd_cos(x);
                 ss = -s-c;
                 cc = s-c;
                 if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-                    z = cos(x+x);
+                    z = fd_cos(x+x);
                     if ((s*c)>zero) cc = z/ss;
                     else            ss = z/cc;
                 }
@@ -193,10 +193,10 @@ static double V0[5] = {
          *              sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
          * to compute the worse one.
          */
-                if(ix>0x48000000) z = (invsqrtpi*ss)/sqrt(x);
+                if(ix>0x48000000) z = (invsqrtpi*ss)/fd_sqrt(x);
                 else {
                     u = pone(x); v = qone(x);
-                    z = invsqrtpi*(u*ss+v*cc)/sqrt(x);
+                    z = invsqrtpi*(u*ss+v*cc)/fd_sqrt(x);
                 }
                 return z;
         } 
@@ -206,7 +206,7 @@ static double V0[5] = {
         z = x*x;
         u = U0[0]+z*(U0[1]+z*(U0[2]+z*(U0[3]+z*U0[4])));
         v = one+z*(V0[0]+z*(V0[1]+z*(V0[2]+z*(V0[3]+z*V0[4]))));
-        return(x*(u/v) + tpi*(__ieee754_j1(x)*__ieee754_log(x)-one/x));
+        return(x*(u/v) + tpi*(fd_j1(x)*fd_log(x)-one/x));
 }
 
 /* For x >= 8, the asymptotic expansions of pone is

@@ -83,9 +83,9 @@ Lg7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
 static double zero   =  0.0;
 
 #ifdef __STDC__
-	double __ieee754_log(double x)
+	double fd_log(double x)
 #else
-	double __ieee754_log(x)
+	double fd_log(x)
 	double x;
 #endif
 {

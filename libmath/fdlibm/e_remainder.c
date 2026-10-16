@@ -30,9 +30,9 @@ static double zero = 0.0;
 
 
 #ifdef __STDC__
-	double __ieee754_remainder(double x, double p)
+	double fd_remainder(double x, double p)
 #else
-	double __ieee754_remainder(x,p)
+	double fd_remainder(x,p)
 	double x,p;
 #endif
 {
@@ -56,10 +56,10 @@ static double zero = 0.0;
 	    return (x*p)/(x*p);
 
 
-	if (hp<=0x7fdfffff) x = __ieee754_fmod(x,p+p);	/* now x < 2p */
+	if (hp<=0x7fdfffff) x = fd_fmod(x,p+p);	/* now x < 2p */
 	if (((hx-hp)|(lx-lp))==0) return zero*x;
-	x  = fabs(x);
-	p  = fabs(p);
+	x  = fd_fabs(x);
+	p  = fd_fabs(p);
 	if (hp<0x00200000) {
 	    if(x+x>p) {
 		x-=p;

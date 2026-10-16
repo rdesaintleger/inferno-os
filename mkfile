@@ -11,6 +11,7 @@ EMUDIRS=\
 	libbio\
 	libmp\
 	libsec\
+	utils/fdconst\
 	libmath\
 	utils/iyacc\
 	limbo\

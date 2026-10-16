@@ -19,9 +19,9 @@
 #include "fdlibm.h"
 
 #ifdef __STDC__
-	int finite(double x)
+	int fd_finite(double x)
 #else
-	int finite(x)
+	int fd_finite(x)
 	double x;
 #endif
 {

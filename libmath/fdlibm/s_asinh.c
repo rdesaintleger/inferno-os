@@ -34,9 +34,9 @@ ln2 =  6.93147180559945286227e-01, /* 0x3FE62E42, 0xFEFA39EF */
 huge=  1.00000000000000000000e+300; 
 
 #ifdef __STDC__
-	double asinh(double x)
+	double fd_asinh(double x)
 #else
-	double asinh(x)
+	double fd_asinh(x)
 	double x;
 #endif
 {	
@@ -49,13 +49,13 @@ huge=  1.00000000000000000000e+300;
 	    if(huge+x>one) return x;	/* return x inexact except 0 */
 	} 
 	if(ix>0x41b00000) {	/* |x| > 2**28 */
-	    w = __ieee754_log(fabs(x))+ln2;
+	    w = fd_log(fd_fabs(x))+ln2;
 	} else if (ix>0x40000000) {	/* 2**28 > |x| > 2.0 */
-	    t = fabs(x);
-	    w = __ieee754_log(2.0*t+one/(sqrt(x*x+one)+t));
+	    t = fd_fabs(x);
+	    w = fd_log(2.0*t+one/(fd_sqrt(x*x+one)+t));
 	} else {		/* 2.0 > |x| > 2**-28 */
 	    t = x*x;
-	    w =log1p(fabs(x)+t/(one+sqrt(one+t)));
+	    w =fd_log1p(fd_fabs(x)+t/(one+fd_sqrt(one+t)));
 	}
 	if(hx>0) return w; else return -w;
 }

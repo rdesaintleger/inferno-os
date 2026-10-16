@@ -41,9 +41,9 @@ static double one = 1.0, huge = 1e300;
 static double zero = 0.0;
 
 #ifdef __STDC__
-	double __ieee754_atanh(double x)
+	double fd_atanh(double x)
 #else
-	double __ieee754_atanh(x)
+	double fd_atanh(x)
 	double x;
 #endif
 {
@@ -61,8 +61,8 @@ static double zero = 0.0;
 	__HI(x) = ix;		/* x <- |x| */
 	if(ix<0x3fe00000) {		/* x < 0.5 */
 	    t = x+x;
-	    t = 0.5*log1p(t+t*x/(one-x));
+	    t = 0.5*fd_log1p(t+t*x/(one-x));
 	} else 
-	    t = 0.5*log1p((x+x)/(one-x));
+	    t = 0.5*fd_log1p((x+x)/(one-x));
 	if(hx>=0) return t; else return -t;
 }
