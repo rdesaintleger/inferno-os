@@ -1,4 +1,3 @@
-
 /* @(#)s_modf.c 1.3 95/01/18 */
 /*
  * ====================================================
@@ -6,13 +5,12 @@
  *
  * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
-
 /*
- * modf(double x, double *iptr) 
+ * modf(double x, double *iptr)
  * return fraction part of x, and return x's integral part in *iptr.
  * Method:
  *	Bit twiddling.
@@ -20,61 +18,56 @@
  * Exception:
  *	No exception.
  */
-
 #include "fdlibm.h"
-
-#ifdef __STDC__
-static const double one = 1.0;
-#else
-static double one = 1.0;
-#endif
-
-#ifdef __STDC__
-	double fd_modf(double x, double *iptr)
-#else
-	double fd_modf(x, iptr)
-	double x,*iptr;
-#endif
+#include "s_modf.k.h"
+F64K(one, 1.0)
+float64_t fd_modf(float64_t x, float64_t *iptr)
 {
-	int i0,i1,j0;
-	unsigned i;
-	i0 =  __HI(x);		/* high x */
-	i1 =  __LO(x);		/* low  x */
-	j0 = ((i0>>20)&0x7ff)-0x3ff;	/* exponent of x */
-	if(j0<20) {			/* integer part in high x */
-	    if(j0<0) {			/* |x|<1 */
-		__HIp(iptr) = i0&0x80000000;
-		__LOp(iptr) = 0;		/* *iptr = +-0 */
-		return x;
-	    } else {
-		i = (0x000fffff)>>j0;
-		if(((i0&i)|i1)==0) {		/* x is integral */
-		    *iptr = x;
-		    __HI(x) &= 0x80000000;
-		    __LO(x)  = 0;	/* return +-0 */
-		    return x;
+	int32_t i0, i1, j0;
+	uint32_t i;
+	i0 = FHI(x);	/* i0 = __HI(x); */	/* high x */
+	i1 = FLO(x);	/* i1 = __LO(x); */	/* low x */
+	j0 = ((i0 >> 20) & 0x7ff) - 0x3ff;	/* exponent of x */
+	if (j0 < 20) {
+		/* integer part in high x */
+		if (j0 < 0) {
+			/* |x|<1 */
+			FSETHI(*iptr, i0 & 0x80000000);	/* __HIp(iptr) = i0&0x80000000; */
+			FSETLO(*iptr, 0);	/* __LOp(iptr) = 0; */	/* *iptr = +-0 */
+			return x;
 		} else {
-		    __HIp(iptr) = i0&(~i);
-		    __LOp(iptr) = 0;
-		    return x - *iptr;
+			i = (uint32_t)(0x000fffff >> j0);	/* i = (0x000fffff)>>j0; */
+			if (((i0 & i) | i1) == 0) {
+				/* x is integral */
+				*iptr = x;
+				FSETHI(x, FHI(x) & 0x80000000);	/* __HI(x) &= 0x80000000; */
+				FSETLO(x, 0);	/* __LO(x) = 0; */	/* return +-0 */
+				return x;
+			} else {
+				FSETHI(*iptr, i0 & (~i));	/* __HIp(iptr) = i0&(~i); */
+				FSETLO(*iptr, 0);	/* __LOp(iptr) = 0; */
+				return FSUB(x, *iptr);	/* return x - *iptr; */
+			}
 		}
-	    }
-	} else if (j0>51) {		/* no fraction part */
-	    *iptr = x*one;
-	    __HI(x) &= 0x80000000;
-	    __LO(x)  = 0;	/* return +-0 */
-	    return x;
-	} else {			/* fraction part in low x */
-	    i = ((unsigned)(0xffffffff))>>(j0-20);
-	    if((i1&i)==0) { 		/* x is integral */
-		*iptr = x;
-		__HI(x) &= 0x80000000;
-		__LO(x)  = 0;	/* return +-0 */
+	} else if (j0 > 51) {
+		/* no fraction part */
+		*iptr = FMUL(x, one);	/* *iptr = x*one; */
+		FSETHI(x, FHI(x) & 0x80000000);	/* __HI(x) &= 0x80000000; */
+		FSETLO(x, 0);	/* __LO(x) = 0; */	/* return +-0 */
 		return x;
-	    } else {
-		__HIp(iptr) = i0;
-		__LOp(iptr) = i1&(~i);
-		return x - *iptr;
-	    }
+	} else {
+		/* fraction part in low x */
+		i = 0xffffffff >> (j0 - 20);	/* i = ((unsigned)(0xffffffff))>>(j0-20); */
+		if ((i1 & i) == 0) {
+			/* x is integral */
+			*iptr = x;
+			FSETHI(x, FHI(x) & 0x80000000);	/* __HI(x) &= 0x80000000; */
+			FSETLO(x, 0);	/* __LO(x) = 0; */	/* return +-0 */
+			return x;
+		} else {
+			FSETHI(*iptr, i0);	/* __HIp(iptr) = i0; */
+			FSETLO(*iptr, i1 & (~i));	/* __LOp(iptr) = i1&(~i); */
+			return FSUB(x, *iptr);	/* return x - *iptr; */
+		}
 	}
 }

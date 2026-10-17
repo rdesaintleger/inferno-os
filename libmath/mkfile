@@ -55,12 +55,151 @@ OFILES=\
 	s_sin.$O\
 	s_tan.$O\
 	s_tanh.$O\
+	fpbits.$O\
+	extF80_add.$O\
+	extF80_div.$O\
+	extF80_eq.$O\
+	extF80_eq_signaling.$O\
+	extF80_isSignalingNaN.$O\
+	extF80_le.$O\
+	extF80_le_quiet.$O\
+	extF80_lt.$O\
+	extF80_lt_quiet.$O\
+	extF80_mul.$O\
+	extF80_rem.$O\
+	extF80_roundToInt.$O\
+	extF80_sqrt.$O\
+	extF80_sub.$O\
+	extF80_to_f32.$O\
+	extF80_to_f64.$O\
+	extF80_to_i32.$O\
+	extF80_to_i32_r_minMag.$O\
+	extF80_to_i64.$O\
+	extF80_to_i64_r_minMag.$O\
+	f32_add.$O\
+	f32_div.$O\
+	f32_eq.$O\
+	f32_eq_signaling.$O\
+	f32_isSignalingNaN.$O\
+	f32_le.$O\
+	f32_le_quiet.$O\
+	f32_lt.$O\
+	f32_lt_quiet.$O\
+	f32_mul.$O\
+	f32_rem.$O\
+	f32_roundToInt.$O\
+	f32_sqrt.$O\
+	f32_sub.$O\
+	f32_to_extF80.$O\
+	f32_to_f64.$O\
+	f32_to_i32.$O\
+	f32_to_i32_r_minMag.$O\
+	f32_to_i64.$O\
+	f32_to_i64_r_minMag.$O\
+	f32_to_ui32.$O\
+	f32_to_ui32_r_minMag.$O\
+	f32_to_ui64.$O\
+	f32_to_ui64_r_minMag.$O\
+	f64_add.$O\
+	f64_div.$O\
+	f64_eq.$O\
+	f64_eq_signaling.$O\
+	f64_isSignalingNaN.$O\
+	f64_le.$O\
+	f64_le_quiet.$O\
+	f64_lt.$O\
+	f64_lt_quiet.$O\
+	f64_mul.$O\
+	f64_rem.$O\
+	f64_roundToInt.$O\
+	f64_sqrt.$O\
+	f64_sub.$O\
+	f64_to_extF80.$O\
+	f64_to_f32.$O\
+	f64_to_i32.$O\
+	f64_to_i32_r_minMag.$O\
+	f64_to_i64.$O\
+	f64_to_i64_r_minMag.$O\
+	f64_to_ui32.$O\
+	f64_to_ui32_r_minMag.$O\
+	f64_to_ui64.$O\
+	f64_to_ui64_r_minMag.$O\
+	i32_to_extF80.$O\
+	i32_to_f32.$O\
+	i32_to_f64.$O\
+	i64_to_extF80.$O\
+	i64_to_f32.$O\
+	i64_to_f64.$O\
+	s_add128.$O\
+	s_addMagsExtF80.$O\
+	s_addMagsF32.$O\
+	s_addMagsF64.$O\
+	s_approxRecip32_1.$O\
+	s_approxRecipSqrt32_1.$O\
+	s_approxRecipSqrt_1Ks.$O\
+	s_approxRecip_1Ks.$O\
+	s_commonNaNToExtF80UI.$O\
+	s_countLeadingZeros32.$O\
+	s_countLeadingZeros64.$O\
+	s_countLeadingZeros8.$O\
+	s_le128.$O\
+	s_lt128.$O\
+	s_mul64ByShifted32To128.$O\
+	s_mul64To128.$O\
+	s_normRoundPackToExtF80.$O\
+	s_normRoundPackToF32.$O\
+	s_normRoundPackToF64.$O\
+	s_normSubnormalExtF80Sig.$O\
+	s_normSubnormalF32Sig.$O\
+	s_normSubnormalF64Sig.$O\
+	s_propagateNaNExtF80UI.$O\
+	s_propagateNaNF32UI.$O\
+	s_propagateNaNF64UI.$O\
+	s_roundPackToExtF80.$O\
+	s_roundPackToF32.$O\
+	s_roundPackToF64.$O\
+	s_roundToI32.$O\
+	s_roundToI64.$O\
+	s_roundToUI32.$O\
+	s_roundToUI64.$O\
+	s_shiftRightJam128.$O\
+	s_shiftRightJam32.$O\
+	s_shiftRightJam64.$O\
+	s_shiftRightJam64Extra.$O\
+	s_shortShiftLeft128.$O\
+	s_shortShiftRightJam64.$O\
+	s_shortShiftRightJam64Extra.$O\
+	s_sub128.$O\
+	s_subMagsExtF80.$O\
+	s_subMagsF32.$O\
+	s_subMagsF64.$O\
+	softfloat_raiseFlags.$O\
+	softfloat_state.$O\
+	ui32_to_f32.$O\
+	ui32_to_f64.$O\
+	ui64_to_f32.$O\
+	ui64_to_f64.$O\
 
 HFILES=\
 	$ROOT/include/mathi.h\
 	fdlibm-old/fdlibm.h\
+	$ROOT/include/inferno/fp.h\
+	$ROOT/include/inferno/softfloat.h\
+	$ROOT/include/inferno/softfloat_types.h\
 	
 <$ROOT/mkfiles/mksyslib-$SHELLTYPE
 
 %.$O:	fdlibm-old/%.c
 	$CC $CFLAGS -o $target -Ifdlibm-old fdlibm-old/$stem.c
+
+# SoftFloat, and the operations of <inferno/fp.h> that are built on it
+SFFLAGS=-Isoftfloat/source/include -Isoftfloat/source/RISCV -I$ROOT/include/inferno
+
+%.$O:	softfloat/source/%.c
+	$CC $CFLAGS -o $target $SFFLAGS softfloat/source/$stem.c
+
+%.$O:	softfloat/source/RISCV/%.c
+	$CC $CFLAGS -o $target $SFFLAGS softfloat/source/RISCV/$stem.c
+
+%.$O:	fp/%.c
+	$CC $CFLAGS -o $target fp/$stem.c

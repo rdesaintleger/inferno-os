@@ -1,0 +1,12 @@
+Reference copy of fdlibm 5.3 for the tests of libmath/fdlibm.
+
+These are the sources of libmath/fdlibm as they were before they were ported
+to SoftFloat: same algorithms, computing with the `double' of the host.  The
+only changes are the prefix of the functions (ref_ instead of fd_), so that both
+versions can be linked into the same test program, and the removal of the
+whitespace at the end of lines.
+
+They are not part of Inferno.  test/oracle.c compares the results of both
+versions bit for bit.  For the comparison to mean something the host must
+compute with strict IEEE 754 binary64 arithmetic: no x87 extended precision, no
+fused multiply-add.  See test/mkfile for the compiler options.

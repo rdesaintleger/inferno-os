@@ -1,4 +1,3 @@
-
 /* @(#)s_tanh.c 1.3 95/01/18 */
 /*
  * ====================================================
@@ -6,11 +5,10 @@
  *
  * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
-
 /* Tanh(x)
  * Return the Hyperbolic Tangent of x
  *
@@ -34,49 +32,43 @@
  *	tanh(NaN) is NaN;
  *	only tanh(0)=0 is exact for finite argument.
  */
-
 #include "fdlibm.h"
-
-#ifdef __STDC__
-static const double one=1.0, two=2.0, tiny = 1.0e-300;
-#else
-static double one=1.0, two=2.0, tiny = 1.0e-300;
-#endif
-
-#ifdef __STDC__
-	double fd_tanh(double x)
-#else
-	double fd_tanh(x)
-	double x;
-#endif
+#include "s_tanh.k.h"
+F64K(one, 1.0)
+F64K(two, 2.0)
+F64K(tiny, 1.0e-300)
+float64_t fd_tanh(float64_t x)
 {
-	double t,z;
-	int jx,ix;
-
-    /* High word of |x|. */
-	jx = __HI(x);
-	ix = jx&0x7fffffff;
-
-    /* x is INF or NaN */
-	if(ix>=0x7ff00000) { 
-	    if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
-	    else       return one/x-one;    /* tanh(NaN) = NaN */
+	float64_t t, z;
+	int32_t jx, ix;
+	/* High word of |x|. */
+	jx = FHI(x);	/* jx = __HI(x); */
+	ix = jx & 0x7fffffff;
+	/* x is INF or NaN */
+	if (ix >= 0x7ff00000) {
+		if (jx >= 0) {
+			return FADD(FDIV(one, x), one);	/* return one/x+one; */	/* tanh(+-inf)=+-1 */
+		} else {
+			return FSUB(FDIV(one, x), one);	/* return one/x-one; */	/* tanh(NaN) = NaN */
+		}
 	}
-
-    /* |x| < 22 */
-	if (ix < 0x40360000) {		/* |x|<22 */
-	    if (ix<0x3c800000) 		/* |x|<2**-55 */
-		return x*(one+x);    	/* tanh(small) = small */
-	    if (ix>=0x3ff00000) {	/* |x|>=1  */
-		t = fd_expm1(two*fd_fabs(x));
-		z = one - two/(t+two);
-	    } else {
-	        t = fd_expm1(-two*fd_fabs(x));
-	        z= -t/(t+two);
-	    }
-    /* |x| > 22, return +-1 */
+	/* |x| < 22 */
+	if (ix < 0x40360000) {
+		/* |x|<22 */
+		if (ix < 0x3c800000) {	/* |x|<2**-55 */
+			return FMUL(x, FADD(one, x));	/* return x*(one+x); */	/* tanh(small) = small */
+		}
+		if (ix >= 0x3ff00000) {
+			/* |x|>=1  */
+			t = fd_expm1(FMUL(two, fd_fabs(x)));	/* t = fd_expm1(two*fd_fabs(x)); */
+			z = FSUB(one, FDIV(two, FADD(t, two)));	/* z = one - two/(t+two); */
+		} else {
+			t = fd_expm1(FMUL(FNEG(two), fd_fabs(x)));	/* t = fd_expm1(-two*fd_fabs(x)); */
+			z = FDIV(FNEG(t), FADD(t, two));	/* z= -t/(t+two); */
+		}
+		/* |x| > 22, return +-1 */
 	} else {
-	    z = one - tiny;		/* raised inexact flag */
+		z = FSUB(one, tiny);	/* z = one - tiny; */	/* raised inexact flag */
 	}
-	return (jx>=0)? z: -z;
+	return (jx >= 0) ? z : FNEG(z);	/* return (jx>=0)? z: -z; */
 }

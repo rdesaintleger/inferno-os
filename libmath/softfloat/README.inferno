@@ -49,6 +49,9 @@ unifdef(1) and are gone, together with the code of the branches not taken:
     host, and these structures must be accessed by field name, never as
     raw memory.  The results are the same with either order.
 
+The public headers softfloat.h and softfloat_types.h are in
+$ROOT/include/inferno; the others are in source/include.
+
 The only platform file left is source/include/platform.h, which defines how
 functions defined in headers are declared (INLINE).  It replaces the
 build/<target>/platform.h of the upstream distribution.

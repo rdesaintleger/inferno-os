@@ -14,8 +14,8 @@
  * -O3 and -Os, and strict C99).  A different value means a bug or a change of
  * behaviour.  To build and run it (hosted C, test only):
  *
- *	cc -I source/RISCV -I source/include -o regress test/regress.c \
- *		source/*.c source/RISCV/*.c && ./regress
+ *	cc -I source/RISCV -I source/include -I ../../include/inferno \
+ *		-o regress test/regress.c source/*.c source/RISCV/*.c && ./regress
  */
 #include <stdio.h>
 #include <stdint.h>

@@ -1,101 +1,102 @@
-
-/* @(#)fdlibm.h 1.5 04/04/22 */
 /*
- * ====================================================
- * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+ * fdlibm.h - header of fdlibm, ported to SoftFloat.
  *
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
- * is preserved.
- * ====================================================
+ * fdlibm computes with the type float64_t of <inferno/fp.h> instead of the
+ * `double' of the host.  The code is the algorithm of fdlibm 5.3, with the
+ * operators of C replaced by the operations of SoftFloat, which round exactly
+ * as the operators did on a machine with strict IEEE 754 binary64 arithmetic.
+ *
+ * The names below are short forms of the operations of <inferno/fp.h> and are
+ * only used by fdlibm.  The original expression is kept in a comment next to
+ * each statement that was rewritten.
+ *
+ * Constants are declared in the source with the markers F64K and F64KA and
+ * defined in a header generated at build time by utils/fdconst.
+ *
  */
+#ifndef _FDLIBM_H_
+#define _FDLIBM_H_
 
-/* Sometimes it's necessary to define __LITTLE_ENDIAN explicitly
-   but these catch some common cases. */
+#include <stdint.h>
+#include <inferno/fp.h>
 
-#if defined(i386) || defined(i486) || \
-	defined(intel) || defined(x86) || defined(i86pc) || \
-	defined(__alpha) || defined(__osf__)
-#define __LITTLE_ENDIAN
-#endif
+#define FADD(a, b)	inferno_fp_add((a), (b))
+#define FSUB(a, b)	inferno_fp_sub((a), (b))
+#define FMUL(a, b)	inferno_fp_mul((a), (b))
+#define FDIV(a, b)	inferno_fp_div((a), (b))
+#define FNEG(a)		inferno_fp_neg((a))
 
-#ifdef __LITTLE_ENDIAN
-#define __HI(x) *(1+(int*)&x)
-#define __LO(x) *(int*)&x
-#define __HIp(x) *(1+(int*)x)
-#define __LOp(x) *(int*)x
-#else
-#define __HI(x) *(int*)&x
-#define __LO(x) *(1+(int*)&x)
-#define __HIp(x) *(int*)x
-#define __LOp(x) *(1+(int*)x)
-#endif
+#define FEQ(a, b)	inferno_fp_eq((a), (b))
+#define FNE(a, b)	inferno_fp_ne((a), (b))
+#define FLT(a, b)	inferno_fp_lt((a), (b))
+#define FLE(a, b)	inferno_fp_le((a), (b))
+#define FGT(a, b)	inferno_fp_gt((a), (b))
+#define FGE(a, b)	inferno_fp_ge((a), (b))
+#define FNZ(a)		inferno_fp_nz((a))	/* as C `if(a)' */
 
-#ifdef __STDC__
-#define	__P(p)	p
-#else
-#define	__P(p)	()
-#endif
+#define FI(n)		inferno_fp_from_i32((n))	/* (double)n */
+#define FU(n)		inferno_fp_from_u32((n))	/* (double)n, n unsigned */
+#define FTOI(a)		inferno_fp_to_i32((a))		/* (int)a */
 
-/*
- * Elementary functions used by Inferno.  All names carry the fd_ prefix so
- * that they cannot clash with the host's libm; the SVID/X-Open error
- * handling (wrappers, matherr, _LIB_VERSION) is not part of this copy:
- * errors are reported through IEEE exceptions only.
- */
+#define FHI(a)		inferno_fp_hi((a))		/* high word, int */
+#define FLO(a)		inferno_fp_lo((a))		/* low word, int */
+#define FSETHI(a, v)	((a) = inferno_fp_with_hi((a), (v)))
+#define FSETLO(a, v)	((a) = inferno_fp_with_lo((a), (v)))
 
 /* ieee style elementary functions */
-extern double fd_acos __P((double));
-extern double fd_acosh __P((double));
-extern double fd_asin __P((double));
-extern double fd_atan2 __P((double,double));
-extern double fd_atanh __P((double));
-extern double fd_cosh __P((double));
-extern double fd_exp __P((double));
-extern double fd_fmod __P((double,double));
-extern double fd_hypot __P((double,double));
-extern double fd_j0 __P((double));
-extern double fd_j1 __P((double));
-extern double fd_jn __P((int,double));
-extern double fd_lgamma_r __P((double,int *));
-extern double fd_log __P((double));
-extern double fd_log10 __P((double));
-extern double fd_pow __P((double,double));
-extern double fd_remainder __P((double,double));
-extern double fd_sinh __P((double));
-extern double fd_sqrt __P((double));
-extern double fd_y0 __P((double));
-extern double fd_y1 __P((double));
-extern double fd_yn __P((int,double));
-extern int    fd_rem_pio2 __P((double,double*));
+extern float64_t fd_acos(float64_t);
+extern float64_t fd_acosh(float64_t);
+extern float64_t fd_asin(float64_t);
+extern float64_t fd_atan2(float64_t, float64_t);
+extern float64_t fd_atanh(float64_t);
+extern float64_t fd_cosh(float64_t);
+extern float64_t fd_exp(float64_t);
+extern float64_t fd_fmod(float64_t, float64_t);
+extern float64_t fd_hypot(float64_t, float64_t);
+extern float64_t fd_j0(float64_t);
+extern float64_t fd_j1(float64_t);
+extern float64_t fd_jn(int32_t, float64_t);
+extern float64_t fd_lgamma_r(float64_t, int32_t *);
+extern float64_t fd_log(float64_t);
+extern float64_t fd_log10(float64_t);
+extern float64_t fd_pow(float64_t, float64_t);
+extern float64_t fd_remainder(float64_t, float64_t);
+extern float64_t fd_sinh(float64_t);
+extern float64_t fd_sqrt(float64_t);
+extern float64_t fd_y0(float64_t);
+extern float64_t fd_y1(float64_t);
+extern float64_t fd_yn(int32_t, float64_t);
+extern int32_t fd_rem_pio2(float64_t, float64_t *);
 
 /* ANSI/POSIX and BSD functions */
-extern double fd_asinh __P((double));
-extern double fd_atan __P((double));
-extern double fd_cbrt __P((double));
-extern double fd_ceil __P((double));
-extern double fd_cos __P((double));
-extern double fd_erf __P((double));
-extern double fd_erfc __P((double));
-extern double fd_expm1 __P((double));
-extern double fd_fabs __P((double));
-extern double fd_floor __P((double));
-extern double fd_log1p __P((double));
-extern double fd_modf __P((double, double *));
-extern double fd_sin __P((double));
-extern double fd_tan __P((double));
-extern double fd_tanh __P((double));
+extern float64_t fd_asinh(float64_t);
+extern float64_t fd_atan(float64_t);
+extern float64_t fd_cbrt(float64_t);
+extern float64_t fd_ceil(float64_t);
+extern float64_t fd_cos(float64_t);
+extern float64_t fd_erf(float64_t);
+extern float64_t fd_erfc(float64_t);
+extern float64_t fd_expm1(float64_t);
+extern float64_t fd_fabs(float64_t);
+extern float64_t fd_floor(float64_t);
+extern float64_t fd_log1p(float64_t);
+extern float64_t fd_modf(float64_t, float64_t *);
+extern float64_t fd_sin(float64_t);
+extern float64_t fd_tan(float64_t);
+extern float64_t fd_tanh(float64_t);
 
 /* functions callable from C, intended to support IEEE arithmetic */
-extern double fd_copysign __P((double, double));
-extern int    fd_finite __P((double));
-extern int    fd_ilogb __P((double));
-extern double fd_nextafter __P((double, double));
-extern double fd_rint __P((double));
-extern double fd_scalbn __P((double, int));
+extern float64_t fd_copysign(float64_t, float64_t);
+extern int32_t fd_finite(float64_t);
+extern int32_t fd_ilogb(float64_t);
+extern float64_t fd_nextafter(float64_t, float64_t);
+extern float64_t fd_rint(float64_t);
+extern float64_t fd_scalbn(float64_t, int32_t);
 
 /* fdlibm kernel functions */
-extern double fd_kernel_sin __P((double,double,int));
-extern double fd_kernel_cos __P((double,double));
-extern double fd_kernel_tan __P((double,double,int));
-extern int    fd_kernel_rem_pio2 __P((double*,double*,int,int,int,const int*));
+extern float64_t fd_kernel_sin(float64_t, float64_t, int32_t);
+extern float64_t fd_kernel_cos(float64_t, float64_t);
+extern float64_t fd_kernel_tan(float64_t, float64_t, int32_t);
+extern int32_t fd_kernel_rem_pio2(float64_t *, float64_t *, int32_t, int32_t, int32_t, const int32_t *);
+
+#endif

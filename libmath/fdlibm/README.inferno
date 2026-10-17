@@ -1,28 +1,74 @@
-Inferno copy of fdlibm 5.3
-==========================
+Inferno copy of fdlibm 5.3, ported to SoftFloat
+================================================
 
-Imported unmodified from the Sun/netlib fdlibm 5.3 distribution, then
-reduced to what Inferno needs.  The upstream README is kept as README.
+The sources are those of the Sun/netlib fdlibm 5.3 distribution (the upstream
+README is kept as README), reduced to what Inferno needs and ported to
+SoftFloat, so that elementary functions give the same bits on every machine,
+whatever its floating-point hardware.
 
-Changes made for Inferno (see the git history for the exact steps):
+Reduction
+---------
 
-  - removed the build system (Makefile*, configure*), the SVID/X-Open error
-    wrappers (w_*.c, k_standard.c, s_matherr.c, s_lib_version.c,
-    s_signgam.c) and the functions Inferno does not use (gamma, scalb,
-    significand, logb, frexp, ldexp, isnan, lgamma without _r);
-    errors are reported through IEEE exceptions only;
+The build system (Makefile*, configure*), the SVID/X-Open error wrappers
+(w_*.c, k_standard.c, s_matherr.c, s_lib_version.c, s_signgam.c) and the
+functions Inferno does not use (gamma, scalb, significand, logb, frexp, ldexp,
+isnan, lgamma without _r) were removed: 44 sources remain.  Errors are
+reported through IEEE exceptions only.
 
-  - every external symbol carries the fd_ prefix, so that it cannot clash
-    with the host's libm:
+Names
+-----
+
+Every external symbol carries the fd_ prefix, so that it cannot clash with the
+host's libm:
 
 	__ieee754_NAME   ->  fd_NAME           (fd_exp, fd_pow, fd_lgamma_r ...)
 	__kernel_NAME    ->  fd_kernel_NAME    (fd_kernel_sin ...)
 	NAME             ->  fd_NAME           (fd_sin, fd_floor, fd_modf ...)
 
-    The calls that the original code made to the public sqrt() now go to
-    fd_sqrt(), i.e. fdlibm's own square root; before, they were resolved
-    by the host's libm.
+The calls that the original code made to the public sqrt() go to fd_sqrt(),
+fdlibm's own square root.
 
-fdlibm is written for IEEE 754 binary64 `double'; porting it on top of the
-softfloat library (so that it no longer depends on the host's floating
-point unit) is done in later steps.
+The port
+--------
+
+The algorithms are those of fdlibm 5.3 and computation is done on float64_t,
+the type of SoftFloat, instead of the `double' of the host.  Nothing depends
+on the host's floating-point unit, its byte order or its C library any more.
+
+  - the operators of C are the operations of <inferno/fp.h>, under the short
+    names of fdlibm.h: FADD FSUB FMUL FDIV FNEG, the comparisons FEQ FNE FLT
+    FLE FGT FGE, the conversions FI FU FTOI.  Each operation rounds as the
+    operator did on a machine with strict IEEE 754 binary64 arithmetic;
+
+  - the two words of a number, which the original reached with __HI and __LO
+    (and a probe of the byte order of the host in e_pow, e_cosh and e_sinh),
+    are read with FHI and FLO and written with FSETHI and FSETLO;
+
+  - integers are int32_t and uint32_t;
+
+  - constants are declared with F64K and F64KA.  The markers define nothing for
+    the compiler: utils/fdconst reads the source and generates, at build time,
+    a header (file.k.h) that defines the constants from their decimal text,
+    with integer arithmetic only.  A constant can be edited in decimal;
+
+  - every statement that was rewritten keeps its original text in a comment.
+
+fdlibm only accumulates the exception flags of SoftFloat: it does not trap and
+does not choose the rounding mode.  Like the original it is written for round
+to nearest; whoever calls it sets the mode, clears the flags before and reads
+them after.
+
+Tests
+-----
+
+../test/oracle.c compares every function with ../test/ref, the same sources
+before the port, computed by the host with strict IEEE 754 arithmetic: bit for
+bit, with operands built from the thresholds of the algorithms.  Run mk test
+in ../test.
+
+Status
+------
+
+The directory is not built into libmath.a yet: libmath/mkfile still builds
+fdlibm-old.  Switching comes after the tests of the new fdlibm and SoftFloat
+are satisfactory.

@@ -1,4 +1,3 @@
-
 /* @(#)s_copysign.c 1.3 95/01/18 */
 /*
  * ====================================================
@@ -6,26 +5,19 @@
  *
  * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
-
 /*
  * copysign(double x, double y)
  * copysign(x,y) returns a value with the magnitude of x and
  * with the sign bit of y.
  */
-
 #include "fdlibm.h"
-
-#ifdef __STDC__
-	double fd_copysign(double x, double y)
-#else
-	double fd_copysign(x,y)
-	double x,y;
-#endif
+#include "s_copysign.k.h"
+float64_t fd_copysign(float64_t x, float64_t y)
 {
-	__HI(x) = (__HI(x)&0x7fffffff)|(__HI(y)&0x80000000);
-        return x;
+	FSETHI(x, (FHI(x) & 0x7fffffff) | (FHI(y) & 0x80000000));	/* __HI(x) = (__HI(x)&0x7fffffff)|(__HI(y)&0x80000000); */
+	return x;
 }

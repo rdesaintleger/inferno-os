@@ -93,7 +93,7 @@ struct commonNaN { char _unused; };
 | location pointed to by 'zPtr'.  If the NaN is a signaling NaN, the invalid
 | exception is raised.
 *----------------------------------------------------------------------------*/
-#define softfloat_f32UIToCommonNaN( uiA, zPtr ) if ( ! ((uiA) & 0x00400000) ) softfloat_raiseFlags( softfloat_flag_invalid )
+#define softfloat_f32UIToCommonNaN( uiA, zPtr ) ((void) (zPtr), ((uiA) & 0x00400000) ? (void) 0 : softfloat_raiseFlags( softfloat_flag_invalid ))
 
 /*----------------------------------------------------------------------------
 | Converts the common NaN pointed to by 'aPtr' into a 32-bit floating-point
@@ -128,7 +128,7 @@ uint_fast32_t
 | location pointed to by 'zPtr'.  If the NaN is a signaling NaN, the invalid
 | exception is raised.
 *----------------------------------------------------------------------------*/
-#define softfloat_f64UIToCommonNaN( uiA, zPtr ) if ( ! ((uiA) & UINT64_C( 0x0008000000000000 )) ) softfloat_raiseFlags( softfloat_flag_invalid )
+#define softfloat_f64UIToCommonNaN( uiA, zPtr ) ((void) (zPtr), ((uiA) & UINT64_C( 0x0008000000000000 )) ? (void) 0 : softfloat_raiseFlags( softfloat_flag_invalid ))
 
 /*----------------------------------------------------------------------------
 | Converts the common NaN pointed to by 'aPtr' into a 64-bit floating-point
@@ -166,7 +166,7 @@ uint_fast64_t
 | location pointed to by 'zPtr'.  If the NaN is a signaling NaN, the invalid
 | exception is raised.
 *----------------------------------------------------------------------------*/
-#define softfloat_extF80UIToCommonNaN( uiA64, uiA0, zPtr ) if ( ! ((uiA0) & UINT64_C( 0x4000000000000000 )) ) softfloat_raiseFlags( softfloat_flag_invalid )
+#define softfloat_extF80UIToCommonNaN( uiA64, uiA0, zPtr ) ((void) (zPtr), ((uiA0) & UINT64_C( 0x4000000000000000 )) ? (void) 0 : softfloat_raiseFlags( softfloat_flag_invalid ))
 
 /*----------------------------------------------------------------------------
 | Converts the common NaN pointed to by 'aPtr' into an 80-bit extended
