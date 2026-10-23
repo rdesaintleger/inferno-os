@@ -66,9 +66,12 @@ before the port, computed by the host with strict IEEE 754 arithmetic: bit for
 bit, with operands built from the thresholds of the algorithms.  Run mk test
 in ../test.
 
-Status
-------
+Use
+---
 
-The directory is not built into libmath.a yet: libmath/mkfile still builds
-fdlibm-old.  Switching comes after the tests of the new fdlibm and SoftFloat
-are satisfactory.
+libmath.a is built from these sources (libmath/mkfile).  libinterp/math.c is
+the only caller for now: it calls the functions through a bridge, because REAL
+is still a double there.  The bridge converts the arguments and the results,
+rounds to nearest, and, after the call, adds the flags of SoftFloat to the
+floating-point status of the process and traps when the control word says so,
+as the hardware did (see the comment at the top of the bridge in math.c).

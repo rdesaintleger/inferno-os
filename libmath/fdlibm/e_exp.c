@@ -94,7 +94,7 @@ float64_t fd_exp(float64_t x)
 	/* 2**-1000=0x01700000,0*/
 	/* default IEEE double exp */
 	float64_t y, hi, lo, c, t;
-	int32_t k, xsb;
+	int32_t k = 0, xsb;
 	uint32_t hx;
 	hx = (uint32_t)FHI(x);	/* hx = __HI(x); */	/* high word of x */
 	xsb = (int32_t)((hx >> 31) & 1);	/* xsb = (hx>>31)&1; */	/* sign bit of x */

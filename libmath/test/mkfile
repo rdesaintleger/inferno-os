@@ -5,11 +5,10 @@
 #
 #		mk test
 #
-#	needs libmath.a and fdconst installed: mk install in .. and in
-#	$ROOT/utils/fdconst.
+#	needs libmath.a installed: mk install in ..
 #
 #	fptest	SoftFloat against the floating-point hardware of the host
-#	oracle	libmath/fdlibm against its reference copy in ref/
+#	oracle	the functions of fdlibm in libmath.a against their reference copy in ref/
 #
 #	Both compare bit for bit.  This is only meaningful if the host computes
 #	with strict IEEE 754 arithmetic: HOSTFP says how to ask a gcc on x86 for
@@ -18,119 +17,9 @@
 #
 
 LIB=$ROOT/$OBJDIR/lib/libmath.a
-FDCONST=$ROOT/$OBJDIR/bin/fdconst
 
 HOSTFP=-frounding-math -ffp-contract=off -fno-math-errno -fno-builtin -msse2 -mfpmath=sse
 COUNT=100000
-
-# files of ../fdlibm ported to SoftFloat, and the functions they define; ORACLE
-# is oracle as soon as there is one (a list that is empty is not a good thing
-# to give to mk)
-ORACLE=oracle
-PORTED=\
-	e_acos\
-	e_acosh\
-	e_asin\
-	e_atan2\
-	e_atanh\
-	e_cosh\
-	e_exp\
-	e_fmod\
-	e_hypot\
-	e_j0\
-	e_j1\
-	e_jn\
-	e_lgamma_r\
-	e_log\
-	e_log10\
-	e_pow\
-	e_rem_pio2\
-	e_remainder\
-	e_sinh\
-	e_sqrt\
-	k_cos\
-	k_rem_pio2\
-	k_sin\
-	k_tan\
-	s_asinh\
-	s_atan\
-	s_cbrt\
-	s_ceil\
-	s_copysign\
-	s_cos\
-	s_erf\
-	s_expm1\
-	s_fabs\
-	s_finite\
-	s_floor\
-	s_ilogb\
-	s_log1p\
-	s_modf\
-	s_nextafter\
-	s_rint\
-	s_scalbn\
-	s_sin\
-	s_tan\
-	s_tanh\
-
-
-
-
-
-FUNCS=\
-	acos\
-	acosh\
-	asin\
-	asinh\
-	atan\
-	atan2\
-	atanh\
-	cbrt\
-	ceil\
-	copysign\
-	cos\
-	cosh\
-	erf\
-	erfc\
-	exp\
-	expm1\
-	fabs\
-	finite\
-	floor\
-	fmod\
-	hypot\
-	ilogb\
-	j0\
-	j1\
-	jn\
-	kernel_cos\
-	kernel_rem_pio2\
-	kernel_sin\
-	kernel_tan\
-	lgamma_r\
-	log\
-	log10\
-	log1p\
-	modf\
-	nextafter\
-	pow\
-	rem_pio2\
-	remainder\
-	rint\
-	scalbn\
-	sin\
-	sinh\
-	sqrt\
-	tan\
-	tanh\
-	y0\
-	y1\
-	yn\
-
-
-
-
-
 
 # the same files before the port, with the prefix ref_ (see ref/README)
 REF=\
@@ -179,40 +68,31 @@ REF=\
 	s_tan\
 	s_tanh\
 
-HAVEFLAGS=${FUNCS:%=-DHAVE_%}
-PORTEDOBJS=${PORTED:%=new_%.$O}
 REFOBJS=${REF:%=ref_%.$O}
 
 all:V:	test
 
-test:V:	fptest $ORACLE
+test:V:	fptest oracle
 	./fptest $COUNT
-	if test -n "$ORACLE"; then ./oracle $COUNT; fi
+	./oracle $COUNT
 
 fptest:	fptest.$O $LIB
 	$LD $LDFLAGS -o $target fptest.$O $LIB -lm
 
-oracle:	oracle.$O $PORTEDOBJS $REFOBJS $LIB
-	$LD $LDFLAGS -o $target oracle.$O $PORTEDOBJS $REFOBJS $LIB -lm
+oracle:	oracle.$O $REFOBJS $LIB
+	$LD $LDFLAGS -o $target oracle.$O $REFOBJS $LIB -lm
 
 fptest.$O:	fptest.c $ROOT/include/inferno/fp.h
 	$CC $HOSTFP -O0 -w -I$ROOT/include -o $target fptest.c
 
 oracle.$O:	oracle.c hiwords.h ../fdlibm/fdlibm.h $ROOT/include/inferno/fp.h
-	$CC $HOSTFP -O1 -w $HAVEFLAGS -I../fdlibm -I$ROOT/include -o $target oracle.c
+	$CC $HOSTFP -O1 -w -I../fdlibm -I$ROOT/include -o $target oracle.c
 
 # reference copy: strict double arithmetic of the host
 ref_%.$O:	ref/%.c ref/fdlibm.h
 	$CC $HOSTFP -O1 -w -fno-strict-aliasing -D__LITTLE_ENDIAN=1 -Iref -o $target ref/$stem.c
 
-# fdlibm ported: constants come from the generated header
-%.k.h:	../fdlibm/%.c $FDCONST
-	$FDCONST -o $target ../fdlibm/$stem.c
-
-new_%.$O:	../fdlibm/%.c %.k.h ../fdlibm/fdlibm.h
-	$CC -O2 -w -I. -I../fdlibm -I$ROOT/include -o $target ../fdlibm/$stem.c
-
 clean:V:
-	rm -f *.$O *.k.h fptest oracle
+	rm -f *.$O fptest oracle
 
 nuke:V:	clean

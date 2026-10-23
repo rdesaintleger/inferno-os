@@ -215,7 +215,7 @@ static float64_t pone(float64_t x)
 	/* for x in [inf, 8]=1/[0,0.125] */
 	/* for x in [8,4.5454]=1/[0.125,0.22001] */
 	/* for x in [2.8570,2]=1/[0.3499,0.5] */
-	const float64_t *p, *q;
+	const float64_t *p = 0, *q = 0;	/* set below for every x >= 2 */
 	float64_t z, r, s;
 	int32_t ix;
 	ix = 0x7fffffff & FHI(x);	/* ix = 0x7fffffff&__HI(x); */
@@ -260,7 +260,7 @@ static float64_t qone(float64_t x)
 	/* for x in [inf, 8]=1/[0,0.125] */
 	/* for x in [8,4.5454]=1/[0.125,0.22001] */
 	/* for x in [2.8570,2]=1/[0.3499,0.5] */
-	const float64_t *p, *q;
+	const float64_t *p = 0, *q = 0;	/* set below for every x >= 2 */
 	float64_t s, r, z;
 	int32_t ix;
 	ix = 0x7fffffff & FHI(x);	/* ix = 0x7fffffff&__HI(x); */

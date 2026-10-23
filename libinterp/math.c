@@ -5,6 +5,7 @@
 #include "raise.h"
 #include "mathi.h"
 #include "mathmod.h"
+#include <inferno/fp.h>
 
 static union
 {
@@ -16,6 +17,135 @@ static union{
 	float x;
 	unsigned int u;
 } bits32;
+
+/*
+ * Elementary functions.
+ *
+ * They are the functions of fdlibm, computed on float64_t with SoftFloat (see
+ * <inferno/fp.h>) and not by the floating-point unit of the host.  REAL is
+ * still a double here: arguments and results are converted, they have the
+ * same 64 bits.
+ *
+ * SoftFloat only raises flags.  After each call they are added to the
+ * floating-point status of the process and, if the control word says so, they
+ * trap as the hardware used to do: the run-time error is "sys: fp: ...".  The
+ * functions always round to nearest.
+ */
+static float64_t
+emu_tofp(REAL x)
+{
+	union { REAL d; uint64_t u; } c;
+	float64_t r;
+
+	c.d = x;
+	r.v = c.u;
+	return r;
+}
+
+static REAL
+emu_fromfp(float64_t x)
+{
+	union { REAL d; uint64_t u; } c;
+
+	c.u = x.v;
+	return c.d;
+}
+
+static void
+emu_fpbegin(void)
+{
+	softfloat_roundingMode = softfloat_round_near_even;
+	softfloat_detectTininess = softfloat_tininess_afterRounding;
+	softfloat_exceptionFlags = 0;
+}
+
+/*
+ * On some machines the status of the floating-point unit can only be cleared,
+ * not set (FPstatus): a flag is raised by an operation that causes it.
+ */
+static void
+emu_fpraise(ulong st)
+{
+	volatile double a, b, r;
+
+	if(st & INEX){
+		a = 1.0; b = 3.0; r = a / b;
+	}
+	if(st & UNFL){
+		a = 1e-300; b = 1e-300; r = a * b;
+	}
+	if(st & OVFL){
+		a = 1e300; b = 1e300; r = a * b;
+	}
+	if(st & ZDIV){
+		a = 1.0; b = 0.0; r = a / b;
+	}
+	if(st & INVAL){
+		a = 0.0; b = 0.0; r = a / b;
+	}
+	USED(r);
+}
+
+static void
+emu_fpend(void)
+{
+	static const char hex[] = "0123456789abcdef";
+	char msg[] = "sys: fp: exception status=0000";
+	uint_fast8_t fl;
+	ulong st, ctl, trap;
+	int i;
+
+	fl = softfloat_exceptionFlags;
+	if(fl == 0)
+		return;
+	st = 0;
+	if(fl & softfloat_flag_invalid)
+		st |= INVAL;
+	if(fl & softfloat_flag_infinite)
+		st |= ZDIV;
+	if(fl & softfloat_flag_overflow)
+		st |= OVFL;
+	if(fl & softfloat_flag_underflow)
+		st |= UNFL;
+	if(fl & softfloat_flag_inexact)
+		st |= INEX;
+
+	/* the flags join the status, whether they trap or not */
+	ctl = getFPcontrol();
+	trap = st & ctl & (INVAL|ZDIV|OVFL|UNFL|INEX);
+	if(trap)
+		FPcontrol(0, trap);
+	emu_fpraise(st);
+	if(trap){
+		FPcontrol(ctl, trap);
+		st = getFPstatus();
+		for(i = 0; i < 4; i++)
+			msg[sizeof msg - 2 - i] = hex[(st >> (4*i)) & 0xf];
+		error(msg);
+	}
+}
+
+static REAL
+emu_call1(float64_t (*fn)(float64_t), REAL x)
+{
+	float64_t r;
+
+	emu_fpbegin();
+	r = fn(emu_tofp(x));
+	emu_fpend();
+	return emu_fromfp(r);
+}
+
+static REAL
+emu_call2(float64_t (*fn)(float64_t, float64_t), REAL x, REAL y)
+{
+	float64_t r;
+
+	emu_fpbegin();
+	r = fn(emu_tofp(x), emu_tofp(y));
+	emu_fpend();
+	return emu_fromfp(r);
+}
 
 void
 mathmodinit(void)
@@ -254,7 +384,7 @@ Math_finite(void *fp)
 
 	f = fp;
 
-	*f->ret = finite(f->x);
+	*f->ret = fd_finite(emu_tofp(f->x));
 }
 
 void
@@ -264,7 +394,7 @@ Math_ilogb(void *fp)
 
 	f = fp;
 
-	*f->ret = ilogb(f->x);
+	*f->ret = fd_ilogb(emu_tofp(f->x));
 }
 
 void
@@ -284,7 +414,7 @@ Math_acos(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_acos(f->x);
+	*f->ret = emu_call1(fd_acos, f->x);
 }
 
 void
@@ -294,7 +424,7 @@ Math_acosh(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_acosh(f->x);
+	*f->ret = emu_call1(fd_acosh, f->x);
 }
 
 void
@@ -304,7 +434,7 @@ Math_asin(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_asin(f->x);
+	*f->ret = emu_call1(fd_asin, f->x);
 }
 
 void
@@ -314,7 +444,7 @@ Math_asinh(void *fp)
 
 	f = fp;
 
-	*f->ret = asinh(f->x);
+	*f->ret = emu_call1(fd_asinh, f->x);
 }
 
 void
@@ -324,7 +454,7 @@ Math_atan(void *fp)
 
 	f = fp;
 
-	*f->ret = atan(f->x);
+	*f->ret = emu_call1(fd_atan, f->x);
 }
 
 void
@@ -334,7 +464,7 @@ Math_atanh(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_atanh(f->x);
+	*f->ret = emu_call1(fd_atanh, f->x);
 }
 
 void
@@ -344,7 +474,7 @@ Math_cbrt(void *fp)
 
 	f = fp;
 
-	*f->ret = cbrt(f->x);
+	*f->ret = emu_call1(fd_cbrt, f->x);
 }
 
 void
@@ -354,7 +484,7 @@ Math_ceil(void *fp)
 
 	f = fp;
 
-	*f->ret = ceil(f->x);
+	*f->ret = emu_call1(fd_ceil, f->x);
 }
 
 void
@@ -364,7 +494,7 @@ Math_cos(void *fp)
 
 	f = fp;
 
-	*f->ret = cos(f->x);
+	*f->ret = emu_call1(fd_cos, f->x);
 }
 
 void
@@ -374,7 +504,7 @@ Math_cosh(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_cosh(f->x);
+	*f->ret = emu_call1(fd_cosh, f->x);
 }
 
 void
@@ -384,7 +514,7 @@ Math_erf(void *fp)
 
 	f = fp;
 
-	*f->ret = erf(f->x);
+	*f->ret = emu_call1(fd_erf, f->x);
 }
 
 void
@@ -394,7 +524,7 @@ Math_erfc(void *fp)
 
 	f = fp;
 
-	*f->ret = erfc(f->x);
+	*f->ret = emu_call1(fd_erfc, f->x);
 }
 
 void
@@ -404,7 +534,7 @@ Math_exp(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_exp(f->x);
+	*f->ret = emu_call1(fd_exp, f->x);
 }
 
 void
@@ -414,7 +544,7 @@ Math_expm1(void *fp)
 
 	f = fp;
 
-	*f->ret = expm1(f->x);
+	*f->ret = emu_call1(fd_expm1, f->x);
 }
 
 void
@@ -424,7 +554,7 @@ Math_fabs(void *fp)
 
 	f = fp;
 
-	*f->ret = fabs(f->x);
+	*f->ret = emu_call1(fd_fabs, f->x);
 }
 
 void
@@ -434,7 +564,7 @@ Math_floor(void *fp)
 
 	f = fp;
 
-	*f->ret = floor(f->x);
+	*f->ret = emu_call1(fd_floor, f->x);
 }
 
 void
@@ -444,7 +574,7 @@ Math_j0(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_j0(f->x);
+	*f->ret = emu_call1(fd_j0, f->x);
 }
 
 void
@@ -454,7 +584,7 @@ Math_j1(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_j1(f->x);
+	*f->ret = emu_call1(fd_j1, f->x);
 }
 
 void
@@ -464,7 +594,7 @@ Math_log(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_log(f->x);
+	*f->ret = emu_call1(fd_log, f->x);
 }
 
 void
@@ -474,7 +604,7 @@ Math_log10(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_log10(f->x);
+	*f->ret = emu_call1(fd_log10, f->x);
 }
 
 void
@@ -484,7 +614,7 @@ Math_log1p(void *fp)
 
 	f = fp;
 
-	*f->ret = log1p(f->x);
+	*f->ret = emu_call1(fd_log1p, f->x);
 }
 
 void
@@ -494,7 +624,7 @@ Math_rint(void *fp)
 
 	f = fp;
 
-	*f->ret = rint(f->x);
+	*f->ret = emu_call1(fd_rint, f->x);
 }
 
 void
@@ -504,7 +634,7 @@ Math_sin(void *fp)
 
 	f = fp;
 
-	*f->ret = sin(f->x);
+	*f->ret = emu_call1(fd_sin, f->x);
 }
 
 void
@@ -514,7 +644,7 @@ Math_sinh(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_sinh(f->x);
+	*f->ret = emu_call1(fd_sinh, f->x);
 }
 
 void
@@ -524,7 +654,7 @@ Math_sqrt(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_sqrt(f->x);
+	*f->ret = emu_call1(fd_sqrt, f->x);
 }
 
 void
@@ -534,7 +664,7 @@ Math_tan(void *fp)
 
 	f = fp;
 
-	*f->ret = tan(f->x);
+	*f->ret = emu_call1(fd_tan, f->x);
 }
 
 void
@@ -544,7 +674,7 @@ Math_tanh(void *fp)
 
 	f = fp;
 
-	*f->ret = tanh(f->x);
+	*f->ret = emu_call1(fd_tanh, f->x);
 }
 
 void
@@ -554,7 +684,7 @@ Math_y0(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_y0(f->x);
+	*f->ret = emu_call1(fd_y0, f->x);
 }
 
 void
@@ -564,7 +694,7 @@ Math_y1(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_y1(f->x);
+	*f->ret = emu_call1(fd_y1, f->x);
 }
 
 void
@@ -604,7 +734,7 @@ Math_fmod(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_fmod(f->x, f->y);
+	*f->ret = emu_call2(fd_fmod, f->x, f->y);
 }
 
 void
@@ -614,7 +744,7 @@ Math_hypot(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_hypot(f->x, f->y);
+	*f->ret = emu_call2(fd_hypot, f->x, f->y);
 }
 
 void
@@ -624,7 +754,7 @@ Math_nextafter(void *fp)
 
 	f = fp;
 
-	*f->ret = nextafter(f->x, f->y);
+	*f->ret = emu_call2(fd_nextafter, f->x, f->y);
 }
 
 void
@@ -634,7 +764,7 @@ Math_pow(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_pow(f->x, f->y);
+	*f->ret = emu_call2(fd_pow, f->x, f->y);
 }
 
 
@@ -666,7 +796,7 @@ Math_atan2(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_atan2(f->y, f->x);
+	*f->ret = emu_call2(fd_atan2, f->y, f->x);
 }
 
 void
@@ -676,7 +806,7 @@ Math_copysign(void *fp)
 
 	f = fp;
 
-	*f->ret = copysign(f->x, f->s);
+	*f->ret = emu_call2(fd_copysign, f->x, f->s);
 }
 
 void
@@ -686,29 +816,40 @@ Math_jn(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_jn(f->n, f->x);
+	emu_fpbegin();
+	*f->ret = emu_fromfp(fd_jn(f->n, emu_tofp(f->x)));
+	emu_fpend();
 }
 
 void
 Math_lgamma(void *fp)
 {
 	F_Math_lgamma *f;
+	float64_t r;
+	int32_t sign;
 
 	f = fp;
 
-	f->ret->t1 = __ieee754_lgamma_r(f->x, &f->ret->t0);
+	emu_fpbegin();
+	r = fd_lgamma_r(emu_tofp(f->x), &sign);
+	emu_fpend();
+	f->ret->t1 = emu_fromfp(r);
+	f->ret->t0 = sign;
 }
 
 void
 Math_modf(void *fp)
 {
 	F_Math_modf *f;
-	double ipart;
+	float64_t ipart, r;
 
 	f = fp;
 
-	f->ret->t1 = modf(f->x, &ipart);
-	f->ret->t0 = ipart;
+	emu_fpbegin();
+	r = fd_modf(emu_tofp(f->x), &ipart);
+	emu_fpend();
+	f->ret->t1 = emu_fromfp(r);
+	f->ret->t0 = emu_fromfp(ipart);
 }
 
 void
@@ -728,7 +869,7 @@ Math_remainder(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_remainder(f->x, f->p);
+	*f->ret = emu_call2(fd_remainder, f->x, f->p);
 }
 
 void
@@ -738,7 +879,9 @@ Math_scalbn(void *fp)
 
 	f = fp;
 
-	*f->ret = scalbn(f->x, f->n);
+	emu_fpbegin();
+	*f->ret = emu_fromfp(fd_scalbn(emu_tofp(f->x), f->n));
+	emu_fpend();
 }
 
 void
@@ -748,7 +891,9 @@ Math_yn(void *fp)
 
 	f = fp;
 
-	*f->ret = __ieee754_yn(f->n, f->x);
+	emu_fpbegin();
+	*f->ret = emu_fromfp(fd_yn(f->n, emu_tofp(f->x)));
+	emu_fpend();
 }
 
 

@@ -205,6 +205,92 @@ fpenv()
 	check(math->getFPcontrol() == old, "trap restored");
 }
 
+# The elementary functions are computed in software, by SoftFloat: they only
+# raise flags.  The traps of the process are applied after the call and give
+# the same run-time error as the hardware did, the flags join the status, and
+# the rounding mode of the process does not change the result.
+fpfunc()
+{
+	old := math->getFPcontrol();
+	traps := Math->INVAL | Math->ZDIV | Math->OVFL | Math->UNFL;
+	zero := 0.;
+	ones := 1000.;
+	trapped := 0;
+
+	# default control word: the exceptions trap
+	{
+		x := math->log(zero);
+		check(x == x, "not reached");
+	} exception {
+	"sys: fp:*" =>
+		trapped = 1;
+	}
+	check(trapped == 1, "log(0) traps (divide by zero)");
+
+	trapped = 0;
+	{
+		x := math->sqrt(-1.);
+		check(x == x, "not reached");
+	} exception {
+	"sys: fp:*" =>
+		trapped = 1;
+	}
+	check(trapped == 1, "sqrt(-1) traps (invalid)");
+
+	trapped = 0;
+	{
+		x := math->exp(ones);
+		check(x == x, "not reached");
+	} exception {
+	"sys: fp:*" =>
+		trapped = 1;
+	}
+	check(trapped == 1, "exp(1000) traps (overflow)");
+
+	# the traps off: the result of IEEE 754 and the flag
+	math->FPcontrol(0, traps);
+	math->FPstatus(0, ~0);
+	x := math->log(zero);
+	check(x == -Math->Infinity, "log(0) is -infinity");
+	check((math->getFPstatus() & Math->ZDIV) != 0, sys->sprint("log(0) sets the divide by zero flag (status %x)", math->getFPstatus()));
+
+	math->FPstatus(0, ~0);
+	x = math->sqrt(-1.);
+	check(math->isnan(x), "sqrt(-1) is a NaN");
+	check((math->getFPstatus() & Math->INVAL) != 0, sys->sprint("sqrt(-1) sets the invalid flag (status %x)", math->getFPstatus()));
+
+	math->FPstatus(0, ~0);
+	x = math->exp(ones);
+	check(x == Math->Infinity, "exp(1000) is infinity");
+	check((math->getFPstatus() & Math->OVFL) != 0, sys->sprint("exp(1000) sets the overflow flag (status %x)", math->getFPstatus()));
+
+	math->FPstatus(0, ~0);
+	x = math->exp(-ones * 1000.);
+	check(x == 0., "exp(-1000000) is zero");
+	check((math->getFPstatus() & Math->UNFL) != 0, sys->sprint("exp(-1000000) sets the underflow flag (status %x)", math->getFPstatus()));
+
+	# inexact is quiet: the flag is set, nothing traps
+	math->FPstatus(0, ~0);
+	x = math->exp(1.);
+	check((math->getFPstatus() & Math->INEX) != 0, sys->sprint("exp(1) sets the inexact flag (status %x)", math->getFPstatus()));
+	check((math->getFPstatus() & traps) == 0, "exp(1) raises nothing else");
+	math->FPcontrol(old, traps);
+	check(math->getFPcontrol() == old, "traps restored");
+
+	# a result does not depend on the rounding mode of the process
+	r := math->exp(1.);
+	s := math->sin(1.);
+	modes := array[] of {Math->RND_Z, Math->RND_PINF, Math->RND_NINF};
+	for(i := 0; i < len modes; i++){
+		math->FPcontrol(modes[i], Math->RND_MASK);
+		exact(math->exp(1.), r, "exp(1) in another rounding mode");
+		exact(math->sin(1.), s, "sin(1) in another rounding mode");
+	}
+	math->FPcontrol(old, Math->RND_MASK);
+	math->FPstatus(0, ~0);
+	check(math->getFPcontrol() == old, "control word restored");
+}
+
 linalg()
 {
 	x := array[] of {1., 2., 3.};
@@ -282,6 +368,7 @@ init(nil: ref Draw->Context, nil: list of string)
 	bessel();
 	floating();
 	fpenv();
+	fpfunc();
 	linalg();
 	export();
 	sys->print("functional checks: %d failure(s)\n", bad);

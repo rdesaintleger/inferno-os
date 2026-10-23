@@ -49,6 +49,7 @@ OFILES=\
 	s_floor.$O\
 	s_ilogb.$O\
 	s_log1p.$O\
+	s_modf.$O\
 	s_nextafter.$O\
 	s_rint.$O\
 	s_scalbn.$O\
@@ -182,15 +183,25 @@ OFILES=\
 
 HFILES=\
 	$ROOT/include/mathi.h\
-	fdlibm-old/fdlibm.h\
+	fdlibm/fdlibm.h\
 	$ROOT/include/inferno/fp.h\
 	$ROOT/include/inferno/softfloat.h\
 	$ROOT/include/inferno/softfloat_types.h\
 	
 <$ROOT/mkfiles/mksyslib-$SHELLTYPE
 
-%.$O:	fdlibm-old/%.c
-	$CC $CFLAGS -o $target -Ifdlibm-old fdlibm-old/$stem.c
+# fdlibm: the constants come from a header that fdconst generates
+FDCONST=$ROOT/$OBJDIR/bin/fdconst
+
+%.$O:	fdlibm/%.c
+	$FDCONST -o $stem.k.h fdlibm/$stem.c
+	$CC $CFLAGS -o $target -I. -Ifdlibm fdlibm/$stem.c
+
+clean:V:	clean-k
+nuke:V:	clean-k
+
+clean-k:V:
+	rm -f *.k.h
 
 # SoftFloat, and the operations of <inferno/fp.h> that are built on it
 SFFLAGS=-Isoftfloat/source/include -Isoftfloat/source/RISCV -I$ROOT/include/inferno

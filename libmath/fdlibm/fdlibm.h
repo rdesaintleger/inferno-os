@@ -43,56 +43,6 @@
 #define FSETHI(a, v)	((a) = inferno_fp_with_hi((a), (v)))
 #define FSETLO(a, v)	((a) = inferno_fp_with_lo((a), (v)))
 
-/* ieee style elementary functions */
-extern float64_t fd_acos(float64_t);
-extern float64_t fd_acosh(float64_t);
-extern float64_t fd_asin(float64_t);
-extern float64_t fd_atan2(float64_t, float64_t);
-extern float64_t fd_atanh(float64_t);
-extern float64_t fd_cosh(float64_t);
-extern float64_t fd_exp(float64_t);
-extern float64_t fd_fmod(float64_t, float64_t);
-extern float64_t fd_hypot(float64_t, float64_t);
-extern float64_t fd_j0(float64_t);
-extern float64_t fd_j1(float64_t);
-extern float64_t fd_jn(int32_t, float64_t);
-extern float64_t fd_lgamma_r(float64_t, int32_t *);
-extern float64_t fd_log(float64_t);
-extern float64_t fd_log10(float64_t);
-extern float64_t fd_pow(float64_t, float64_t);
-extern float64_t fd_remainder(float64_t, float64_t);
-extern float64_t fd_sinh(float64_t);
-extern float64_t fd_sqrt(float64_t);
-extern float64_t fd_y0(float64_t);
-extern float64_t fd_y1(float64_t);
-extern float64_t fd_yn(int32_t, float64_t);
-extern int32_t fd_rem_pio2(float64_t, float64_t *);
-
-/* ANSI/POSIX and BSD functions */
-extern float64_t fd_asinh(float64_t);
-extern float64_t fd_atan(float64_t);
-extern float64_t fd_cbrt(float64_t);
-extern float64_t fd_ceil(float64_t);
-extern float64_t fd_cos(float64_t);
-extern float64_t fd_erf(float64_t);
-extern float64_t fd_erfc(float64_t);
-extern float64_t fd_expm1(float64_t);
-extern float64_t fd_fabs(float64_t);
-extern float64_t fd_floor(float64_t);
-extern float64_t fd_log1p(float64_t);
-extern float64_t fd_modf(float64_t, float64_t *);
-extern float64_t fd_sin(float64_t);
-extern float64_t fd_tan(float64_t);
-extern float64_t fd_tanh(float64_t);
-
-/* functions callable from C, intended to support IEEE arithmetic */
-extern float64_t fd_copysign(float64_t, float64_t);
-extern int32_t fd_finite(float64_t);
-extern int32_t fd_ilogb(float64_t);
-extern float64_t fd_nextafter(float64_t, float64_t);
-extern float64_t fd_rint(float64_t);
-extern float64_t fd_scalbn(float64_t, int32_t);
-
 /* fdlibm kernel functions */
 extern float64_t fd_kernel_sin(float64_t, float64_t, int32_t);
 extern float64_t fd_kernel_cos(float64_t, float64_t);

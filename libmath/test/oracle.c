@@ -9,8 +9,7 @@
  * neighbours, values of moderate magnitude, and special values (zeros,
  * infinities, NaNs, subnormals, extremes).
  *
- * Only the functions listed with -DHAVE_<name> are tested (see mkfile).  Any
- * NaN equals any other NaN: the reference computes the sign of a NaN with
+ * Any NaN equals any other NaN: the reference computes the sign of a NaN with
  * the hardware of the host, SoftFloat with its own rules.
  *
  * usage: oracle [count]	operands per function, default 100000
@@ -169,116 +168,43 @@ end(void)
 		for(i = 0; i < count; i++){ uint64_t a = pickbits(), b = pickbits(); double r = ref_##name(tod(a), tod(b)); float64_t g = fd_##name(F(a), F(b)); \
 			if(!same(r, g)) bad("", a, b, tob(r), g.v); } end(); }
 
-#ifdef HAVE_acos
 D1(acos)
-#endif
-#ifdef HAVE_acosh
 D1(acosh)
-#endif
-#ifdef HAVE_asin
 D1(asin)
-#endif
-#ifdef HAVE_atanh
 D1(atanh)
-#endif
-#ifdef HAVE_cosh
 D1(cosh)
-#endif
-#ifdef HAVE_exp
 D1(exp)
-#endif
-#ifdef HAVE_j0
 D1(j0)
-#endif
-#ifdef HAVE_y0
 D1(y0)
-#endif
-#ifdef HAVE_j1
 D1(j1)
-#endif
-#ifdef HAVE_y1
 D1(y1)
-#endif
-#ifdef HAVE_log
 D1(log)
-#endif
-#ifdef HAVE_log10
 D1(log10)
-#endif
-#ifdef HAVE_sinh
 D1(sinh)
-#endif
-#ifdef HAVE_sqrt
 D1(sqrt)
-#endif
-#ifdef HAVE_asinh
 D1(asinh)
-#endif
-#ifdef HAVE_atan
 D1(atan)
-#endif
-#ifdef HAVE_cbrt
 D1(cbrt)
-#endif
-#ifdef HAVE_ceil
 D1(ceil)
-#endif
-#ifdef HAVE_cos
 D1(cos)
-#endif
-#ifdef HAVE_erf
 D1(erf)
-#endif
-#ifdef HAVE_erfc
 D1(erfc)
-#endif
-#ifdef HAVE_expm1
 D1(expm1)
-#endif
-#ifdef HAVE_fabs
 D1(fabs)
-#endif
-#ifdef HAVE_floor
 D1(floor)
-#endif
-#ifdef HAVE_log1p
 D1(log1p)
-#endif
-#ifdef HAVE_sin
 D1(sin)
-#endif
-#ifdef HAVE_tan
 D1(tan)
-#endif
-#ifdef HAVE_tanh
 D1(tanh)
-#endif
-#ifdef HAVE_rint
 D1(rint)
-#endif
-#ifdef HAVE_atan2
 D2(atan2)
-#endif
-#ifdef HAVE_fmod
 D2(fmod)
-#endif
-#ifdef HAVE_hypot
 D2(hypot)
-#endif
-#ifdef HAVE_pow
 D2(pow)
-#endif
-#ifdef HAVE_remainder
 D2(remainder)
-#endif
-#ifdef HAVE_copysign
 D2(copysign)
-#endif
-#ifdef HAVE_nextafter
 D2(nextafter)
-#endif
 
-#ifdef HAVE_jn
 static void
 t_jn(void)
 {
@@ -296,8 +222,6 @@ t_jn(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_yn
 static void
 t_yn(void)
 {
@@ -315,8 +239,6 @@ t_yn(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_scalbn
 static void
 t_scalbn(void)
 {
@@ -334,8 +256,6 @@ t_scalbn(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_finite
 static void
 t_finite(void)
 {
@@ -350,8 +270,6 @@ t_finite(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_ilogb
 static void
 t_ilogb(void)
 {
@@ -367,8 +285,6 @@ t_ilogb(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_lgamma_r
 static void
 t_lgamma_r(void)
 {
@@ -386,8 +302,6 @@ t_lgamma_r(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_modf
 static void
 t_modf(void)
 {
@@ -406,8 +320,6 @@ t_modf(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_rem_pio2
 static void
 t_rem_pio2(void)
 {
@@ -425,7 +337,6 @@ t_rem_pio2(void)
 	}
 	end();
 }
-#endif
 
 /* kernels: |x| <= pi/4, y a small correction of x */
 static void
@@ -443,7 +354,6 @@ kernelargs(uint64_t *x, uint64_t *y)
 		*y = 0;
 }
 
-#ifdef HAVE_kernel_sin
 static void
 t_kernel_sin(void)
 {
@@ -464,8 +374,6 @@ t_kernel_sin(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_kernel_cos
 static void
 t_kernel_cos(void)
 {
@@ -485,8 +393,6 @@ t_kernel_cos(void)
 	}
 	end();
 }
-#endif
-#ifdef HAVE_kernel_tan
 static void
 t_kernel_tan(void)
 {
@@ -507,7 +413,6 @@ t_kernel_tan(void)
 	}
 	end();
 }
-#endif
 
 int
 main(int argc, char **argv)
@@ -515,147 +420,53 @@ main(int argc, char **argv)
 	if(argc > 1)
 		count = atol(argv[1]);
 #define RUN(n) t_##n();
-#ifdef HAVE_acos
 	RUN(acos)
-#endif
-#ifdef HAVE_acosh
 	RUN(acosh)
-#endif
-#ifdef HAVE_asin
 	RUN(asin)
-#endif
-#ifdef HAVE_atanh
 	RUN(atanh)
-#endif
-#ifdef HAVE_cosh
 	RUN(cosh)
-#endif
-#ifdef HAVE_exp
 	RUN(exp)
-#endif
-#ifdef HAVE_j0
 	RUN(j0)
-#endif
-#ifdef HAVE_y0
 	RUN(y0)
-#endif
-#ifdef HAVE_j1
 	RUN(j1)
-#endif
-#ifdef HAVE_y1
 	RUN(y1)
-#endif
-#ifdef HAVE_log
 	RUN(log)
-#endif
-#ifdef HAVE_log10
 	RUN(log10)
-#endif
-#ifdef HAVE_sinh
 	RUN(sinh)
-#endif
-#ifdef HAVE_sqrt
 	RUN(sqrt)
-#endif
-#ifdef HAVE_asinh
 	RUN(asinh)
-#endif
-#ifdef HAVE_atan
 	RUN(atan)
-#endif
-#ifdef HAVE_cbrt
 	RUN(cbrt)
-#endif
-#ifdef HAVE_ceil
 	RUN(ceil)
-#endif
-#ifdef HAVE_cos
 	RUN(cos)
-#endif
-#ifdef HAVE_erf
 	RUN(erf)
-#endif
-#ifdef HAVE_erfc
 	RUN(erfc)
-#endif
-#ifdef HAVE_expm1
 	RUN(expm1)
-#endif
-#ifdef HAVE_fabs
 	RUN(fabs)
-#endif
-#ifdef HAVE_floor
 	RUN(floor)
-#endif
-#ifdef HAVE_log1p
 	RUN(log1p)
-#endif
-#ifdef HAVE_sin
 	RUN(sin)
-#endif
-#ifdef HAVE_tan
 	RUN(tan)
-#endif
-#ifdef HAVE_tanh
 	RUN(tanh)
-#endif
-#ifdef HAVE_rint
 	RUN(rint)
-#endif
-#ifdef HAVE_atan2
 	RUN(atan2)
-#endif
-#ifdef HAVE_fmod
 	RUN(fmod)
-#endif
-#ifdef HAVE_hypot
 	RUN(hypot)
-#endif
-#ifdef HAVE_pow
 	RUN(pow)
-#endif
-#ifdef HAVE_remainder
 	RUN(remainder)
-#endif
-#ifdef HAVE_copysign
 	RUN(copysign)
-#endif
-#ifdef HAVE_nextafter
 	RUN(nextafter)
-#endif
-#ifdef HAVE_jn
 	RUN(jn)
-#endif
-#ifdef HAVE_yn
 	RUN(yn)
-#endif
-#ifdef HAVE_scalbn
 	RUN(scalbn)
-#endif
-#ifdef HAVE_finite
 	RUN(finite)
-#endif
-#ifdef HAVE_ilogb
 	RUN(ilogb)
-#endif
-#ifdef HAVE_lgamma_r
 	RUN(lgamma_r)
-#endif
-#ifdef HAVE_modf
 	RUN(modf)
-#endif
-#ifdef HAVE_rem_pio2
 	RUN(rem_pio2)
-#endif
-#ifdef HAVE_kernel_sin
 	RUN(kernel_sin)
-#endif
-#ifdef HAVE_kernel_cos
 	RUN(kernel_cos)
-#endif
-#ifdef HAVE_kernel_tan
 	RUN(kernel_tan)
-#endif
 	printf("%ld operands tested, %ld mismatches\n", total, failures);
 	return failures != 0;
 }
