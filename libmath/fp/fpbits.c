@@ -61,3 +61,12 @@ inferno_fp_from_host(double d)
 	r.v = c.u;
 	return r;
 }
+
+float32_t
+inferno_fp_from_bits32(uint32_t u)
+{
+	float32_t r;
+
+	r.v = u;
+	return r;
+}

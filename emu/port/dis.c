@@ -1053,9 +1053,9 @@ vmachine(void *a)
 			o = r->osenv;
 			up->env = o;
 
-			FPrestore(&o->fpu);
+			inferno_fp_restore(&o->fpu);
 			r->xec(r);
-			FPsave(&o->fpu);
+			inferno_fp_save(&o->fpu);
 
 			if(isched.runhd != nil)
 			if(r == isched.runhd)
@@ -1095,8 +1095,8 @@ disinit(void *a)
 
 	HOSTED_API(fmtinstall)('D', Dconv);
 
-	FPinit();
-	FPsave(&up->env->fpu);
+	inferno_fp_init();
+	inferno_fp_save(&up->env->fpu);
 
 	opinit();
 	modinit();

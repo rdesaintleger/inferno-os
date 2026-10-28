@@ -369,7 +369,7 @@ struct Osenv
 	Queue*	childq;		/* Info about children for debuggers */
 	void*	debug;		/* Debugging master */
 	char*	user;	/* Inferno user name */
-	InfernoFPU	fpu;		/* Floating point thread state (SoftFPU) */
+	SoftFPU	fpu;		/* Floating point thread state (SoftFPU) */
 	int	uid;		/* Numeric user id for host system */
 	int	gid;		/* Numeric group id for host system */
 	void	*ui;		/* User info for NT */
@@ -463,23 +463,6 @@ extern	int	xtblbit;
 extern	int	globfs;
 extern	int	greyscale;
 extern	uint	qiomaxatomic;
-
-/*
- * floating point control and status register masks
- */
-enum
-{
-	INVAL		= 0x0001,
-	ZDIV		= 0x0002,
-	OVFL		= 0x0004,
-	UNFL		= 0x0008,
-	INEX		= 0x0010,
-	RND_NR		= 0x0000,
-	RND_NINF	= 0x0100,
-	RND_PINF	= 0x0200,
-	RND_Z		= 0x0300,
-	RND_MASK	= 0x0300
-};
 
 struct Cmdbuf
 {

@@ -3,7 +3,7 @@
 #include "interp.h"
 #include "raise.h"
 #include "pool.h"
-#include "mathi.h"
+#include <inferno/fp.h>
 
 #define OP(fn)	void fn(void)
 #define B(r)	*((BYTE*)(R.r))

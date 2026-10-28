@@ -33,20 +33,20 @@ OP(runt) {}
  * process; fpcheck() takes the flags they raised, and traps if the control word
  * says so.  The result is stored when no trap has been taken.
  */
-#define FPCHK()	do{ if(softfloat_exceptionFlags) fpcheck(); }while(0)
+#define FPCHK()	do{ if(inferno_fp_pending()) fpcheck(); }while(0)
 #define FPARITH(f)	{ REAL r_ = f(F(m), F(s)); FPCHK(); F(d) = r_; }
 #define FPBRANCH(e)	{ int c_ = (e); FPCHK(); if(c_) JMP(d); }
 
-static const REAL fpzero = { 0 };
-static const REAL fphalf = { UINT64_C(0x3FE0000000000000) };
+static const REAL fpzero = INFERNO_FP_CONST(0);
+static const REAL fphalf = INFERNO_FP_CONST(UINT64_C(0x3FE0000000000000));
 
 /* round half away from zero, as the instructions used to do, then truncate */
 static REAL
 fpround(REAL f)
 {
-	if(f64_lt(f, fpzero))
-		return f64_sub(f, fphalf);
-	return f64_add(f, fphalf);
+	if(inferno_fp_lt(f, fpzero))
+		return inferno_fp_sub(f, fphalf);
+	return inferno_fp_add(f, fphalf);
 }
 
 OP(negf) { F(d) = inferno_fp_neg(F(s)); }
@@ -60,30 +60,30 @@ OP(movf) { F(d) = F(s); }
 OP(movl) { V(d) = V(s); }
 OP(cvtbw){ W(d) = B(s); }
 OP(cvtwb){ B(d) = W(s); }
-OP(cvtrf){ REAL r = f32_to_f64(SR(s)); FPCHK(); F(d) = r; }
-OP(cvtfr){ SREAL r = f64_to_f32(F(s)); FPCHK(); SR(d) = r; }
+OP(cvtrf){ REAL r = inferno_fp_from_f32(SR(s)); FPCHK(); F(d) = r; }
+OP(cvtfr){ SREAL r = inferno_fp_to_f32(F(s)); FPCHK(); SR(d) = r; }
 OP(cvtws){ SH(d) = W(s); }
 OP(cvtsw){ W(d) = SH(s); }
-OP(cvtwf){ F(d) = i32_to_f64(W(s)); }
+OP(cvtwf){ F(d) = inferno_fp_from_i32(W(s)); }
 OP(addb) { B(d) = B(m) + B(s); }
 OP(addw) { W(d) = W(m) + W(s); }
 OP(addl) { V(d) = V(m) + V(s); }
-OP(addf) FPARITH(f64_add)
+OP(addf) FPARITH(inferno_fp_add)
 OP(subb) { B(d) = B(m) - B(s); }
 OP(subw) { W(d) = W(m) - W(s); }
 OP(subl) { V(d) = V(m) - V(s); }
-OP(subf) FPARITH(f64_sub)
+OP(subf) FPARITH(inferno_fp_sub)
 OP(divb) { B(d) = B(m) / B(s); }
 OP(divw) { W(d) = W(m) / W(s); }
 OP(divl) { V(d) = V(m) / V(s); }
-OP(divf) FPARITH(f64_div)
+OP(divf) FPARITH(inferno_fp_div)
 OP(modb) { B(d) = B(m) % B(s); }
 OP(modw) { W(d) = W(m) % W(s); }
 OP(modl) { V(d) = V(m) % V(s); }
 OP(mulb) { B(d) = B(m) * B(s); }
 OP(mulw) { W(d) = W(m) * W(s); }
 OP(mull) { V(d) = V(m) * V(s); }
-OP(mulf) FPARITH(f64_mul)
+OP(mulf) FPARITH(inferno_fp_mul)
 OP(andb) { B(d) = B(m) & B(s); }
 OP(andw) { W(d) = W(m) & W(s); }
 OP(andl) { V(d) = V(m) & V(s); }
@@ -119,12 +119,12 @@ OP(bltl) { if(V(s) <  V(m)) JMP(d); }
 OP(blel) { if(V(s) <= V(m)) JMP(d); }
 OP(bgtl) { if(V(s) >  V(m)) JMP(d); }
 OP(bgel) { if(V(s) >= V(m)) JMP(d); }
-OP(beqf) FPBRANCH(f64_eq(F(s), F(m)))
-OP(bnef) FPBRANCH(!f64_eq(F(s), F(m)))
-OP(bltf) FPBRANCH(f64_lt(F(s), F(m)))
-OP(blef) FPBRANCH(f64_le(F(s), F(m)))
-OP(bgtf) FPBRANCH(f64_lt(F(m), F(s)))
-OP(bgef) FPBRANCH(f64_le(F(m), F(s)))
+OP(beqf) FPBRANCH(inferno_fp_eq(F(s), F(m)))
+OP(bnef) FPBRANCH(!inferno_fp_eq(F(s), F(m)))
+OP(bltf) FPBRANCH(inferno_fp_lt(F(s), F(m)))
+OP(blef) FPBRANCH(inferno_fp_le(F(s), F(m)))
+OP(bgtf) FPBRANCH(inferno_fp_lt(F(m), F(s)))
+OP(bgef) FPBRANCH(inferno_fp_le(F(m), F(s)))
 OP(beqc) { if(stringcmp(S(s), S(m)) == 0) JMP(d); }
 OP(bnec) { if(stringcmp(S(s), S(m)) != 0) JMP(d); }
 OP(bltc) { if(stringcmp(S(s), S(m)) <  0) JMP(d); }
@@ -134,7 +134,7 @@ OP(bgec) { if(stringcmp(S(s), S(m)) >= 0) JMP(d); }
 OP(iexit){ error(""); }
 OP(cvtwl){ V(d) = W(s); }
 OP(cvtlw){ W(d) = V(s); }
-OP(cvtlf){ REAL r = i64_to_f64(V(s)); FPCHK(); F(d) = r; }
+OP(cvtlf){ REAL r = inferno_fp_from_i64(V(s)); FPCHK(); F(d) = r; }
 OP(cvtfl)
 {
 	LONG v;
@@ -223,16 +223,16 @@ OP(iexpf)
 		n = -n;
 		inv = 1;
 	}
-	r = i32_to_f64(1);
+	r = inferno_fp_from_i32(1);
 	for(;;){
 		if(n&1)
-			r = f64_mul(r, x);
+			r = inferno_fp_mul(r, x);
 		if((n >>= 1) == 0)
 			break;
-		x = f64_mul(x, x);
+		x = inferno_fp_mul(x, x);
 	}
 	if(inv)
-		r = f64_div(i32_to_f64(1), r);
+		r = inferno_fp_div(inferno_fp_from_i32(1), r);
 	FPCHK();
 	F(d) = r;
 }
@@ -1575,7 +1575,7 @@ OP(cvtfx)
 {
 	WORD v;
 
-	v = inferno_fp_to_i32(fpround(f64_mul(F(s), F(m))));
+	v = inferno_fp_to_i32(fpround(inferno_fp_mul(F(s), F(m))));
 	FPCHK();
 	W(d) = v;
 }
@@ -1583,7 +1583,7 @@ OP(cvtxf)
 {
 	REAL r;
 
-	r = f64_mul(i32_to_f64(W(s)), F(m));
+	r = inferno_fp_mul(inferno_fp_from_i32(W(s)), F(m));
 	FPCHK();
 	F(d) = r;
 }

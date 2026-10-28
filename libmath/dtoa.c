@@ -16,7 +16,6 @@
  * of a given number of digits (modes 2 and 3).
  */
 #include "lib9.h"
-#include "mathi.h"
 #include <inferno/fp.h>
 
 /*

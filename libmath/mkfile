@@ -182,7 +182,6 @@ OFILES=\
 	ui64_to_f64.$O\
 
 HFILES=\
-	$ROOT/include/mathi.h\
 	fdlibm/fdlibm.h\
 	$ROOT/include/inferno/fp.h\
 	$ROOT/include/inferno/softfloat.h\

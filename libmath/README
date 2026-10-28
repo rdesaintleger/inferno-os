@@ -1,0 +1,43 @@
+libmath: the floating point of Inferno
+======================================
+
+The interface is one header, include/inferno/fp.h.  The Dis VM (libinterp,
+emu), limbo and the libraries use nothing else of floating point: no
+SoftFloat call, no float64_t field, no host double (except the transport of
+the bits through the varargs of printf, inferno_fp_from_host/to_host).
+
+What this directory provides
+----------------------------
+  fp/softfpu.c	the SoftFPU (control and status words of the running process)
+		and the collection of the exception flags
+  fp/fpbits.c	bits, halves and host conversions of the numbers
+  fdlibm/	the elementary functions (fd_*), written on float64_t
+  blas.c gemm.c	inferno_fp_dot, _iamax, _norm1, _norm2, _gemm
+  fdim.c	fd_fdim, fd_fmax, fd_fmin
+  dtoa.c	fd_strtod, fd_dtoa (integer arithmetic only)
+  g_fmt.c gfltconv.c	fd_g_fmt, inferno_fp_fmtconv (the verbs e f g)
+  softfloat/	Berkeley SoftFloat 3 (see README.inferno)
+  test/		fptest, oracle (fdlibm), dtoatest; and emu/test/math.b for the VM
+
+Replacing it
+------------
+Another implementation (for example one that uses the arithmetic of the
+processor, or SIMD, to be faster) only has to provide, with the same
+behaviour, what fp.h declares:
+
+  - the types float64_t and float32_t, and the macros of fp.h that name the
+    arithmetic (inferno_fp_add, ..., inferno_fp_from_i32, INFERNO_FP_CONST,
+    inferno_fp_pending, inferno_fp_discard...); they may be redefined;
+  - the functions inferno_fp_init/save/restore/control/status/get_control/
+    get_status/flags/round_nearest/round_restore: the SoftFPU keeps the
+    control and status words per process; the arithmetic only raises flags,
+    and inferno_fp_flags moves them to the status word and says which ones
+    trap; the VM raises the error;
+  - the elementary functions fd_*, which round to nearest and only raise flags;
+  - the conversions of numbers to text and back (fd_strtod, fd_dtoa, fd_g_fmt,
+    inferno_fp_fmtconv): same results, bit for bit.
+
+The behaviour is defined by IEEE 754 binary64 (and binary32 for the
+conversions), with the rounding modes of the control word.  It is checked by
+emu/test/math.b (run it with `mk test` at the root), libmath/test/oracle
+(against the reference copy of fdlibm), fptest and dtoatest.

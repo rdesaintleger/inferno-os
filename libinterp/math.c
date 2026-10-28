@@ -3,7 +3,7 @@
 #include "isa.h"
 #include "runt.h"
 #include "raise.h"
-#include "mathi.h"
+#include <inferno/fp.h>
 #include "mathmod.h"
 #include <inferno/fp.h>
 
@@ -13,7 +13,7 @@
  * They are the functions of fdlibm, computed on float64_t with SoftFloat (see
  * <inferno/fp.h>) and not by the floating-point unit of the host: REAL is a
  * float64_t.  The state of the floating-point unit is the SoftFPU of libmath
- * (FPinit, FPcontrol, FPstatus, ...), saved and restored with each process.
+ * (inferno_fp_init, inferno_fp_control, inferno_fp_status, ...), saved and restored with each process.
  *
  * SoftFloat only raises flags.  fpcheck() adds them to the status of the
  * process and, if the control word says so, traps as the hardware used to do:
@@ -29,9 +29,9 @@ fpcheck(void)
 	ulong st;
 	int i;
 
-	if(FPflags() == 0)
+	if(inferno_fp_flags() == 0)
 		return;
-	st = getFPstatus();
+	st = inferno_fp_get_status();
 	for(i = 0; i < 4; i++)
 		msg[sizeof msg - 2 - i] = hex[(st >> (4*i)) & 0xf];
 	error(msg);
@@ -41,12 +41,11 @@ static REAL
 emu_call1(float64_t (*fn)(float64_t), REAL x)
 {
 	REAL r;
-	uint_fast8_t mode;
+	int mode;
 
-	mode = softfloat_roundingMode;
-	softfloat_roundingMode = softfloat_round_near_even;
+	mode = inferno_fp_round_nearest();
 	r = fn(x);
-	softfloat_roundingMode = mode;
+	inferno_fp_round_restore(mode);
 	fpcheck();
 	return r;
 }
@@ -55,46 +54,28 @@ static REAL
 emu_call2(float64_t (*fn)(float64_t, float64_t), REAL x, REAL y)
 {
 	REAL r;
-	uint_fast8_t mode;
+	int mode;
 
-	mode = softfloat_roundingMode;
-	softfloat_roundingMode = softfloat_round_near_even;
+	mode = inferno_fp_round_nearest();
 	r = fn(x, y);
-	softfloat_roundingMode = mode;
+	inferno_fp_round_restore(mode);
 	fpcheck();
 	return r;
 }
 
-static float32_t
-f32bits(uint32_t u)
-{
-	float32_t r;
-
-	r.v = u;
-	return r;
-}
-
-static uint_fast8_t emu_mode;
+static int emu_mode;
 
 static void
 emu_fpbegin(void)
 {
-	emu_mode = softfloat_roundingMode;
-	softfloat_roundingMode = softfloat_round_near_even;
+	emu_mode = inferno_fp_round_nearest();
 }
 
 static void
 emu_fpend(void)
 {
-	softfloat_roundingMode = emu_mode;
+	inferno_fp_round_restore(emu_mode);
 	fpcheck();
-}
-
-static int
-emu_isnan(REAL x)
-{
-	return (x.v & UINT64_C(0x7FF0000000000000)) == UINT64_C(0x7FF0000000000000) &&
-		(x.v & UINT64_C(0x000FFFFFFFFFFFFF)) != 0;
 }
 
 /* operations that follow the rounding mode of the process */
@@ -112,12 +93,12 @@ void
 mathmodinit(void)
 {
 	builtinmod("$Math", Mathmodtab, Mathmodlen);
-	HOSTED_API(fmtinstall)('g', gfltconv);
-	HOSTED_API(fmtinstall)('G', gfltconv);
-	HOSTED_API(fmtinstall)('e', gfltconv);
-	/* HOSTED_API(fmtinstall)('E', gfltconv); */	/* avoid clash with ether address */
-	HOSTED_API(fmtinstall)(0x00c9, gfltconv);	/* L'É' */
-	HOSTED_API(fmtinstall)('f', gfltconv);
+	HOSTED_API(fmtinstall)('g', inferno_fp_fmtconv);
+	HOSTED_API(fmtinstall)('G', inferno_fp_fmtconv);
+	HOSTED_API(fmtinstall)('e', inferno_fp_fmtconv);
+	/* HOSTED_API(fmtinstall)('E', inferno_fp_fmtconv); */	/* avoid clash with ether address */
+	HOSTED_API(fmtinstall)(0x00c9, inferno_fp_fmtconv);	/* L'É' */
+	HOSTED_API(fmtinstall)('f', inferno_fp_fmtconv);
 }
 
 void
@@ -164,7 +145,7 @@ Math_import_real32(void *fp)
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
-		x[i] = f32_to_f64(f32bits(u));
+		x[i] = inferno_fp_from_f32(inferno_fp_from_bits32(u));
 	}
 }
 
@@ -236,7 +217,7 @@ Math_export_real32(void *fp)
 	bp = (unsigned char *)(f->b->data);
 	x = (REAL*)(f->x->data);
 	for(i=0; i<n; i++){
-		u = f64_to_f32(x[i]).v;
+		u = inferno_fp_bits32(inferno_fp_to_f32(x[i]));
 		*bp++ = u>>24;
 		*bp++ = u>>16;
 		*bp++ = u>>8;
@@ -279,8 +260,8 @@ Math_bits32real(void *fp)
 	F_Math_bits32real *f;
 
 	f = fp;
-	*f->ret = f32_to_f64(f32bits(f->b));
-	softfloat_exceptionFlags = 0;
+	*f->ret = inferno_fp_from_f32(inferno_fp_from_bits32(f->b));
+	inferno_fp_discard();
 }
 
 void
@@ -298,7 +279,7 @@ Math_realbits32(void *fp)
 	F_Math_realbits32 *f;
 
 	f = fp;
-	*f->ret = f64_to_f32(f->x).v;
+	*f->ret = inferno_fp_bits32(inferno_fp_to_f32(f->x));
 	fpcheck();
 }
 
@@ -319,7 +300,7 @@ Math_getFPcontrol(void *fp)
 
 	f = fp;
 
-	*f->ret = getFPcontrol();
+	*f->ret = inferno_fp_get_control();
 }
 
 void
@@ -329,7 +310,7 @@ Math_getFPstatus(void *fp)
 
 	f = fp;
 
-	*f->ret = getFPstatus();
+	*f->ret = inferno_fp_get_status();
 }
 
 void
@@ -359,7 +340,7 @@ Math_isnan(void *fp)
 
 	f = fp;
 
-	*f->ret = emu_isnan(f->x);
+	*f->ret = inferno_fp_isnan(f->x);
 }
 
 void
@@ -731,7 +712,7 @@ Math_FPcontrol(void *fp)
 
 	f = fp;
 
-	*f->ret = FPcontrol(f->r, f->mask);
+	*f->ret = inferno_fp_control(f->r, f->mask);
 }
 
 void
@@ -741,7 +722,7 @@ Math_FPstatus(void *fp)
 
 	f = fp;
 
-	*f->ret = FPstatus(f->r, f->mask);
+	*f->ret = inferno_fp_status(f->r, f->mask);
 }
 
 void
@@ -864,7 +845,7 @@ static int
 cmp(int *u, int *v, REAL *x)
 {
 	/* quiet comparisons: sorting does not raise exceptions */
-	return f64_eq(x[*u], x[*v]) ? 0 : (f64_lt_quiet(x[*u], x[*v]) ? -1 : 1);
+	return inferno_fp_eq(x[*u], x[*v]) ? 0 : (inferno_fp_lt_quiet(x[*u], x[*v]) ? -1 : 1);
 }
 
 #define swap(u, v) {int t = *(u); *(u) = *(v); *(v) = t;}
@@ -970,7 +951,7 @@ Math_dot(void *fp)
 	f = fp;
 	if(f->x->len!=f->y->len)
 		error(exMathia);	/* incompatible lengths */
-	*f->ret = dot(f->x->len, (REAL*)(f->x->data), (REAL*)(f->y->data));
+	*f->ret = inferno_fp_dot(f->x->len, (REAL*)(f->x->data), (REAL*)(f->y->data));
 	fpcheck();
 }
 
@@ -981,7 +962,7 @@ Math_iamax(void *fp)
 
 	f = fp;
 
-	*f->ret = iamax(f->x->len, (REAL*)(f->x->data));
+	*f->ret = inferno_fp_iamax(f->x->len, (REAL*)(f->x->data));
 	fpcheck();
 }
 
@@ -992,7 +973,7 @@ Math_norm2(void *fp)
 
 	f = fp;
 
-	*f->ret = norm2(f->x->len, (REAL*)(f->x->data));
+	*f->ret = inferno_fp_norm2(f->x->len, (REAL*)(f->x->data));
 	fpcheck();
 }
 
@@ -1003,7 +984,7 @@ Math_norm1(void *fp)
 
 	f = fp;
 
-	*f->ret = norm1(f->x->len, (REAL*)(f->x->data));
+	*f->ret = inferno_fp_norm1(f->x->len, (REAL*)(f->x->data));
 	fpcheck();
 }
 
@@ -1056,7 +1037,7 @@ Math_gemm(void *fp)
 	if(ld<m || ld*(n-1)>mn)
 		error(exBounds);
 
-	gemm(f->transa, f->transb, f->m, f->n, f->k, f->alpha,
+	inferno_fp_gemm(f->transa, f->transb, f->m, f->n, f->k, f->alpha,
 		adata, f->lda, bdata, f->ldb, f->beta, cdata, f->ldc);
 	fpcheck();
 }

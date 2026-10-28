@@ -450,7 +450,6 @@ extern	void		freestring(Heap*, int);
 extern	void		freetype(Type*);
 extern	void		freetypemodinit(void);
 extern	long	getdbreg();
-extern	int		gfltconv(Fmt*);
 extern	void		go(Module*);
 extern	int		handler(char*);
 extern	Heap*	heap(Type*);

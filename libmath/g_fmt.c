@@ -23,7 +23,6 @@
  */
 
 #include "lib9.h"
-#include "mathi.h"
 #include <inferno/fp.h>
 
  char *

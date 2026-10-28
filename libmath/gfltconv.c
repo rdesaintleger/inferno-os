@@ -1,5 +1,4 @@
 #include "lib9.h"
-#include "mathi.h"
 #include <inferno/fp.h>
 extern int	_fmtcpy(Fmt*, void*, int, int);
 
@@ -12,7 +11,7 @@ enum
 };
 
 int
-gfltconv(Fmt *f)
+inferno_fp_fmtconv(Fmt *f)
 {
 	int flags = f->flags;
 	int precision;

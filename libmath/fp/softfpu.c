@@ -4,37 +4,35 @@
  * It is a register, not an instruction set: the control word (rounding mode
  * and exceptions that trap) and the status word (exceptions seen since they
  * were last cleared) of the running process.  The arithmetic is done by
- * SoftFloat, which only sets flags; FPflags() moves them to the status word
+ * SoftFloat, which only sets flags; inferno_fp_flags() moves them to the status word
  * and says which of them trap.  The caller raises the run-time error.
  *
  * Nothing here depends on the host or on the compiler.  The state of the
  * running process is in the variables below; the scheduler switches it with
- * FPsave and FPrestore.
+ * inferno_fp_save and inferno_fp_restore.
  */
-#include "lib9.h"
-#include "mathi.h"
 #include <inferno/fp.h>
 
 enum
 {
-	EXC	= INVAL|ZDIV|OVFL|UNFL|INEX,
-	VALID	= EXC|RND_MASK
+	EXC	= INFERNO_FP_INVAL|INFERNO_FP_ZDIV|INFERNO_FP_OVFL|INFERNO_FP_UNFL|INFERNO_FP_INEX,
+	VALID	= EXC|INFERNO_FP_RND_MASK
 };
 
-static ulong	fpctl;
-static ulong	fpst;
+static uint32_t	fpctl;
+static uint32_t	fpst;
 
 static void
 setmode(void)
 {
-	switch(fpctl & RND_MASK){
-	case RND_NINF:
+	switch(fpctl & INFERNO_FP_RND_MASK){
+	case INFERNO_FP_RND_NINF:
 		softfloat_roundingMode = softfloat_round_min;
 		break;
-	case RND_PINF:
+	case INFERNO_FP_RND_PINF:
 		softfloat_roundingMode = softfloat_round_max;
 		break;
-	case RND_Z:
+	case INFERNO_FP_RND_Z:
 		softfloat_roundingMode = softfloat_round_minMag;
 		break;
 	default:
@@ -45,46 +43,40 @@ setmode(void)
 }
 
 void
-FPinit(void)
+inferno_fp_init(void)
 {
-	fpctl = INVAL|ZDIV|OVFL|UNFL;	/* round to nearest; INEX is silent */
+	fpctl = INFERNO_FP_INVAL|INFERNO_FP_ZDIV|INFERNO_FP_OVFL|INFERNO_FP_UNFL;	/* round to nearest; INFERNO_FP_INEX is silent */
 	fpst = 0;
 	softfloat_exceptionFlags = 0;
 	setmode();
 }
 
 void
-FPsave(void *v)
+inferno_fp_save(SoftFPU *u)
 {
-	InfernoFPU *u;
-
-	u = v;
 	u->control = fpctl;
 	u->status = fpst;
 }
 
 void
-FPrestore(void *v)
+inferno_fp_restore(SoftFPU *u)
 {
-	InfernoFPU *u;
-
-	u = v;
 	fpctl = u->control;
 	fpst = u->status;
 	softfloat_exceptionFlags = 0;
 	setmode();
 }
 
-ulong
-getFPcontrol(void)
+uint32_t
+inferno_fp_get_control(void)
 {
 	return fpctl;
 }
 
-ulong
-FPcontrol(ulong fcr, ulong mask)
+uint32_t
+inferno_fp_control(uint32_t fcr, uint32_t mask)
 {
-	ulong old;
+	uint32_t old;
 
 	old = fpctl;
 	mask &= VALID;
@@ -93,16 +85,16 @@ FPcontrol(ulong fcr, ulong mask)
 	return old & mask;
 }
 
-ulong
-getFPstatus(void)
+uint32_t
+inferno_fp_get_status(void)
 {
 	return fpst;
 }
 
-ulong
-FPstatus(ulong fsr, ulong mask)
+uint32_t
+inferno_fp_status(uint32_t fsr, uint32_t mask)
 {
-	ulong old;
+	uint32_t old;
 
 	old = fpst;
 	mask &= EXC;
@@ -114,25 +106,41 @@ FPstatus(ulong fsr, ulong mask)
  * Move the flags raised by SoftFloat to the status word and clear them.
  * The result is the set of exceptions that trap: raised, and not masked.
  */
-ulong
-FPflags(void)
+uint32_t
+inferno_fp_flags(void)
 {
 	uint_fast8_t fl;
-	ulong st;
+	uint32_t st;
 
 	fl = softfloat_exceptionFlags;
 	softfloat_exceptionFlags = 0;
 	st = 0;
 	if(fl & softfloat_flag_invalid)
-		st |= INVAL;
+		st |= INFERNO_FP_INVAL;
 	if(fl & softfloat_flag_infinite)
-		st |= ZDIV;
+		st |= INFERNO_FP_ZDIV;
 	if(fl & softfloat_flag_overflow)
-		st |= OVFL;
+		st |= INFERNO_FP_OVFL;
 	if(fl & softfloat_flag_underflow)
-		st |= UNFL;
+		st |= INFERNO_FP_UNFL;
 	if(fl & softfloat_flag_inexact)
-		st |= INEX;
+		st |= INFERNO_FP_INEX;
 	fpst |= st;
 	return st & fpctl & EXC;
+}
+
+int
+inferno_fp_round_nearest(void)
+{
+	int old;
+
+	old = softfloat_roundingMode;
+	softfloat_roundingMode = softfloat_round_near_even;
+	return old;
+}
+
+void
+inferno_fp_round_restore(int mode)
+{
+	softfloat_roundingMode = mode;
 }

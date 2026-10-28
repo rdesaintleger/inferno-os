@@ -1642,8 +1642,8 @@ main(int argc, char *argv[])
 	char *s, *ofile, *ext, *root;
 	int i;
 
-	FPinit();
-	FPcontrol(0, INVAL|ZDIV|OVFL|UNFL|INEX);
+	inferno_fp_init();
+	inferno_fp_control(0, INFERNO_FP_INVAL|INFERNO_FP_ZDIV|INFERNO_FP_OVFL|INFERNO_FP_UNFL|INFERNO_FP_INEX);
 	canonnan = canontod(canonnanbits);
 
 	HOSTED_API(fmtinstall)('D', dotconv);

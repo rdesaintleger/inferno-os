@@ -1,17 +1,15 @@
-#include "lib9.h"
-#include "mathi.h"
 #include <inferno/fp.h>
 
 /* gemm on float64_t (SoftFloat); the caller looks at the flags afterwards */
-static const float64_t zero = { 0 };
-static const float64_t one = { UINT64_C(0x3FF0000000000000) };
+static const float64_t zero = INFERNO_FP_CONST(0);
+static const float64_t one = INFERNO_FP_CONST(UINT64_C(0x3FF0000000000000));
 
-#define EQ(x, y)	f64_eq((x), (y))
-#define ADD(x, y)	f64_add((x), (y))
-#define MUL(x, y)	f64_mul((x), (y))
+#define EQ(x, y)	inferno_fp_eq((x), (y))
+#define ADD(x, y)	inferno_fp_add((x), (y))
+#define MUL(x, y)	inferno_fp_mul((x), (y))
 
 void
-gemm(int transa, int transb, int m, int n, int k, float64_t alpha,
+inferno_fp_gemm(int transa, int transb, int m, int n, int k, float64_t alpha,
 	float64_t *a, int lda,
 	float64_t *b, int ldb, float64_t beta,
 	float64_t *c, int ldc)

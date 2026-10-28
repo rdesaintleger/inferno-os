@@ -1,5 +1,5 @@
 #include "lib9.h"
-#include "mathi.h"
+#include <inferno/fp.h>
 
 double
 ipow10(int n)

@@ -1,12 +1,7 @@
 #include "inferno/hosted.h"
 
-ulong	FPcontrol(ulong,ulong);
-ulong	FPstatus(ulong,ulong);
-void		FPsave(void*);
-void		FPrestore(void*);
 void		Sleep(Rendez*, int (*)(void*), void*);
 int		Wakeup(Rendez*);
-void		FPinit(void);
 void		addprog(Proc*);
 Block*	adjustblock(Block*, int);
 Block*	allocb(int);
@@ -80,8 +75,6 @@ int		findmount(Chan**, Mhead**, int, int, Qid);
 void		freeb(Block*);
 void		freeblist(Block*);
 void		freeskey(Signerkey*);
-ulong	getFPcontrol(void);
-ulong	getFPstatus(void);
 void		gkbdputc(Queue*, int);
 int		incref(Ref*);
 int		iprint(char*, ...);

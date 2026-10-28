@@ -1,7 +1,7 @@
 #include "lib9.h"
 #include "bio.h"
 #include "isa.h"
-#include "mathi.h"
+#include <inferno/fp.h>
 
 /* internal dis ops */
 #define IEXC	MAXDIS
