@@ -707,10 +707,10 @@ foldcast(Node *n, Node *left)
 			left->val = strtoi(left->decl->sym->name, 10);
 			break;
 		case Treal:
-			left->rval = strtod(left->decl->sym->name, nil);
+			left->rval = inferno_fp_to_host(fd_strtod(left->decl->sym->name, nil));
 			break;
 		case Tfix:
-			left->val = real2fix(strtod(left->decl->sym->name, nil), n->ty);
+			left->val = real2fix(inferno_fp_to_host(fd_strtod(left->decl->sym->name, nil)), n->ty);
 			break;
 		default:
 			return n;

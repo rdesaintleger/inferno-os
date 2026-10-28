@@ -37,6 +37,7 @@ typedef struct Walkqid	Walkqid;
 #undef NAMELEN
 #undef ERRLEN
 
+#include <inferno/fp.h>
 #include "emu.h"
 
 #pragma incomplete Queue
@@ -368,7 +369,7 @@ struct Osenv
 	Queue*	childq;		/* Info about children for debuggers */
 	void*	debug;		/* Debugging master */
 	char*	user;	/* Inferno user name */
-	FPU	fpu;		/* Floating point thread state */
+	InfernoFPU	fpu;		/* Floating point thread state (SoftFPU) */
 	int	uid;		/* Numeric user id for host system */
 	int	gid;		/* Numeric group id for host system */
 	void	*ui;		/* User info for NT */

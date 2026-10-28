@@ -3,6 +3,7 @@
 #include "interp.h"
 #include "raise.h"
 #include "pool.h"
+#include "mathi.h"
 
 #define OP(fn)	void fn(void)
 #define B(r)	*((BYTE*)(R.r))
@@ -330,13 +331,13 @@ OP(cvtcf)
 
 	s = S(s);
 	if(s == H)
-		F(d) = 0.0;
+		F(d) = inferno_fp_from_i32(0);
 	else
 	if(s->len < 0)
-		F(d) = strtod(string2c(s), nil);
+		F(d) = fd_strtod(string2c(s), nil);
 	else {
 		s->Sascii[s->len] = '\0';
-		F(d) = strtod(s->Sascii, nil);
+		F(d) = fd_strtod(s->Sascii, nil);
 	}
 }
 
@@ -369,7 +370,7 @@ OP(cvtfc)
 	String *ds, **dp;
 
 	ds = newstring(32);
-	ds->len = HOSTED_API(sprint)(ds->Sascii, "%g", F(s));	
+	ds->len = HOSTED_API(sprint)(ds->Sascii, "%g", inferno_fp_to_host(F(s)));	
 	dp = R.d;
 	destroy(*dp);
 	*dp = ds;

@@ -76,17 +76,6 @@ trapmemref(int signo, siginfo_t *si, void *a)
 }
 
 static void
-trapFPE(int signo, siginfo_t *si, void *a)
-{
-	char buf[64];
-
-	USED(signo);
-	USED(a);
-	HOSTED_API(snprint)(buf, sizeof(buf), "sys: fp: exception status=%.4lux pc=%#p", getfsr(), si->si_addr);
-	disfault(nil, buf);
-}
-
-static void
 trapUSR1(int signo)
 {
 	int intwait;
@@ -199,8 +188,6 @@ libinit(char *imod)
 		act.sa_flags = SA_SIGINFO;
 		act.sa_sigaction = trapILL;
 		sigaction(SIGILL, &act, nil);
-		act.sa_sigaction = trapFPE;
-		sigaction(SIGFPE, &act, nil);
 		act.sa_sigaction = trapmemref;
 		sigaction(SIGBUS, &act, nil);
 		sigaction(SIGSEGV, &act, nil);

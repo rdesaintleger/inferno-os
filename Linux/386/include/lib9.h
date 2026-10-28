@@ -64,8 +64,8 @@ extern	vlong	osnsec(void);
 extern	void	_assert(char*);
 extern	char*	HOSTED_API(cleanname)(char*);
 extern	int	getfields(char*, char**, int, int, char*);
-extern	char*	HOSTED_API(getwd)(char*, int);
 extern	double	ipow10(int);
+extern	char*	HOSTED_API(getwd)(char*, int);
 extern	vlong	HOSTED_API(strtoll)(const char*, char**, int);
 extern	void	HOSTED_API(qsort)(void*, long, long, int (*)(void*, void*));
 extern	uvlong	HOSTED_API(strtoull)(const char*, char**, int);
@@ -110,10 +110,5 @@ extern char *argv0;
 /*
  *	Extensions for Inferno to basic libc.h
  */
-
-extern	void	setfcr(ulong);
-extern	void	setfsr(ulong);
-extern	ulong	getfcr(void);
-extern	ulong	getfsr(void);
 
 #endif /* _LIB9_LINUX_H_ */

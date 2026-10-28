@@ -57,20 +57,11 @@ disw(uchar **p)
 	return v;
 }
 
-double
+REAL
 canontod(ulong v[2])
 {
-	union { double d; unsigned long ul[2]; } a;
-	a.d = 1.;
-	if(a.ul[0]) {
-		a.ul[0] = v[0];
-		a.ul[1] = v[1];
-	}
-	else {
-		a.ul[1] = v[0];
-		a.ul[0] = v[1];
-	}
-	return a.d;
+	/* v[0] holds the high word and v[1] the low word of the IEEE754 value */
+	return inferno_fp_from_bits(((uint64_t)(uint32_t)v[0] << 32) | (uint32_t)v[1]);
 }
 
 Module*

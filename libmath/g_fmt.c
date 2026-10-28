@@ -22,23 +22,18 @@
  *	char buf[32];
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
- extern char *dtoa(double, int, int, int *, int *, char **);
- extern char *g_fmt(char *, double, int);
- extern void freedtoa(char*);
-#ifdef __cplusplus
-	}
-#endif
+#include "lib9.h"
+#include "mathi.h"
+#include <inferno/fp.h>
 
  char *
-g_fmt(register char *b, double x, int echr)
+fd_g_fmt(register char *b, float64_t x, int echr)
 {
 	register int i, k;
 	register char *s;
 	int decpt, j, sign;
-	char *b0, *s0, *se;
+	char *b0, *se;
+	char dbuf[400];
 
 	b0 = b;
 #ifdef IGNORE_ZERO_SIGN
@@ -48,7 +43,8 @@ g_fmt(register char *b, double x, int echr)
 		goto done;
 		}
 #endif
-	s = s0 = dtoa(x, 0, 0, &decpt, &sign, &se);
+	s = dbuf;
+	se = dbuf + fd_dtoa(x, 0, 0, &decpt, &sign, dbuf, sizeof dbuf);
 	if (sign)
 		*b++ = '-';
 	if (decpt == 9999) /* Infinity or Nan */ {
@@ -98,7 +94,6 @@ g_fmt(register char *b, double x, int echr)
 		*b = 0;
 		}
  done0:
-	freedtoa(s0);
 #ifdef IGNORE_ZERO_SIGN
  done:
 #endif

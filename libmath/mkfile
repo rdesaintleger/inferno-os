@@ -7,7 +7,7 @@ OFILES=\
 	blas.$O\
 	dtoa.$O\
 	fdim.$O\
-	FPcontrol-$TARGTYPE.$O\
+	softfpu.$O\
 	gemm.$O\
 	g_fmt.$O\
 	gfltconv.$O\

@@ -9,6 +9,7 @@
 #
 #	fptest	SoftFloat against the floating-point hardware of the host
 #	oracle	the functions of fdlibm in libmath.a against their reference copy in ref/
+#	dtoatest	fd_strtod and fd_dtoa against the strtod and printf of the host
 #
 #	Both compare bit for bit.  This is only meaningful if the host computes
 #	with strict IEEE 754 arithmetic: HOSTFP says how to ask a gcc on x86 for
@@ -72,9 +73,10 @@ REFOBJS=${REF:%=ref_%.$O}
 
 all:V:	test
 
-test:V:	fptest oracle
+test:V:	fptest oracle dtoatest
 	./fptest $COUNT
 	./oracle $COUNT
+	./dtoatest
 
 fptest:	fptest.$O $LIB
 	$LD $LDFLAGS -o $target fptest.$O $LIB -lm
@@ -85,6 +87,12 @@ oracle:	oracle.$O $REFOBJS $LIB
 fptest.$O:	fptest.c $ROOT/include/inferno/fp.h
 	$CC $HOSTFP -O0 -w -I$ROOT/include -o $target fptest.c
 
+dtoatest:	dtoatest.$O $LIB
+	$LD $LDFLAGS -o $target dtoatest.$O $LIB -lm
+
+dtoatest.$O:	dtoatest.c $ROOT/include/inferno/fp.h
+	$CC $HOSTFP -O1 -w -I$ROOT/include -o $target dtoatest.c
+
 oracle.$O:	oracle.c hiwords.h ../fdlibm/fdlibm.h $ROOT/include/inferno/fp.h
 	$CC $HOSTFP -O1 -w -I../fdlibm -I$ROOT/include -o $target oracle.c
 
@@ -93,6 +101,6 @@ ref_%.$O:	ref/%.c ref/fdlibm.h
 	$CC $HOSTFP -O1 -w -fno-strict-aliasing -D__LITTLE_ENDIAN=1 -Iref -o $target ref/$stem.c
 
 clean:V:
-	rm -f *.$O fptest oracle
+	rm -f *.$O fptest oracle dtoatest
 
 nuke:V:	clean

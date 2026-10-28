@@ -1913,14 +1913,6 @@ translate(char *in, char *out, char *dbg)
 		remove(dbg);
 }
 
-void
-trapFPE(unsigned exception[5], int value[2])
-{
-	/* can't happen; it's just here to keep FPinit happy. */
-	USED(exception);
-	USED(value);
-}
-
 static char *
 win2inf(char *s)
 {

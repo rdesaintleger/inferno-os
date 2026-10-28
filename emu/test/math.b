@@ -159,7 +159,8 @@ floating()
 	check(math->isnan(1.) == 0, "isnan 1");
 	check(math->isnan(inf) == 0, "isnan infinity");
 	check(1. / (zero + 1e400) == 0., "infinity constant");
-	# IEEE says nan != nan; the interpreter says otherwise (recorded, not asserted)
+	# the compiler folds this on its host, with its own rules (recorded, not asserted):
+	# the interpreter is IEEE, see ieee()
 	sys->print("behaviour: nan != nan is %d, nan == nan is %d\n", nan != nan, nan == nan);
 }
 
@@ -356,6 +357,191 @@ export()
 	exact(math->bits64real(math->realbits64(1e-200)), 1e-200, "64-bit round trip");
 }
 
+sink: real;
+isink: int;
+
+# 1 if the operation traps: 0 a+b, 1 a*b, 2 a/b, 3 a<b, 4 int a, 5 big a
+trapped(op: int, a, b: real): int
+{
+	t := 0;
+	{
+		case op {
+		0 =>	sink = a + b;
+		1 =>	sink = a * b;
+		2 =>	sink = a / b;
+		3 =>	isink = a < b;
+		4 =>	isink = int a;
+		5 =>	isink = int (big a);
+		}
+	} exception {
+	"sys: fp:*" =>
+		t = 1;
+	}
+	return t;
+}
+
+bits(x: real): big
+{
+	return math->realbits64(x);
+}
+
+fp(b: big): real
+{
+	return math->bits64real(b);
+}
+
+ALL: con Math->INVAL | Math->ZDIV | Math->OVFL | Math->UNFL | Math->INEX | Math->RND_MASK;
+
+# The arithmetic of the interpreter is IEEE 754, computed by SoftFloat whatever the host is:
+# exact bits, rounding modes, infinities, signed zeros, subnormals, NaNs, conversions.
+# The operands come from bits64real, so that nothing is folded by the compiler.
+ieee()
+{
+	old := math->getFPcontrol();
+	zero := fp(big 0);
+	one := fp(big 16r3FF0000000000000);
+	three := fp(big 16r4008000000000000);
+	nan := fp(big 16r7FF8000000000000);
+	inf := fp(big 16r7FF0000000000000);
+	tiny := fp(big 1);			# the smallest subnormal
+	least := fp(big 16r0010000000000000);	# the smallest normal number
+	max := fp(big 16r7FEFFFFFFFFFFFFF);
+	a := fp(big 16r3FB999999999999A);	# 0.1
+	b := fp(big 16r3FC999999999999A);	# 0.2
+
+	# the bits of the results
+	check(bits(a + b) == big 16r3FD3333333333334, "0.1 + 0.2");
+	check(bits(a * three) == big 16r3FD3333333333334, "0.1 * 3");
+	check(bits(one / three) == big 16r3FD5555555555555, "1 / 3");
+	check(bits(-(one / three)) == big 16rBFD5555555555555, "-(1 / 3)");
+	check(bits(least - tiny) == big 16r000FFFFFFFFFFFFF, "smallest normal minus smallest subnormal");
+	check(bits(tiny + tiny) == big 2 && bits(tiny * three) == big 3, "subnormal sums");
+
+	# the rounding modes
+	math->FPcontrol(Math->RND_PINF, Math->RND_MASK);
+	check(bits(one / three) == big 16r3FD5555555555556, "1 / 3 toward +infinity");
+	check(bits(-one / three) == big 16rBFD5555555555555, "-1 / 3 toward +infinity");
+	math->FPcontrol(Math->RND_NINF, Math->RND_MASK);
+	check(bits(one / three) == big 16r3FD5555555555555, "1 / 3 toward -infinity");
+	check(bits(-one / three) == big 16rBFD5555555555556, "-1 / 3 toward -infinity");
+	math->FPcontrol(Math->RND_Z, Math->RND_MASK);
+	check(bits(-one / three) == big 16rBFD5555555555555, "-1 / 3 toward zero");
+	math->FPcontrol(0, Math->OVFL);
+	check(bits(max * three) == bits(max), "overflow toward zero gives the largest number");
+	math->FPcontrol(old, ALL);
+	check(math->getFPcontrol() == old, "control word restored");
+
+	# NaN: never equal; a comparison for equality does not raise INVAL, an ordered one does
+	# (the compiler turns an ordered comparison into its opposite, so what a < b gives
+	# with a nan is not asserted)
+	n2 := fp(big 16r7FF8000000000000);
+	ninf := -inf;
+	math->FPstatus(0, ~0);
+	check(!(nan == n2) && nan != n2, "nan is not equal to nan");
+	check(!(nan == one) && nan != one, "nan is not equal to 1");
+	check(math->getFPstatus() == 0, "comparing for equality raises nothing");
+	check(trapped(3, nan, one) == 1, "nan < 1 traps (INVAL)");
+	math->FPcontrol(0, Math->INVAL);
+	math->FPstatus(0, ~0);
+	isink = nan < one;
+	check((math->getFPstatus() & Math->INVAL) != 0, "ordered comparison with nan raises INVAL");
+	math->FPstatus(0, ~0);
+	check(math->isnan(inf + ninf), "inf - inf is nan");
+	check(math->isnan(zero / fp(big 0)) && math->isnan(inf * zero), "0 / 0 and inf * 0 are nan");
+	check((math->getFPstatus() & Math->INVAL) != 0, "invalid operation raises INVAL");
+	math->FPcontrol(old, ALL);
+	check(trapped(0, inf, ninf) == 1, "inf - inf traps");
+	check(trapped(1, inf, zero) == 1, "inf * 0 traps");
+
+	# infinities and signed zeros
+	check(inf + one == inf && ninf < one && one / inf == zero, "infinity arithmetic");
+	negz := -zero;
+	check(bits(negz) == big 16r8000000000000000 && negz == zero, "-0 is a zero with the sign bit");
+	math->FPcontrol(0, Math->ZDIV);
+	check(bits(one / negz) == big 16rFFF0000000000000 && bits(one / zero) == big 16r7FF0000000000000, "1 / -0 and 1 / 0");
+	math->FPcontrol(old, ALL);
+	check(bits(zero + negz) == big 0 && bits(negz + negz) == big 16r8000000000000000, "sums of zeros");
+
+	# overflow, underflow
+	check(trapped(1, max, three) == 1, "overflow traps");
+	check(trapped(1, tiny, tiny) == 1, "underflow traps");
+	math->FPcontrol(0, Math->OVFL | Math->UNFL);
+	math->FPstatus(0, ~0);
+	check(bits(max * three) == bits(inf), "overflow gives infinity");
+	check((math->getFPstatus() & Math->OVFL) != 0, "overflow flag");
+	check(bits(tiny * fp(big 16r3FE0000000000000)) == big 0, "half the smallest subnormal rounds to even: 0");
+	check((math->getFPstatus() & Math->UNFL) != 0, "underflow flag");
+	math->FPcontrol(old, ALL);
+
+	# the inexact flag does not trap by default and is kept
+	math->FPstatus(0, ~0);
+	x := one / three;
+	check(x != one && (math->getFPstatus() & Math->INEX) != 0, "inexact flag");
+	math->FPstatus(0, ~0);
+	x = one + one;
+	check(math->getFPstatus() == 0, "exact result raises nothing");
+
+	# conversions to integers round half away from zero
+	check(int fp(big 16r4004000000000000) == 3, "int 2.5");		# 2.5
+	check(int fp(big 16rC004000000000000) == -3, "int -2.5");
+	check(int fp(big 16r3FD999999999999A) == 0, "int 0.4");
+	check(trapped(4, fp(big 16r4202A05F20000000), zero) == 1, "int 1e10 traps");
+	check(trapped(4, nan, zero) == 1, "int nan traps");
+	check(trapped(5, fp(big 16r43E0000000000000), zero) == 1, "big 2**63 traps");
+	# and from integers: exact, or rounded
+	check(bits(real 16r7FFFFFFF) == big 16r41DFFFFFFFC00000, "real of the largest int");
+	check(bits(real (big 16r7FFFFFFFFFFFFFFF)) == big 16r43E0000000000000, "real of the largest big");
+	check(bits(real (big 16r20000000000001)) == big 16r4340000000000000, "real of 2**53 + 1 (to even)");
+	check(bits(real (big 16r20000000000003)) == big 16r4340000000000002, "real of 2**53 + 3 (to even)");
+}
+
+# Numbers to text and back, bit for bit.
+decimal()
+{
+	check(sys->sprint("%g", fp(big 16r3FB999999999999A)) == ".1", "%g 0.1 (no leading zero)");
+	check(sys->sprint("%.1g", fp(big 16r3FB999999999999A)) == "0.1", "%.1g 0.1");
+	check(sys->sprint("%.17g", fp(big 16r3FB999999999999A)) == "0.10000000000000001", "%.17g 0.1");
+	check(sys->sprint("%g", fp(big 16r44B52D02C7E14AF6)) == "1e+23", "%g 1e23");
+	check(sys->sprint("%g", fp(big 16r4034000000000000)) == "20", "%g 20");
+	check(sys->sprint("%g", fp(big 16r40F86A0000000000)) == "100000", "%g 100000");
+	check(sys->sprint("%g", fp(big 1)) == "5e-324", "%g smallest subnormal");
+	check(sys->sprint("%g", fp(big 16r7FEFFFFFFFFFFFFF)) == "1.7976931348623157e+308", "%g largest");
+	check(sys->sprint("%g", fp(big 16r8000000000000000)) == "-0", "%g -0");
+	check(sys->sprint("%g", fp(big 16r7FF0000000000000)) == "Infinity", "%g infinity");
+	check(sys->sprint("%g", fp(big 16rFFF0000000000000)) == "-Infinity", "%g -infinity");
+	check(sys->sprint("%g", fp(big 16r7FF8000000000000)) == "NaN", "%g nan");
+	check(sys->sprint("%e", fp(big 16r40C81CD6E9E1B089)) == "1.234568e+04", "%e 12345.6789");
+	check(sys->sprint("%.3e", fp(big 16r3FF0000000000000)) == "1.000e+00", "%.3e 1");
+	check(sys->sprint("%.0f", fp(big 16r4004000000000000)) == "2", "%.0f 2.5 (to even)");
+	check(sys->sprint("%.0f", fp(big 16r400C000000000000)) == "4", "%.0f 3.5 (to even)");
+	check(sys->sprint("%.1f", fp(big 16r3FB999999999999A)) == "0.1", "%.1f 0.1");
+	check(sys->sprint("%.3f", fp(big 16r3FF0020C49BA5E35)) == "1.000", "%.3f 1.0005 (a little below)");
+	check(sys->sprint("%f", fp(big 16r4202A05F20000000)) == "10000000000.000000", "%f 1e10");
+	check(sys->sprint("%.2f", fp(big 16r7FEFFFFFFFFFFFFF)) == "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00", "%.2f largest");
+
+	check(bits(real "0.1") == big 16r3FB999999999999A, "0.1");
+	check(bits(real "1e23") == big 16r44B52D02C7E14AF6, "1e23");
+	check(bits(real "5e-324") == big 1, "5e-324");
+	check(bits(real "2.4703282292062327e-324") == big 0, "just under half the smallest subnormal");
+	check(bits(real "2.4703282292062328e-324") == big 1, "just over half the smallest subnormal");
+	check(bits(real "2.2250738585072011e-308") == big 16r000FFFFFFFFFFFFF, "largest subnormal");
+	check(bits(real "2.2250738585072014e-308") == big 16r0010000000000000, "smallest normal number");
+	check(bits(real "1.7976931348623157e308") == big 16r7FEFFFFFFFFFFFFF, "largest number");
+	check(bits(real "1.7976931348623159e308") == big 16r7FF0000000000000, "just above the largest number: infinity");
+	check(bits(real "1e400") == big 16r7FF0000000000000 && bits(real "-1e400") == big 16rFFF0000000000000, "overflow");
+	check(bits(real "1e-400") == big 0, "underflow");
+	check(bits(real "-0") == big 16r8000000000000000, "-0");
+	check(bits(real "9007199254740993") == big 16r4340000000000000, "2**53 + 1 (to even)");
+	check(bits(real "9007199254740993.0000001") == big 16r4340000000000001, "2**53 + 1.0000001 (up)");
+	check(bits(real "9007199254740995") == big 16r4340000000000002, "2**53 + 3 (to even)");
+	check(bits(real "  12abc") == bits(12.), "leading spaces and trailing text");
+	check(bits(real ".5") == bits(0.5) && bits(real "5.") == bits(5.) && bits(real "1e2") == bits(100.), "forms of numbers");
+	check(bits(real "1e") == bits(1.) && bits(real "1e+") == bits(1.), "exponent without digits");
+	check(bits(real "Infinity") == big 16r7FF0000000000000 && bits(real "-infinity") == big 16rFFF0000000000000, "infinity");
+	check(math->isnan(real "nan") && math->isnan(real "NaN"), "nan");
+	check(bits(real "abc") == big 0 && bits(real "") == big 0, "no number");
+}
+
 init(nil: ref Draw->Context, nil: list of string)
 {
 	sys = load Sys Sys->PATH;
@@ -368,6 +554,8 @@ init(nil: ref Draw->Context, nil: list of string)
 	bessel();
 	floating();
 	fpenv();
+	ieee();
+	decimal();
 	fpfunc();
 	linalg();
 	export();

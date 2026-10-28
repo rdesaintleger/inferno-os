@@ -1,30 +1,31 @@
 #include "lib9.h"
 #include "mathi.h"
+#include <inferno/fp.h>
 
-double
-fdim(double x, double y)
+/*
+ * The comparisons are quiet: a NaN gives the same results as before and
+ * does not raise INVAL.
+ */
+float64_t
+fd_fdim(float64_t x, float64_t y)
 {
-	if(x>y)
-		return x-y;
-	else
-		return 0;
+	if(f64_lt_quiet(y, x))
+		return f64_sub(x, y);
+	return inferno_fp_from_i32(0);
 }
 
-double
-fmax(double x, double y)
+float64_t
+fd_fmax(float64_t x, float64_t y)
 {
-	if(x>y)
+	if(f64_lt_quiet(y, x))
 		return x;
-	else
-		return y;
+	return y;
 }
 
-double
-fmin(double x, double y)
+float64_t
+fd_fmin(float64_t x, float64_t y)
 {
-	if(x<y)
+	if(f64_lt_quiet(x, y))
 		return x;
-	else
-		return y;
+	return y;
 }
-

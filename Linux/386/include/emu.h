@@ -1,17 +1,8 @@
 /*
  * system- and machine-specific declarations for emu:
- * floating-point save and restore, signal handling primitive, and
+ * signal handling primitive, and
  * implementation of the current-process variable `up'.
  */
-
-/*
- * This structure must agree with FPsave and FPrestore asm routines
- */
-typedef struct FPU FPU;
-struct FPU
-{
-	uchar	env[28];
-};
 
 #define KSTACK (32 * 1024)
 

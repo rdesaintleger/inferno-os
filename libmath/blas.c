@@ -1,31 +1,42 @@
+/*
+ * Vector operations of the Math module, on float64_t (SoftFloat).
+ * The caller looks at the flags (FPflags) when they return.
+ */
 #include "lib9.h"
 #include "mathi.h"
+#include <inferno/fp.h>
 
-double
-dot(int n, double *x, double *y)
+static const float64_t zero = { 0 };
+
+float64_t
+dot(int n, float64_t *x, float64_t *y)
 {
-	double	sum = 0;
-	if (n <= 0) 
-		return 0;
+	float64_t sum = zero;
+
+	if (n <= 0)
+		return zero;
 	while (n--) {
-		sum += *x++ * *y++;
+		sum = f64_add(sum, f64_mul(*x, *y));
+		x++;
+		y++;
 	}
 	return sum;
 }
 
 
 int
-iamax(int n, double *x)
+iamax(int n, float64_t *x)
 {
 	int	i, m;
-	double	xm, a;
-	if (n <= 0) 
+	float64_t xm, a;
+
+	if (n <= 0)
 		return 0;
 	m = 0;
-	xm = fabs(*x);
+	xm = inferno_fp_abs(*x);
 	for (i = 1; i < n; i++) {
-		a = fabs(*++x);
-		if (xm < a) {
+		a = inferno_fp_abs(*++x);
+		if (f64_lt(xm, a)) {
 			m = i;
 			xm = a;
 		}
@@ -34,29 +45,31 @@ iamax(int n, double *x)
 }
 
 
-double
-norm1(int n, double *x)
+float64_t
+norm1(int n, float64_t *x)
 {
-	double	sum = 0;
-	if (n <= 0) 
-		return 0;
+	float64_t sum = zero;
+
+	if (n <= 0)
+		return zero;
 	while (n--) {
-		sum += fabs(*x);
+		sum = f64_add(sum, inferno_fp_abs(*x));
 		x++;
 	}
 	return sum;
 }
 
 
-double
-norm2(int n, double *x)
+float64_t
+norm2(int n, float64_t *x)
 {
-	double	sum = 0;
-	if (n <= 0) 
-		return 0;
+	float64_t sum = zero;
+
+	if (n <= 0)
+		return zero;
 	while (n--) {
-		sum += *x * *x;
+		sum = f64_add(sum, f64_mul(*x, *x));
 		x++;
 	}
-	return sqrt(sum);
+	return f64_sqrt(sum);
 }

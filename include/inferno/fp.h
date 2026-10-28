@@ -22,6 +22,18 @@
 #include <stdint.h>
 #include <inferno/softfloat.h>
 
+/*
+ * Floating-point state of a process (see libmath/fp/softfpu.c): the control
+ * word (rounding mode and traps) and the accumulated status flags, in the
+ * Inferno encoding of mathi.h (INVAL, ZDIV, OVFL, UNFL, INEX, RND_*).
+ */
+typedef struct InfernoFPU InfernoFPU;
+struct InfernoFPU
+{
+	uint32_t	control;
+	uint32_t	status;
+};
+
 /* arithmetic: the result is rounded as the current rounding mode says */
 #define inferno_fp_add(a, b)		f64_add((a), (b))
 #define inferno_fp_sub(a, b)		f64_sub((a), (b))
@@ -49,10 +61,21 @@ extern float64_t inferno_fp_abs(float64_t);
 #define inferno_fp_from_i32(n)		i32_to_f64((n))
 #define inferno_fp_from_u32(n)		ui32_to_f64((n))
 #define inferno_fp_to_i32(x)		((int32_t)f64_to_i32_r_minMag((x), false))
+#define inferno_fp_from_i64(n)		i64_to_f64((n))
+#define inferno_fp_to_i64(x)		((int64_t)f64_to_i64_r_minMag((x), false))
+#define inferno_fp_from_f32(x)		f32_to_f64((x))
+#define inferno_fp_to_f32(x)		f64_to_f32((x))
 
 /* the bits of a number */
 #define inferno_fp_bits(x)		((x).v)
 extern float64_t inferno_fp_from_bits(uint64_t);
+
+/*
+ * Transitional: conversion with the host double, only for the parsing and
+ * the formatting of numbers (dtoa) that still run on the host.
+ */
+extern double inferno_fp_to_host(float64_t);
+extern float64_t inferno_fp_from_host(double);
 
 /*
  * The two 32-bit halves of a number: hi holds the sign, the exponent and the

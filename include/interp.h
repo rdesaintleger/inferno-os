@@ -1,15 +1,16 @@
 #ifndef _INFERNO_INTERP_OLD_H_
 #define _INFERNO_INTERP_OLD_H_
 
+#include <inferno/fp.h>
 
 typedef uchar		BYTE;		/* 8  bits */
 typedef int		WORD;		/* 32 bits */
 typedef unsigned int	UWORD;		/* 32 bits */
 typedef vlong		LONG;		/* 64 bits */
 typedef uvlong		ULONG;		/* 64 bits */
-typedef double		REAL;		/* 64 double IEEE754 */
+typedef float64_t	REAL;		/* 64 double IEEE754 (SoftFloat) */
 typedef short		SHORT;		/* 16 bits */
-typedef float		SREAL;		/* 32 float IEEE754 */
+typedef float32_t	SREAL;		/* 32 float IEEE754 (SoftFloat) */
 
 enum ProgState
 {
@@ -331,7 +332,6 @@ struct Heap
 union HeapAlign {
 	uintptr_t p;
 
-	double d;
 	uint64_t l;
 };
 
@@ -479,6 +479,7 @@ extern	void		markheap(Type*, void*);
 extern	void		marklist(Type*, void*);
 extern	void		markmodl(Type*, void*);
 extern	void		mathmodinit(void);
+extern	void		fpcheck(void);
 extern	Array*		mem2array(void*, int);
 extern	void		mlink(Module*, Link*, uchar*, int, int, Type*);
 extern	void		modinit(void);

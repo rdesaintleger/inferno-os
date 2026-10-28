@@ -1,7 +1,6 @@
 #include "lib9.h"
 #include "mathi.h"
-extern char	*dtoa(double, int, int, int *, int *, char **);
-extern void	freedtoa(char*);
+#include <inferno/fp.h>
 extern int	_fmtcpy(Fmt*, void*, int, int);
 
 enum
@@ -18,12 +17,13 @@ gfltconv(Fmt *f)
 	int flags = f->flags;
 	int precision;
 	int fmt = f->r;
-	double d;
+	float64_t d;
 	int echr, exponent, sign, ndig, nout, i;
 	char *digits, *edigits, ebuf[32], *eptr;
-	char out[64], *pout;
+	char out[512], dbuf[400], *pout;
 
-	d = va_arg(f->args, double);
+	/* the argument is a double of the C varargs: only its 64 bits are used */
+	d = inferno_fp_from_host(va_arg(f->args, double));
 	echr = 'e';
 	precision = FDEFLT;
 	if(f->flags & FmtPrec)
@@ -32,7 +32,7 @@ gfltconv(Fmt *f)
 		precision = FDIGIT;
 	switch(fmt){
 	case 'f':
-		digits = dtoa(d, 3, precision, &exponent, &sign, &edigits);
+		digits = dbuf, edigits = dbuf + fd_dtoa(d, 3, precision, &exponent, &sign, dbuf, sizeof dbuf);
 		break;
 	case 0x00c9:	/* L'É' */
 	case 'E':
@@ -40,7 +40,7 @@ gfltconv(Fmt *f)
 		fmt = 'e';
 		/* fall through */
 	case 'e':
-		digits = dtoa(d, 2, 1+precision, &exponent, &sign, &edigits);
+		digits = dbuf, edigits = dbuf + fd_dtoa(d, 2, 1+precision, &exponent, &sign, dbuf, sizeof dbuf);
 		break;
 	case 'G':
 		echr = 'E';
@@ -48,14 +48,14 @@ gfltconv(Fmt *f)
 	default:
 	case 'g':
 		if((flags&(FmtWidth|FmtPrec)) == 0){
-			g_fmt(out, d, echr);
+			fd_g_fmt(out, d, echr);
 			f->flags &= FmtWidth|FmtLeft;
 			return _fmtcpy(f, out, strlen(out), strlen(out));
 		}
 		if (precision > 0)
-			digits = dtoa(d, 2, precision, &exponent, &sign, &edigits);
+			digits = dbuf, edigits = dbuf + fd_dtoa(d, 2, precision, &exponent, &sign, dbuf, sizeof dbuf);
 		else {
-			digits = dtoa(d, 0, precision, &exponent, &sign, &edigits);
+			digits = dbuf, edigits = dbuf + fd_dtoa(d, 0, precision, &exponent, &sign, dbuf, sizeof dbuf);
 			precision = edigits - digits;
 			if (exponent > precision && exponent <= precision + 4)
 				precision = exponent;
@@ -116,7 +116,6 @@ gfltconv(Fmt *f)
 		while(eptr>ebuf) *pout++ = *--eptr;
 	}
 	*pout = 0;
-	freedtoa(digits);
 	f->flags &= FmtWidth|FmtLeft;
 	nout = pout-out;
 	return _fmtcpy(f, out, nout, nout);

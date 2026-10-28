@@ -7,144 +7,105 @@
 #include "mathmod.h"
 #include <inferno/fp.h>
 
-static union
-{
-	double x;
-	uvlong u;
-} bits64;
-
-static union{
-	float x;
-	unsigned int u;
-} bits32;
-
 /*
  * Elementary functions.
  *
  * They are the functions of fdlibm, computed on float64_t with SoftFloat (see
- * <inferno/fp.h>) and not by the floating-point unit of the host.  REAL is
- * still a double here: arguments and results are converted, they have the
- * same 64 bits.
+ * <inferno/fp.h>) and not by the floating-point unit of the host: REAL is a
+ * float64_t.  The state of the floating-point unit is the SoftFPU of libmath
+ * (FPinit, FPcontrol, FPstatus, ...), saved and restored with each process.
  *
- * SoftFloat only raises flags.  After each call they are added to the
- * floating-point status of the process and, if the control word says so, they
- * trap as the hardware used to do: the run-time error is "sys: fp: ...".  The
- * functions always round to nearest.
+ * SoftFloat only raises flags.  fpcheck() adds them to the status of the
+ * process and, if the control word says so, traps as the hardware used to do:
+ * the run-time error is "sys: fp: ...".  Arithmetic and conversions follow
+ * the rounding mode of the process; the elementary functions always round to
+ * nearest.
  */
-static float64_t
-emu_tofp(REAL x)
-{
-	union { REAL d; uint64_t u; } c;
-	float64_t r;
-
-	c.d = x;
-	r.v = c.u;
-	return r;
-}
-
-static REAL
-emu_fromfp(float64_t x)
-{
-	union { REAL d; uint64_t u; } c;
-
-	c.u = x.v;
-	return c.d;
-}
-
-static void
-emu_fpbegin(void)
-{
-	softfloat_roundingMode = softfloat_round_near_even;
-	softfloat_detectTininess = softfloat_tininess_afterRounding;
-	softfloat_exceptionFlags = 0;
-}
-
-/*
- * On some machines the status of the floating-point unit can only be cleared,
- * not set (FPstatus): a flag is raised by an operation that causes it.
- */
-static void
-emu_fpraise(ulong st)
-{
-	volatile double a, b, r;
-
-	if(st & INEX){
-		a = 1.0; b = 3.0; r = a / b;
-	}
-	if(st & UNFL){
-		a = 1e-300; b = 1e-300; r = a * b;
-	}
-	if(st & OVFL){
-		a = 1e300; b = 1e300; r = a * b;
-	}
-	if(st & ZDIV){
-		a = 1.0; b = 0.0; r = a / b;
-	}
-	if(st & INVAL){
-		a = 0.0; b = 0.0; r = a / b;
-	}
-	USED(r);
-}
-
-static void
-emu_fpend(void)
+void
+fpcheck(void)
 {
 	static const char hex[] = "0123456789abcdef";
 	char msg[] = "sys: fp: exception status=0000";
-	uint_fast8_t fl;
-	ulong st, ctl, trap;
+	ulong st;
 	int i;
 
-	fl = softfloat_exceptionFlags;
-	if(fl == 0)
+	if(FPflags() == 0)
 		return;
-	st = 0;
-	if(fl & softfloat_flag_invalid)
-		st |= INVAL;
-	if(fl & softfloat_flag_infinite)
-		st |= ZDIV;
-	if(fl & softfloat_flag_overflow)
-		st |= OVFL;
-	if(fl & softfloat_flag_underflow)
-		st |= UNFL;
-	if(fl & softfloat_flag_inexact)
-		st |= INEX;
-
-	/* the flags join the status, whether they trap or not */
-	ctl = getFPcontrol();
-	trap = st & ctl & (INVAL|ZDIV|OVFL|UNFL|INEX);
-	if(trap)
-		FPcontrol(0, trap);
-	emu_fpraise(st);
-	if(trap){
-		FPcontrol(ctl, trap);
-		st = getFPstatus();
-		for(i = 0; i < 4; i++)
-			msg[sizeof msg - 2 - i] = hex[(st >> (4*i)) & 0xf];
-		error(msg);
-	}
+	st = getFPstatus();
+	for(i = 0; i < 4; i++)
+		msg[sizeof msg - 2 - i] = hex[(st >> (4*i)) & 0xf];
+	error(msg);
 }
 
 static REAL
 emu_call1(float64_t (*fn)(float64_t), REAL x)
 {
-	float64_t r;
+	REAL r;
+	uint_fast8_t mode;
 
-	emu_fpbegin();
-	r = fn(emu_tofp(x));
-	emu_fpend();
-	return emu_fromfp(r);
+	mode = softfloat_roundingMode;
+	softfloat_roundingMode = softfloat_round_near_even;
+	r = fn(x);
+	softfloat_roundingMode = mode;
+	fpcheck();
+	return r;
 }
 
 static REAL
 emu_call2(float64_t (*fn)(float64_t, float64_t), REAL x, REAL y)
 {
-	float64_t r;
+	REAL r;
+	uint_fast8_t mode;
 
-	emu_fpbegin();
-	r = fn(emu_tofp(x), emu_tofp(y));
-	emu_fpend();
-	return emu_fromfp(r);
+	mode = softfloat_roundingMode;
+	softfloat_roundingMode = softfloat_round_near_even;
+	r = fn(x, y);
+	softfloat_roundingMode = mode;
+	fpcheck();
+	return r;
+}
+
+static float32_t
+f32bits(uint32_t u)
+{
+	float32_t r;
+
+	r.v = u;
+	return r;
+}
+
+static uint_fast8_t emu_mode;
+
+static void
+emu_fpbegin(void)
+{
+	emu_mode = softfloat_roundingMode;
+	softfloat_roundingMode = softfloat_round_near_even;
+}
+
+static void
+emu_fpend(void)
+{
+	softfloat_roundingMode = emu_mode;
+	fpcheck();
+}
+
+static int
+emu_isnan(REAL x)
+{
+	return (x.v & UINT64_C(0x7FF0000000000000)) == UINT64_C(0x7FF0000000000000) &&
+		(x.v & UINT64_C(0x000FFFFFFFFFFFFF)) != 0;
+}
+
+/* operations that follow the rounding mode of the process */
+static REAL
+emu_op2(float64_t (*fn)(float64_t, float64_t), REAL x, REAL y)
+{
+	REAL r;
+
+	r = fn(x, y);
+	fpcheck();
+	return r;
 }
 
 void
@@ -190,21 +151,20 @@ Math_import_real32(void *fp)
 	int i, n;
 	unsigned int u;
 	unsigned char *bp;
-	double *x;
+	REAL *x;
 
 	f = fp;
 	n = f->x->len;
 	if(f->b->len!=4*n)
 		error(exMathia);
 	bp = (unsigned char *)(f->b->data);
-	x = (double*)(f->x->data);
+	x = (REAL*)(f->x->data);
 	for(i=0; i<n; i++){
 		u = *bp++;
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
-		bits32.u = u;
-		x[i] = bits32.x;
+		x[i] = f32_to_f64(f32bits(u));
 	}
 }
 
@@ -215,14 +175,14 @@ Math_import_real(void *fp)
 	int i, n;
 	uvlong u;
 	unsigned char *bp;
-	double *x;
+	REAL *x;
 
 	f = fp;
 	n = f->x->len;
 	if(f->b->len!=8*n)
 		error(exMathia);
 	bp = f->b->data;
-	x = (double*)(f->x->data);
+	x = (REAL*)(f->x->data);
 	for(i=0; i<n; i++){
 		u = *bp++;
 		u = (u<<8) | *bp++;
@@ -232,8 +192,7 @@ Math_import_real(void *fp)
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
 		u = (u<<8) | *bp++;
-		bits64.u = u;
-		x[i] = bits64.x;
+		x[i] = inferno_fp_from_bits(u);
 	}
 }
 
@@ -268,17 +227,16 @@ Math_export_real32(void *fp)
 	int i, n;
 	unsigned int u;
 	unsigned char *bp;
-	double *x;
+	REAL *x;
 
 	f = fp;
 	n = f->x->len;
 	if(f->b->len!=4*n)
 		error(exMathia);
 	bp = (unsigned char *)(f->b->data);
-	x = (double*)(f->x->data);
+	x = (REAL*)(f->x->data);
 	for(i=0; i<n; i++){
-		bits32.x = x[i];
-		u = bits32.u;
+		u = f64_to_f32(x[i]).v;
 		*bp++ = u>>24;
 		*bp++ = u>>16;
 		*bp++ = u>>8;
@@ -293,17 +251,16 @@ Math_export_real(void *fp)
 	int i, n;
 	uvlong u;
 	unsigned char *bp;
-	double *x;
+	REAL *x;
 
 	f = fp;
 	n = f->x->len;
 	if(f->b->len!=8*n)
 		error(exMathia);
 	bp = (unsigned char *)(f->b->data);
-	x = (double*)(f->x->data);
+	x = (REAL*)(f->x->data);
 	for(i=0; i<n; i++){
-		bits64.x = x[i];
-		u = bits64.u;
+		u = inferno_fp_bits(x[i]);
 		*bp++ = u>>56;
 		*bp++ = u>>48;
 		*bp++ = u>>40;
@@ -322,8 +279,8 @@ Math_bits32real(void *fp)
 	F_Math_bits32real *f;
 
 	f = fp;
-	bits32.u = f->b;
-	*f->ret = bits32.x;
+	*f->ret = f32_to_f64(f32bits(f->b));
+	softfloat_exceptionFlags = 0;
 }
 
 void
@@ -332,8 +289,7 @@ Math_bits64real(void *fp)
 	F_Math_bits64real *f;
 
 	f = fp;
-	bits64.u = f->b;
-	*f->ret = bits64.x;
+	*f->ret = inferno_fp_from_bits(f->b);
 }
 
 void
@@ -342,8 +298,8 @@ Math_realbits32(void *fp)
 	F_Math_realbits32 *f;
 
 	f = fp;
-	bits32.x = f->x;
-	*f->ret = bits32.u;
+	*f->ret = f64_to_f32(f->x).v;
+	fpcheck();
 }
 
 void
@@ -352,8 +308,7 @@ Math_realbits64(void *fp)
 	F_Math_realbits64 *f;
 
 	f = fp;
-	bits64.x = f->x;
-	*f->ret = bits64.u;
+	*f->ret = inferno_fp_bits(f->x);
 }
 
 
@@ -384,7 +339,7 @@ Math_finite(void *fp)
 
 	f = fp;
 
-	*f->ret = fd_finite(emu_tofp(f->x));
+	*f->ret = fd_finite(f->x);
 }
 
 void
@@ -394,7 +349,7 @@ Math_ilogb(void *fp)
 
 	f = fp;
 
-	*f->ret = fd_ilogb(emu_tofp(f->x));
+	*f->ret = fd_ilogb(f->x);
 }
 
 void
@@ -404,7 +359,7 @@ Math_isnan(void *fp)
 
 	f = fp;
 
-	*f->ret = isNaN(f->x);
+	*f->ret = emu_isnan(f->x);
 }
 
 void
@@ -704,7 +659,7 @@ Math_fdim(void *fp)
 
 	f = fp;
 
-	*f->ret = fdim(f->x, f->y);
+	*f->ret = emu_op2(fd_fdim, f->x, f->y);
 }
 
 void
@@ -714,7 +669,7 @@ Math_fmax(void *fp)
 
 	f = fp;
 
-	*f->ret = fmax(f->x, f->y);
+	*f->ret = emu_op2(fd_fmax, f->x, f->y);
 }
 
 void
@@ -724,7 +679,7 @@ Math_fmin(void *fp)
 
 	f = fp;
 
-	*f->ret = fmin(f->x, f->y);
+	*f->ret = emu_op2(fd_fmin, f->x, f->y);
 }
 
 void
@@ -817,7 +772,7 @@ Math_jn(void *fp)
 	f = fp;
 
 	emu_fpbegin();
-	*f->ret = emu_fromfp(fd_jn(f->n, emu_tofp(f->x)));
+	*f->ret = fd_jn(f->n, f->x);
 	emu_fpend();
 }
 
@@ -831,9 +786,9 @@ Math_lgamma(void *fp)
 	f = fp;
 
 	emu_fpbegin();
-	r = fd_lgamma_r(emu_tofp(f->x), &sign);
+	r = fd_lgamma_r(f->x, &sign);
 	emu_fpend();
-	f->ret->t1 = emu_fromfp(r);
+	f->ret->t1 = (r);
 	f->ret->t0 = sign;
 }
 
@@ -846,10 +801,11 @@ Math_modf(void *fp)
 	f = fp;
 
 	emu_fpbegin();
-	r = fd_modf(emu_tofp(f->x), &ipart);
+	r = fd_modf(f->x, &ipart);
 	emu_fpend();
-	f->ret->t1 = emu_fromfp(r);
-	f->ret->t0 = emu_fromfp(ipart);
+	f->ret->t1 = r;
+	f->ret->t0 = inferno_fp_to_i32(ipart);
+	fpcheck();
 }
 
 void
@@ -859,7 +815,7 @@ Math_pow10(void *fp)
 
 	f = fp;
 
-	*f->ret = ipow10(f->p);
+	*f->ret = emu_call2(fd_pow, inferno_fp_from_i32(10), inferno_fp_from_i32(f->p));
 }
 
 void
@@ -880,7 +836,7 @@ Math_scalbn(void *fp)
 	f = fp;
 
 	emu_fpbegin();
-	*f->ret = emu_fromfp(fd_scalbn(emu_tofp(f->x), f->n));
+	*f->ret = (fd_scalbn(f->x, f->n));
 	emu_fpend();
 }
 
@@ -892,7 +848,7 @@ Math_yn(void *fp)
 	f = fp;
 
 	emu_fpbegin();
-	*f->ret = emu_fromfp(fd_yn(f->n, emu_tofp(f->x)));
+	*f->ret = (fd_yn(f->n, f->x));
 	emu_fpend();
 }
 
@@ -905,9 +861,10 @@ Math_yn(void *fp)
 */
 
 static int
-cmp(int *u, int *v, double *x)
+cmp(int *u, int *v, REAL *x)
 {
-	return ((x[*u]==x[*v])? 0 : ((x[*u]<x[*v])? -1 : 1));
+	/* quiet comparisons: sorting does not raise exceptions */
+	return f64_eq(x[*u], x[*v]) ? 0 : (f64_lt_quiet(x[*u], x[*v]) ? -1 : 1);
 }
 
 #define swap(u, v) {int t = *(u); *(u) = *(v); *(v) = t;}
@@ -926,14 +883,14 @@ cmp(int *u, int *v, double *x)
 #define minimum(x, y) ((x)<=(y) ? (x) : (y))
 
 static int *
-med3(int *a, int *b, int *c, double *x)
+med3(int *a, int *b, int *c, REAL *x)
 {	return cmp(a, b, x) < 0 ?
 		  (cmp(b, c, x) < 0 ? b : (cmp(a, c, x) < 0 ? c : a ) )
 		: (cmp(b, c, x) > 0 ? b : (cmp(a, c, x) < 0 ? a : c ) );
 }
 
 void
-rqsort(int *a, int n, double *x)
+rqsort(int *a, int n, REAL *x)
 {
 	int *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	int  d, r;
@@ -999,7 +956,7 @@ Math_sort(void*fp)
 		p++;
 	}
 
-	rqsort( (int*)(f->pi->data), f->pi->len, (double*)(f->x->data));
+	rqsort( (int*)(f->pi->data), f->pi->len, (REAL*)(f->x->data));
 }
 
 
@@ -1013,7 +970,8 @@ Math_dot(void *fp)
 	f = fp;
 	if(f->x->len!=f->y->len)
 		error(exMathia);	/* incompatible lengths */
-	*f->ret = dot(f->x->len, (double*)(f->x->data), (double*)(f->y->data));
+	*f->ret = dot(f->x->len, (REAL*)(f->x->data), (REAL*)(f->y->data));
+	fpcheck();
 }
 
 void
@@ -1023,7 +981,8 @@ Math_iamax(void *fp)
 
 	f = fp;
 
-	*f->ret = iamax(f->x->len, (double*)(f->x->data));
+	*f->ret = iamax(f->x->len, (REAL*)(f->x->data));
+	fpcheck();
 }
 
 void
@@ -1033,7 +992,8 @@ Math_norm2(void *fp)
 
 	f = fp;
 
-	*f->ret = norm2(f->x->len, (double*)(f->x->data));
+	*f->ret = norm2(f->x->len, (REAL*)(f->x->data));
+	fpcheck();
 }
 
 void
@@ -1043,7 +1003,8 @@ Math_norm1(void *fp)
 
 	f = fp;
 
-	*f->ret = norm1(f->x->len, (double*)(f->x->data));
+	*f->ret = norm1(f->x->len, (REAL*)(f->x->data));
+	fpcheck();
 }
 
 void
@@ -1051,7 +1012,7 @@ Math_gemm(void *fp)
 {
 	F_Math_gemm *f = fp;
 	int nrowa, ncola, nrowb, ncolb, mn, ld, m, n;
-	double *adata = 0, *bdata = 0, *cdata;
+	REAL *adata = 0, *bdata = 0, *cdata;
 	int nota = f->transa=='N';
 	int notb = f->transb=='N';
 	if(nota){
@@ -1075,7 +1036,7 @@ Math_gemm(void *fp)
 	}
 	if(f->a != H){
 		mn = f->a->len;
-		adata = (double*)(f->a->data);
+		adata = (REAL*)(f->a->data);
 		ld = f->lda;
 		if(ld<nrowa || ld*(ncola-1)>mn)
 			error(exBounds);
@@ -1083,18 +1044,19 @@ Math_gemm(void *fp)
 	if(f->b != H){
 		mn = f->b->len;
 		ld = f->ldb;
-		bdata = (double*)(f->b->data);
+		bdata = (REAL*)(f->b->data);
 		if(ld<nrowb || ld*(ncolb-1)>mn)
 			error(exBounds);
 	}
 	m = f->m;
 	n = f->n;
 	mn = f->c->len;
-	cdata = (double*)(f->c->data);
+	cdata = (REAL*)(f->c->data);
 	ld = f->ldc;
 	if(ld<m || ld*(n-1)>mn)
 		error(exBounds);
 
 	gemm(f->transa, f->transb, f->m, f->n, f->k, f->alpha,
 		adata, f->lda, bdata, f->ldb, f->beta, cdata, f->ldc);
+	fpcheck();
 }

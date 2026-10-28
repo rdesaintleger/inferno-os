@@ -658,7 +658,7 @@ progheap(Heapqry *hq, char *va, int count, ulong offset)
 			w = (WORD*)addr;
 			rock.w[0] = w[0];
 			rock.w[1] = w[1];
-			n += HOSTED_API(snprint)(va+n, count-n, "%g\n", rock.r);
+			n += HOSTED_API(snprint)(va+n, count-n, "%g\n", inferno_fp_to_host(rock.r));
 			s = sizeof(REAL);
 			break;
 		case 'I':

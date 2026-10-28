@@ -766,7 +766,7 @@ done:
 		break;
 	case Frac:
 	case Exp:
-		d = strtod(buf, nil);
+		d = inferno_fp_to_host(fd_strtod(buf, nil));
 		yylval.tok.v.rval = d;
 		return Lrconst;
 	case FracB:
@@ -1392,7 +1392,7 @@ gfltconv(Fmt *f)
 	char buf[32];
 
 	d = va_arg(f->args, double);
-	g_fmt(buf, d, 'e');
+	fd_g_fmt(buf, inferno_fp_from_host(d), 'e');
 	return HOSTED_API(fmtstrcpy)(f, buf);
 }
 

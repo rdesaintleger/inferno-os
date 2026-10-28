@@ -28,7 +28,28 @@ String	snil;			/* String known to be zero length */
 #define SR(r)	*((SREAL*)(R.r))
 
 OP(runt) {}
-OP(negf) { F(d) = -F(s); }
+/*
+ * Floating point: the operations are SoftFloat's, with the rounding mode of the
+ * process; fpcheck() takes the flags they raised, and traps if the control word
+ * says so.  The result is stored when no trap has been taken.
+ */
+#define FPCHK()	do{ if(softfloat_exceptionFlags) fpcheck(); }while(0)
+#define FPARITH(f)	{ REAL r_ = f(F(m), F(s)); FPCHK(); F(d) = r_; }
+#define FPBRANCH(e)	{ int c_ = (e); FPCHK(); if(c_) JMP(d); }
+
+static const REAL fpzero = { 0 };
+static const REAL fphalf = { UINT64_C(0x3FE0000000000000) };
+
+/* round half away from zero, as the instructions used to do, then truncate */
+static REAL
+fpround(REAL f)
+{
+	if(f64_lt(f, fpzero))
+		return f64_sub(f, fphalf);
+	return f64_add(f, fphalf);
+}
+
+OP(negf) { F(d) = inferno_fp_neg(F(s)); }
 OP(jmp)  { JMP(d); }
 OP(movpc){ T(d) = &R.M->prog[W(s)]; }
 OP(movm) { memmove(R.d, R.s, W(m)); }
@@ -39,30 +60,30 @@ OP(movf) { F(d) = F(s); }
 OP(movl) { V(d) = V(s); }
 OP(cvtbw){ W(d) = B(s); }
 OP(cvtwb){ B(d) = W(s); }
-OP(cvtrf){ F(d) = SR(s); }
-OP(cvtfr){ SR(d) = F(s); }
+OP(cvtrf){ REAL r = f32_to_f64(SR(s)); FPCHK(); F(d) = r; }
+OP(cvtfr){ SREAL r = f64_to_f32(F(s)); FPCHK(); SR(d) = r; }
 OP(cvtws){ SH(d) = W(s); }
 OP(cvtsw){ W(d) = SH(s); }
-OP(cvtwf){ F(d) = W(s); }
+OP(cvtwf){ F(d) = i32_to_f64(W(s)); }
 OP(addb) { B(d) = B(m) + B(s); }
 OP(addw) { W(d) = W(m) + W(s); }
 OP(addl) { V(d) = V(m) + V(s); }
-OP(addf) { F(d) = F(m) + F(s); }
+OP(addf) FPARITH(f64_add)
 OP(subb) { B(d) = B(m) - B(s); }
 OP(subw) { W(d) = W(m) - W(s); }
 OP(subl) { V(d) = V(m) - V(s); }
-OP(subf) { F(d) = F(m) - F(s); }
+OP(subf) FPARITH(f64_sub)
 OP(divb) { B(d) = B(m) / B(s); }
 OP(divw) { W(d) = W(m) / W(s); }
 OP(divl) { V(d) = V(m) / V(s); }
-OP(divf) { F(d) = F(m) / F(s); }
+OP(divf) FPARITH(f64_div)
 OP(modb) { B(d) = B(m) % B(s); }
 OP(modw) { W(d) = W(m) % W(s); }
 OP(modl) { V(d) = V(m) % V(s); }
 OP(mulb) { B(d) = B(m) * B(s); }
 OP(mulw) { W(d) = W(m) * W(s); }
 OP(mull) { V(d) = V(m) * V(s); }
-OP(mulf) { F(d) = F(m) * F(s); }
+OP(mulf) FPARITH(f64_mul)
 OP(andb) { B(d) = B(m) & B(s); }
 OP(andw) { W(d) = W(m) & W(s); }
 OP(andl) { V(d) = V(m) & V(s); }
@@ -98,12 +119,12 @@ OP(bltl) { if(V(s) <  V(m)) JMP(d); }
 OP(blel) { if(V(s) <= V(m)) JMP(d); }
 OP(bgtl) { if(V(s) >  V(m)) JMP(d); }
 OP(bgel) { if(V(s) >= V(m)) JMP(d); }
-OP(beqf) { if(F(s) == F(m)) JMP(d); }
-OP(bnef) { if(F(s) != F(m)) JMP(d); }
-OP(bltf) { if(F(s) <  F(m)) JMP(d); }
-OP(blef) { if(F(s) <= F(m)) JMP(d); }
-OP(bgtf) { if(F(s) >  F(m)) JMP(d); }
-OP(bgef) { if(F(s) >= F(m)) JMP(d); }
+OP(beqf) FPBRANCH(f64_eq(F(s), F(m)))
+OP(bnef) FPBRANCH(!f64_eq(F(s), F(m)))
+OP(bltf) FPBRANCH(f64_lt(F(s), F(m)))
+OP(blef) FPBRANCH(f64_le(F(s), F(m)))
+OP(bgtf) FPBRANCH(f64_lt(F(m), F(s)))
+OP(bgef) FPBRANCH(f64_le(F(m), F(s)))
 OP(beqc) { if(stringcmp(S(s), S(m)) == 0) JMP(d); }
 OP(bnec) { if(stringcmp(S(s), S(m)) != 0) JMP(d); }
 OP(bltc) { if(stringcmp(S(s), S(m)) <  0) JMP(d); }
@@ -113,20 +134,22 @@ OP(bgec) { if(stringcmp(S(s), S(m)) >= 0) JMP(d); }
 OP(iexit){ error(""); }
 OP(cvtwl){ V(d) = W(s); }
 OP(cvtlw){ W(d) = V(s); }
-OP(cvtlf){ F(d) = V(s); }
+OP(cvtlf){ REAL r = i64_to_f64(V(s)); FPCHK(); F(d) = r; }
 OP(cvtfl)
 {
-	REAL f;
+	LONG v;
 
-	f = F(s);
-	V(d) = f < 0 ? f - .5 : f + .5;
+	v = inferno_fp_to_i64(fpround(F(s)));
+	FPCHK();
+	V(d) = v;
 }
 OP(cvtfw)
 {
-	REAL f;
+	WORD v;
 
-	f = F(s);
-	W(d) = f < 0 ? f - .5 : f + .5;
+	v = inferno_fp_to_i32(fpround(F(s)));
+	FPCHK();
+	W(d) = v;
 }
 OP(cvtcl)
 {
@@ -200,16 +223,17 @@ OP(iexpf)
 		n = -n;
 		inv = 1;
 	}
-	r = 1;
+	r = i32_to_f64(1);
 	for(;;){
 		if(n&1)
-			r *= x;
+			r = f64_mul(r, x);
 		if((n >>= 1) == 0)
 			break;
-		x *= x;
+		x = f64_mul(x, x);
 	}
 	if(inv)
-		r = 1/r;
+		r = f64_div(i32_to_f64(1), r);
+	FPCHK();
 	F(d) = r;
 }
 OP(indx)
@@ -1549,15 +1573,19 @@ OP(cvtxx)
 */
 OP(cvtfx)
 {
-	REAL v;
+	WORD v;
 
-	v = F(s)*F(m);
-	v = v < 0 ? v-0.5: v+0.5;
-	W(d) = (WORD)v;
+	v = inferno_fp_to_i32(fpround(f64_mul(F(s), F(m))));
+	FPCHK();
+	W(d) = v;
 }
 OP(cvtxf)
 {
-	F(d) = (REAL)W(s)*F(m);
+	REAL r;
+
+	r = f64_mul(i32_to_f64(W(s)), F(m));
+	FPCHK();
+	F(d) = r;
 }
 
 OP(self)

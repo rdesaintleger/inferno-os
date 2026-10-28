@@ -114,7 +114,7 @@ xprint(Prog *xp, void *vfp, void *vva, String *s1, char *buf, int n)
 			case 'G':
 				while((va - fp) & (sizeof(REAL)-1))
 					va++;
-				d = *(REAL*)va;
+				d = inferno_fp_to_host(*(REAL*)va);
 				b += HOSTED_API(snprint)(b, eb-b, fmt, d);
 				va += sizeof(REAL);
 				break;

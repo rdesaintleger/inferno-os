@@ -41,3 +41,23 @@ inferno_fp_with_lo(float64_t x, int32_t lo)
 	x.v = (x.v & ~UINT64_C(0xFFFFFFFF)) | (uint64_t)(uint32_t)lo;
 	return x;
 }
+
+double
+inferno_fp_to_host(float64_t x)
+{
+	union { double d; uint64_t u; } c;
+
+	c.u = x.v;
+	return c.d;
+}
+
+float64_t
+inferno_fp_from_host(double d)
+{
+	union { double d; uint64_t u; } c;
+	float64_t r;
+
+	c.d = d;
+	r.v = c.u;
+	return r;
+}
