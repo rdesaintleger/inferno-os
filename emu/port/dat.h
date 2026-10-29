@@ -23,8 +23,6 @@ typedef struct Ref	Ref;
 typedef struct Rendez	Rendez;
 typedef struct Rept	Rept;
 typedef struct Rootdata Rootdata;
-/*typedef struct RWlock	RWlock;*/
-typedef struct RWLock	RWlock;
 typedef struct Procs	Procs;
 typedef struct Signerkey Signerkey;
 typedef struct Skeyset	Skeyset;

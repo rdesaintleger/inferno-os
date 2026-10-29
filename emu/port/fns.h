@@ -8,7 +8,6 @@ Block*	allocb(int);
 Block*	bl2mem(uchar*, Block*, int);
 int	blocklen(Block*);
 char*	c2name(Chan*);
-int		canlock(Lock*);
 int		canqlock(QLock*);
 void		cclose(Chan*);
 void		chandevinit(void);

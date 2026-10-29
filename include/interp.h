@@ -52,7 +52,6 @@ typedef struct Alt	Alt;
 typedef struct Channel	Channel;
 typedef struct Progq	Progq;
 typedef struct Import	Import;
-typedef struct ILock	ILock;
 typedef struct Inst	Inst;
 typedef struct Module	Module;
 typedef struct Modlink	Modlink;
@@ -74,13 +73,6 @@ typedef struct Atidle	Atidle;
 typedef struct Altc	Altc;
 typedef struct Except Except;
 typedef struct Handler Handler;
-
-struct ILock
-{
-	int	lk;
-	int	pid;
-	void*	ql;
-};
 
 struct Frame
 {
@@ -437,8 +429,6 @@ extern	void		destroystack(REG*);
 extern	void		drawmodinit(void);
 extern	Type*		dtype(void (*)(Heap*, int), int, uchar*, int);
 extern	Module*		dupmod(Module*);
-extern	void		iqlock(ILock*);
-extern	void		iqunlock(ILock*);
 extern	void		loadermodinit(void);
 extern	void		error(char*);
 extern	void		errorf(char*, ...);

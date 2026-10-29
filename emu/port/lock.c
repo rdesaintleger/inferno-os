@@ -25,12 +25,6 @@ lock(Lock *l)
 	}
 }
 
-int
-canlock(Lock *l)
-{
-	return _tas(&l->val) == 0;
-}
-
 void
 unlock(Lock *l)
 {
@@ -63,7 +57,7 @@ qlock(QLock *q)
 int
 canqlock(QLock *q)
 {
-	if(!canlock(&q->use))
+	if(_tas(&q->use.val) != 0)
 		return 0;
 	if(q->locked){
 		unlock(&q->use);
