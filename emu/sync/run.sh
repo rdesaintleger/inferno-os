@@ -13,4 +13,7 @@ rc=0
 echo "== backend pthread"
 $CC $FLAGS -DBACKEND_PTHREAD -o $out.pthread test.c lock-pthread.c -lpthread || exit 1
 $out.pthread || rc=1
+echo "== backend coop"
+$CC $FLAGS -DBACKEND_COOP -o $out.coop test.c lock-coop.c || exit 1
+$out.coop || rc=1
 exit $rc

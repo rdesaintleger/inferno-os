@@ -1,12 +1,19 @@
 /*
  *  Tests of the synchronization API of include/inferno/lock.h, for any backend:
  *	cc -DBACKEND_PTHREAD test.c lock-pthread.c -lpthread
+ *	cc -DBACKEND_COOP test.c lock-coop.c
  *  Prints "PASS name" per test and exits 0 when all passed.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inferno/lock.h>
+#ifdef BACKEND_COOP
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include "lock-coop.h"
+#endif
 #ifdef BACKEND_PTHREAD
 #include <pthread.h>
 #include <sched.h>
@@ -447,6 +454,140 @@ t_short_pause_aborts(void)
 
 #endif /* BACKEND_PTHREAD */
 
+#ifdef BACKEND_COOP
+
+/*
+ *  Deterministic scenarios: context 0 and 1 are two "threads".  inferno_coop_wait
+ *  runs step(), one move of whoever holds what the waiter needs.
+ */
+static inferno_token_t CT[2];		/* canonical order: CT[0] first */
+#define CA	CT[0]
+#define CB	CT[1]
+static int stepno, step_freed_b;
+static void (*scenario)(void);
+
+static void
+wait_hook(void)
+{
+	int me = inferno_coop_current();
+
+	stepno++;
+	scenario();
+	inferno_coop_select(me);
+}
+
+/*
+ *  ctx 0 holds A (the lowest address); ctx 1 holds B and asks for A: B is released
+ *  and ctx 1 waits for A first, as the canonical order says; A is then handed over
+ */
+static void
+sc_a_holder(void)
+{
+	inferno_coop_select(0);
+	if(stepno == 1){
+		step_freed_b = inferno_token_try(&CB);	/* proves ctx 1 released B */
+		if(step_freed_b)
+			inferno_token_put(&CB);
+		inferno_token_put(&CA);
+	}
+}
+
+static void
+t_coop_pause(void)
+{
+	int r;
+
+	inferno_token_init(&CA);
+	inferno_token_init(&CB);
+	inferno_coop_select(0);
+	CHECK(inferno_token_get(&CA) == 0);
+	inferno_coop_select(1);
+	CHECK(inferno_token_get(&CB) == 0);
+	scenario = sc_a_holder;
+	inferno_coop_wait = wait_hook;
+	stepno = 0;
+	r = inferno_token_get(&CA);		/* ctx 1 waits: pause point */
+	inferno_coop_wait = NULL;
+	CHECK(r == 1);
+	CHECK(step_freed_b == 1);
+	CHECK(inferno_coop_current() == 1);
+	CHECK(inferno_token_held(&CA) && inferno_token_held(&CB));
+	inferno_token_put(&CA);
+	inferno_token_put(&CB);
+	inferno_coop_select(0);
+	CHECK(!inferno_token_held(&CA));
+	inferno_coop_select(0);
+}
+
+/* the same with a mutex taken by ctx 0 and released by ctx 1: no owner */
+static inferno_mutex_t CM;
+
+static void
+sc_unlock_other(void)
+{
+	inferno_coop_select(1);		/* not the one that took it */
+	inferno_mutex_unlock(&CM);
+}
+
+static void
+t_coop_mutex_noowner(void)
+{
+	inferno_mutex_init(&CM, 0);
+	inferno_coop_select(0);
+	CHECK(inferno_mutex_lock(&CM) == 0);
+	scenario = sc_unlock_other;
+	inferno_coop_wait = wait_hook;
+	stepno = 0;
+	CHECK(inferno_mutex_lock(&CM) == 1);	/* ctx 0 again: waits, ctx 1 releases */
+	inferno_coop_wait = NULL;
+	inferno_mutex_unlock(&CM);
+	inferno_coop_select(0);
+}
+
+/* the seqlock asks for a retry when a write happened in the read section */
+static void
+t_coop_seqlock_retry(void)
+{
+	inferno_seqlock_t l;
+	unsigned s;
+	int v = 1, copy, tries = 0;
+
+	inferno_seqlock_init(&l);
+	do{
+		s = inferno_seqlock_read_begin(&l);
+		copy = v;
+		if(tries++ == 0){			/* another context writes now */
+			inferno_seqlock_write_begin(&l);
+			v = 2;
+			inferno_seqlock_write_end(&l);
+		}
+	}while(inferno_seqlock_read_retry(&l, s));
+	CHECK(tries == 2 && copy == 2);
+}
+
+/* with no hook, a wait is a deadlock and must be reported */
+static void
+t_coop_deadlock_aborts(void)
+{
+	pid_t pid;
+	int st;
+	inferno_mutex_t m;
+
+	pid = fork();
+	if(pid == 0){
+		if(freopen("/dev/null", "w", stderr) == NULL)
+			_exit(1);
+		inferno_mutex_init(&m, 0);
+		inferno_mutex_lock(&m);
+		inferno_mutex_lock(&m);		/* must abort */
+		_exit(0);
+	}
+	waitpid(pid, &st, 0);
+	CHECK(WIFSIGNALED(st) && WTERMSIG(st) == SIGABRT);
+}
+
+#endif /* BACKEND_COOP */
+
 int
 main(void)
 {
@@ -458,6 +599,12 @@ main(void)
 	RUN("mutex", t_mutex());
 	RUN("seqlock", t_seqlock());
 	RUN("ref", t_ref());
+#ifdef BACKEND_COOP
+	RUN("coop-pause", t_coop_pause());
+	RUN("coop-mutex-noowner", t_coop_mutex_noowner());
+	RUN("coop-seqlock-retry", t_coop_seqlock_retry());
+	RUN("coop-deadlock-aborts", t_coop_deadlock_aborts());
+#endif
 #ifdef BACKEND_PTHREAD
 	RUN("short-pause-aborts", t_short_pause_aborts());
 	RUN("tokens-threads", t_tokens_threads(0));
