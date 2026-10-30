@@ -1,0 +1,476 @@
+/*
+ *  Tests of the synchronization API of include/inferno/lock.h, for any backend:
+ *	cc -DBACKEND_PTHREAD test.c lock-pthread.c -lpthread
+ *  Prints "PASS name" per test and exits 0 when all passed.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <inferno/lock.h>
+#ifdef BACKEND_PTHREAD
+#include <pthread.h>
+#include <sched.h>
+#include <signal.h>
+#include <time.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
+
+static int failed;
+
+#define CHECK(x) do { if(!(x)){ printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #x); failed++; } } while(0)
+
+static void
+report(const char *name, int before)
+{
+	printf("%s %s\n", failed == before ? "PASS" : "FAIL", name);
+}
+
+#define H(t) inferno_token_held(&(t))
+
+static void
+t_token(void)
+{
+	inferno_token_t a, b, c, *set[3];
+	inferno_token_saved_t s;
+	unsigned m0, m1;
+
+	inferno_token_init(&a); inferno_token_init(&b); inferno_token_init(&c);
+	CHECK(inferno_token_get(&a) == 0);
+	CHECK(H(a) && !H(b));
+	CHECK(inferno_token_get(&b) == 0);
+	inferno_token_put(&a);
+	CHECK(!H(a) && H(b));
+	inferno_token_put(&b);
+	CHECK(!H(b));
+
+	CHECK(inferno_token_try(&a) == 1);
+	inferno_token_put(&a);
+
+	/* marks: what was taken since is put back */
+	m0 = inferno_token_mark();
+	inferno_token_get(&a);
+	m1 = inferno_token_mark();
+	inferno_token_get(&b);
+	inferno_token_get(&c);
+	inferno_token_release_to(m1);
+	CHECK(H(a) && !H(b) && !H(c));
+	inferno_token_release_to(m0);
+	CHECK(!H(a));
+
+	/* get_all, in any order, duplicates ignored */
+	set[0] = &c; set[1] = &a; set[2] = &c;
+	CHECK(inferno_token_get_all(3, set) == 0);
+	CHECK(H(a) && H(c) && !H(b));
+	inferno_token_put(&a);
+	inferno_token_put(&c);
+
+	/* suspend / resume keep the acquisition order for the marks */
+	inferno_token_get(&a);
+	m1 = inferno_token_mark();
+	inferno_token_get(&b);
+	inferno_token_suspend(&s);
+	CHECK(s.n == 2 && !H(a) && !H(b));
+	inferno_token_resume(&s);
+	CHECK(H(a) && H(b));
+	inferno_token_release_to(m1);
+	CHECK(H(a) && !H(b));
+	inferno_token_put(&a);
+
+	inferno_token_destroy(&a); inferno_token_destroy(&b); inferno_token_destroy(&c);
+}
+
+static void
+t_debug(void)
+{
+	inferno_token_t a, b;
+	inferno_mutex_t m;
+	int i;
+
+	inferno_token_init(&a); inferno_token_init(&b);
+	inferno_mutex_init(&m, 0);
+	inferno_lock_debug(1, 1000);		/* always pause */
+	CHECK(inferno_token_get(&a) == 1);
+	CHECK(inferno_token_get(&b) == 1);
+	CHECK(H(a) && H(b));			/* all taken again */
+	inferno_token_put(&a);
+	inferno_token_put(&b);
+	CHECK(inferno_mutex_lock(&m) == 1);
+	inferno_mutex_unlock(&m);
+	inferno_lock_debug(1, 0);
+	CHECK(inferno_token_get(&a) == 0);
+	inferno_token_put(&a);
+	inferno_lock_debug(7, 500);		/* about half */
+	{
+		int n = 0;
+		for(i = 0; i < 1000; i++){
+			n += inferno_token_get(&a);
+			inferno_token_put(&a);
+		}
+		CHECK(n > 300 && n < 700);
+	}
+	inferno_lock_debug(0, 0);
+	inferno_token_destroy(&a); inferno_token_destroy(&b);
+	inferno_mutex_destroy(&m);
+}
+
+static void
+t_mutex(void)
+{
+	inferno_mutex_t m, sm;
+
+	inferno_mutex_init(&m, 0);
+	inferno_mutex_init(&sm, INFERNO_MUTEX_SHORT);
+	CHECK(inferno_mutex_lock(&m) == 0);
+	CHECK(inferno_mutex_trylock(&m) == 0);
+	inferno_mutex_unlock(&m);
+	CHECK(inferno_mutex_trylock(&m) == 1);
+	inferno_mutex_unlock(&m);
+	CHECK(inferno_mutex_lock(&sm) == 0);
+	CHECK(inferno_mutex_trylock(&sm) == 0);
+	inferno_mutex_unlock(&sm);
+	inferno_mutex_destroy(&m);
+	inferno_mutex_destroy(&sm);
+}
+
+static void
+t_seqlock(void)
+{
+	inferno_seqlock_t l;
+	unsigned s;
+	int v = 1, copy, tries = 0;
+
+	inferno_seqlock_init(&l);
+	do{
+		s = inferno_seqlock_read_begin(&l);
+		copy = v;
+		tries++;
+	}while(inferno_seqlock_read_retry(&l, s));
+	CHECK(copy == 1 && tries == 1);
+	inferno_seqlock_write_begin(&l);
+	v = 2;
+	inferno_seqlock_write_end(&l);
+	do{
+		s = inferno_seqlock_read_begin(&l);
+		copy = v;
+	}while(inferno_seqlock_read_retry(&l, s));
+	CHECK(copy == 2);
+	inferno_seqlock_destroy(&l);
+}
+
+static void
+t_ref(void)
+{
+	inferno_ref_t r;
+
+	inferno_ref_init(&r, 1);
+	CHECK(inferno_ref_inc(&r) == 2);
+	CHECK(inferno_ref_dec(&r) == 1);
+	CHECK(inferno_ref_dec(&r) == 0);
+	CHECK(inferno_ref_get(&r) == 0);
+}
+
+#ifdef BACKEND_PTHREAD
+
+#define NTHREAD	4
+
+/* a pthread-specific helper: run n copies of f, wait for them */
+static void
+spawn(int n, void *(*f)(void*))
+{
+	pthread_t th[NTHREAD];
+	int i;
+
+	for(i = 0; i < n; i++)
+		pthread_create(&th[i], NULL, f, (void*)(long)i);
+	for(i = 0; i < n; i++)
+		pthread_join(th[i], NULL);
+}
+
+static void
+nap(void)
+{
+	struct timespec ts;
+
+	ts.tv_sec = 0;
+	ts.tv_nsec = 1000000;
+	nanosleep(&ts, NULL);
+}
+
+/* tokens taken in all orders by several threads: exclusivity, no deadlock, no lost update */
+static inferno_token_t T[3];
+static long cnt[3];
+#define NITER	20000
+
+static void*
+tokworker(void *arg)
+{
+	unsigned r = (unsigned)(long)arg * 7919u + 1;
+	int i, x, y, pr;
+	long vx, a;
+
+	for(i = 0; i < NITER; i++){
+		r = r * 1103515245u + 12345u;
+		x = (r >> 8) % 3;
+		y = (r >> 12) % 3;
+		if(x == y)
+			y = (x + 1) % 3;
+		inferno_token_get(&T[x]);
+		vx = cnt[x];
+		pr = inferno_token_get(&T[y]);
+		if(pr == 0 && cnt[x] != vx){
+			printf("FAIL: data under a token held changed without a pause\n");
+			failed++;
+		}
+		a = cnt[x];
+		if(i % 16 == 0)
+			sched_yield();
+		if(cnt[x] != a){
+			printf("FAIL: exclusivity lost on token %d\n", x);
+			failed++;
+		}
+		cnt[x] = a + 1;
+		a = cnt[y];
+		if(i % 16 == 8)
+			sched_yield();
+		cnt[y] = a + 1;
+		inferno_token_put(&T[y]);
+		inferno_token_put(&T[x]);
+	}
+	return NULL;
+}
+
+static void
+t_tokens_threads(int permille)
+{
+	int i;
+
+	for(i = 0; i < 3; i++){
+		inferno_token_init(&T[i]);
+		cnt[i] = 0;
+	}
+	inferno_lock_debug(42, permille);
+	spawn(NTHREAD, tokworker);
+	inferno_lock_debug(0, 0);
+	CHECK(cnt[0] + cnt[1] + cnt[2] == 2L * NTHREAD * NITER);
+	for(i = 0; i < 3; i++)
+		inferno_token_destroy(&T[i]);
+}
+
+/* get_all against incremental gets, in opposite orders */
+static void*
+allworker(void *arg)
+{
+	inferno_token_t *set[3];
+	int i;
+
+	for(i = 0; i < NITER/4; i++){
+		if((long)arg & 1){
+			set[0] = &T[0]; set[1] = &T[1]; set[2] = &T[2];
+		}else{
+			set[0] = &T[2]; set[1] = &T[1]; set[2] = &T[0];
+		}
+		inferno_token_get_all(3, set);
+		cnt[0]++; cnt[1]++; cnt[2]++;
+		if(i % 8 == 0)
+			sched_yield();
+		inferno_token_put(&T[0]); inferno_token_put(&T[1]); inferno_token_put(&T[2]);
+	}
+	return NULL;
+}
+
+static void
+t_get_all_threads(void)
+{
+	int i;
+
+	for(i = 0; i < 3; i++){
+		inferno_token_init(&T[i]);
+		cnt[i] = 0;
+	}
+	inferno_lock_debug(5, 200);
+	spawn(NTHREAD, allworker);
+	inferno_lock_debug(0, 0);
+	for(i = 0; i < 3; i++)
+		CHECK(cnt[i] == (long)NTHREAD * (NITER/4));
+	for(i = 0; i < 3; i++)
+		inferno_token_destroy(&T[i]);
+}
+
+/* short mutex and seqlock under contention */
+static inferno_mutex_t SM;
+static inferno_seqlock_t SL;
+static long shared_a, shared_b;
+
+static void*
+shortworker(void *arg)
+{
+	int i;
+	long a, b;
+	unsigned s;
+
+	for(i = 0; i < NITER; i++){
+		if((long)arg == 0){
+			inferno_seqlock_write_begin(&SL);
+			shared_a++;
+			shared_b++;
+			inferno_seqlock_write_end(&SL);
+		}else{
+			do{
+				s = inferno_seqlock_read_begin(&SL);
+				a = shared_a;
+				b = shared_b;
+			}while(inferno_seqlock_read_retry(&SL, s));
+			if(a != b){
+				printf("FAIL: seqlock reader saw a torn value\n");
+				failed++;
+			}
+		}
+		inferno_mutex_lock(&SM);
+		cnt[0]++;
+		inferno_mutex_unlock(&SM);
+	}
+	return NULL;
+}
+
+static void
+t_short_seq_threads(void)
+{
+	inferno_mutex_init(&SM, INFERNO_MUTEX_SHORT);
+	inferno_seqlock_init(&SL);
+	cnt[0] = 0;
+	spawn(NTHREAD, shortworker);
+	CHECK(cnt[0] == (long)NTHREAD * NITER);
+	CHECK(shared_a == NITER && shared_b == NITER);
+	inferno_mutex_destroy(&SM);
+	inferno_seqlock_destroy(&SL);
+}
+
+/* a mutex has no owner: taken by a thread, released by another */
+static inferno_mutex_t XM;
+
+static void*
+locker(void *arg)
+{
+	(void)arg;
+	inferno_mutex_lock(&XM);
+	return NULL;
+}
+
+static void
+t_mutex_transfer(void)
+{
+	pthread_t th;
+
+	inferno_mutex_init(&XM, 0);
+	pthread_create(&th, NULL, locker, NULL);
+	pthread_join(th, NULL);
+	CHECK(inferno_mutex_trylock(&XM) == 0);
+	inferno_mutex_unlock(&XM);
+	CHECK(inferno_mutex_trylock(&XM) == 1);
+	inferno_mutex_unlock(&XM);
+	inferno_mutex_destroy(&XM);
+}
+
+/* a thread that waits on a mutex releases its tokens, and takes them back */
+static inferno_token_t PA;
+static inferno_mutex_t PM;
+static volatile int p_state, p_ret, p_held;
+
+static void*
+pausethr(void *arg)
+{
+	(void)arg;
+	inferno_token_get(&PA);
+	p_state = 1;
+	p_ret = inferno_mutex_lock(&PM);	/* held by main: slow path */
+	p_held = inferno_token_held(&PA);
+	inferno_mutex_unlock(&PM);
+	inferno_token_put(&PA);
+	p_state = 2;
+	return NULL;
+}
+
+static void
+t_pause_releases(void)
+{
+	pthread_t th;
+	int i, got;
+
+	inferno_token_init(&PA);
+	inferno_mutex_init(&PM, 0);
+	p_state = p_ret = p_held = 0;
+	inferno_mutex_lock(&PM);
+	pthread_create(&th, NULL, pausethr, NULL);
+	for(i = 0; i < 5000 && p_state != 1; i++)	/* it holds the token now */
+		nap();
+	got = 0;
+	for(i = 0; i < 5000 && !got; i++){	/* the token must come free while it waits */
+		got = inferno_token_try(&PA);
+		if(!got)
+			nap();
+	}
+	CHECK(got);
+	if(got)
+		inferno_token_put(&PA);
+	inferno_mutex_unlock(&PM);
+	pthread_join(th, NULL);
+	CHECK(p_ret == 1);
+	CHECK(p_held == 1);
+	inferno_token_destroy(&PA);
+	inferno_mutex_destroy(&PM);
+}
+
+/* pausing with a short mutex held is a bug that must be caught */
+static void
+t_short_pause_aborts(void)
+{
+	pid_t pid;
+	int st;
+	inferno_mutex_t sm;
+	inferno_token_t a;
+	inferno_token_saved_t s;
+
+	pid = fork();
+	if(pid == 0){
+		if(freopen("/dev/null", "w", stderr) == NULL)
+			_exit(1);
+		inferno_mutex_init(&sm, INFERNO_MUTEX_SHORT);
+		inferno_token_init(&a);
+		inferno_mutex_lock(&sm);
+		inferno_token_suspend(&s);	/* must abort */
+		_exit(0);
+	}
+	waitpid(pid, &st, 0);
+	CHECK(WIFSIGNALED(st) && WTERMSIG(st) == SIGABRT);
+}
+
+#endif /* BACKEND_PTHREAD */
+
+int
+main(void)
+{
+	int b;
+
+#define RUN(name, call) do { b = failed; call; report(name, b); } while(0)
+	RUN("token", t_token());
+	RUN("debug", t_debug());
+	RUN("mutex", t_mutex());
+	RUN("seqlock", t_seqlock());
+	RUN("ref", t_ref());
+#ifdef BACKEND_PTHREAD
+	RUN("short-pause-aborts", t_short_pause_aborts());
+	RUN("tokens-threads", t_tokens_threads(0));
+	RUN("tokens-threads-forced-pause", t_tokens_threads(300));
+	RUN("get-all-threads", t_get_all_threads());
+	RUN("short-seqlock-threads", t_short_seq_threads());
+	RUN("mutex-transfer", t_mutex_transfer());
+	RUN("pause-releases-tokens", t_pause_releases());
+#endif
+	if(failed){
+		printf("%d checks failed\n", failed);
+		return 1;
+	}
+	printf("all lock tests passed\n");
+	return 0;
+}

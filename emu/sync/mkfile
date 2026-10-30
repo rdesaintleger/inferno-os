@@ -1,0 +1,6 @@
+<../../mkconfig
+
+# Tests of the synchronization API (include/inferno/lock.h) and its backends,
+# standalone (no emu needed):  mk test
+test:V:
+	sh run.sh
