@@ -11,6 +11,7 @@ TARG=\
 	clash.dis\
 	sys.dis\
 	math.dis\
+	intr.dis\
 
 DATA=\
 	run.sh\
@@ -23,6 +24,7 @@ DATA=\
 	clash.exp\
 	sys.exp\
 	math.exp\
+	intr.exp\
 	ui.exp\
 	dev-env.exp\
 	dev-dup.exp\

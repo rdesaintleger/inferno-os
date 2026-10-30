@@ -8,6 +8,9 @@
  *	md5sum /dev/snapshot.ppm
  * The file is read-only.  Reading it before anything has used /dev/draw
  * (no screen yet) fails.
+ *
+ * #T/osenterdelay (read: "pid ms"; write: "pid ms", the osenters of the Prog pid wait ms) and #T/hostcalls (read: how many
+ * processes are in a host call) are hooks for emu/test/intr.b, see proc.c.
  */
 #include	"dat.h"
 #include	"fns.h"
@@ -15,14 +18,22 @@
 
 extern	uchar*	testscreen(int*, int*);	/* win-test.c: pixels (XRGB32, little endian) and size */
 
+extern	int	osenterdelayms;		/* proc.c: test hooks, see there */
+extern	int	osenterdelaypid;
+extern	int	oshostcalls(void);
+
 enum{
 	Qdir,
 	Qppm,
+	Qdelay,
+	Qhostcalls,
 };
 
 static Dirtab snaptab[]={
 	".",		{Qdir, 0, QTDIR},	0,	0555,
 	"snapshot.ppm",	{Qppm},			0,	0444,
+	"osenterdelay",	{Qdelay},		0,	0666,
+	"hostcalls",	{Qhostcalls},		0,	0444,
 };
 
 static int
@@ -84,6 +95,14 @@ snapread(Chan *c, void *a, long n, vlong off)
 	if(c->qid.type & QTDIR)
 		return devdirread(c, a, n, snaptab, nelem(snaptab), devgen);
 
+	if(c->qid.path == Qdelay || c->qid.path == Qhostcalls){
+		if(c->qid.path == Qdelay)
+			HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%d %d\n", osenterdelaypid, osenterdelayms);
+		else
+			HOSTED_API(snprint)(up->genbuf, sizeof(up->genbuf), "%d\n", oshostcalls());
+		return readstr(off, a, n, up->genbuf);
+	}
+
 	screen = testscreen(&w, &h);
 	if(screen == nil)
 		error("no screen");
@@ -109,12 +128,20 @@ snapread(Chan *c, void *a, long n, vlong off)
 static long
 snapwrite(Chan *c, void *a, long n, vlong off)
 {
-	USED(c);
-	USED(a);
-	USED(n);
+	char *p;
+
 	USED(off);
-	error(Eperm);
-	return 0;
+	if(c->qid.path != Qdelay)
+		error(Eperm);
+	if(n >= sizeof(up->genbuf))
+		n = sizeof(up->genbuf)-1;
+	memmove(up->genbuf, a, n);
+	up->genbuf[n] = 0;
+	osenterdelaypid = atoi(up->genbuf);
+	for(p = up->genbuf; *p != 0 && *p != ' '; p++)
+		;
+	osenterdelayms = atoi(p);
+	return n;
 }
 
 Dev snapdevtab = {

@@ -125,10 +125,48 @@ notkilled(void)
 	unlock(&up->rlock);
 }
 
+/*
+ *  Test hooks, driven from #T (devsnap.c, headless emu-t only): osenterdelayms
+ *  makes every osenter done for the Prog osenterdelaypid wait that long (yielding)
+ *  after it has announced the host call, which is the window in which swiproc's
+ *  signal used to be lost; oshostcalls counts the processes that are between
+ *  osenter and osleave.  emu/test/intr.b uses them.
+ */
+int osenterdelayms;
+int osenterdelaypid;
+
+int
+oshostcalls(void)
+{
+	Proc *p;
+	int n;
+
+	n = 0;
+	lock(&procs.l);
+	for(p = procs.head; p != nil; p = p->next)
+		if(p->syscall)
+			n++;
+	unlock(&procs.l);
+	return n;
+}
+
+static void
+osenterdelay(void)
+{
+	vlong t;
+
+	if(osenterdelayms > 0 && up->iprog != nil && ((Prog*)up->iprog)->pid == osenterdelaypid){
+		t = osusectime() + (vlong)osenterdelayms*1000;
+		while(osusectime() < t)
+			osyield();
+	}
+}
+
 void
 osenter(void)
 {
 	up->syscall = 1;
+	osenterdelay();
 }
 
 void
