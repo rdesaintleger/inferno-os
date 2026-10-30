@@ -4,3 +4,7 @@
 # standalone (no emu needed):  mk test
 test:V:
 	sh run.sh
+
+# Cost of the primitives without contention
+bench:V:
+	sh run.sh bench
