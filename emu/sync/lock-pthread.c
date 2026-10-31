@@ -26,14 +26,20 @@ mkkey(void)
 		die("cannot create the thread key");
 }
 
+static volatile int keyready;	/* the key exists: spares a pthread_once on every call */
+
 static Thread*
 selfthread(void)
 {
 	Thread *t;
 
-	pthread_once(&keyonce, mkkey);
+	if(!keyready){
+		pthread_once(&keyonce, mkkey);
+		keyready = 1;
+	}
 	t = pthread_getspecific(key);
-	thread_ctx(t);
+	if(t == NULL || t->ctx.magic != INFERNO_THREAD_MAGIC)
+		thread_ctx(t);		/* dies, with the right message */
 	return t;
 }
 
@@ -62,10 +68,16 @@ prim_destroy(Prim *p)
 	pthread_mutex_destroy(&p->m);
 }
 
+/* a token or a short mutex is released by its holder: the pthread mutex is enough */
+#define RAW(p)	((p)->flags & (INFERNO_PRIM_TOKEN | INFERNO_MUTEX_SHORT))
+
 static int
 prim_try(Prim *p)
 {
 	int r;
+
+	if(RAW(p))
+		return pthread_mutex_trylock(&p->m) == 0;
 
 	pthread_mutex_lock(&p->m);
 	r = !p->locked;
@@ -78,6 +90,10 @@ prim_try(Prim *p)
 static void
 prim_wait(Prim *p)
 {
+	if(RAW(p)){
+		pthread_mutex_lock(&p->m);
+		return;
+	}
 	pthread_mutex_lock(&p->m);
 	p->nwait++;
 	while(p->locked)
@@ -90,6 +106,10 @@ prim_wait(Prim *p)
 static void
 prim_put(Prim *p)
 {
+	if(RAW(p)){
+		pthread_mutex_unlock(&p->m);
+		return;
+	}
 	pthread_mutex_lock(&p->m);
 	p->locked = 0;
 	if(p->nwait)

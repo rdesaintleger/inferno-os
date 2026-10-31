@@ -968,6 +968,25 @@ t_nogo(void)
 	CHECK(aborts(nogo_end_unbalanced));
 }
 
+/* statics need no init call */
+static inferno_mutex_t smx = INFERNO_MUTEX_INITIALIZER(INFERNO_MUTEX_SHORT);
+static inferno_mutex_t lmx = INFERNO_MUTEX_INITIALIZER(0);
+static inferno_token_t stok = INFERNO_TOKEN_INITIALIZER;
+
+static void
+t_static_init(void)
+{
+	CHECK(inferno_mutex_lock(&smx) == 0);
+	CHECK(inferno_mutex_trylock(&smx) == 0);
+	inferno_mutex_unlock(&smx);
+	CHECK(inferno_mutex_lock(&lmx) == 0);
+	inferno_mutex_unlock(&lmx);
+	CHECK(inferno_token_get(&stok) == 0);
+	CHECK(inferno_token_held(&stok));
+	inferno_token_put(&stok);
+	CHECK(!inferno_token_held(&stok));
+}
+
 #ifdef BACKEND_COOP
 
 /*
@@ -1225,6 +1244,7 @@ main(void)
 	RUN("attach-checked", t_attach_checked());
 	RUN("many-tokens", t_many_tokens());
 	RUN("nogo", t_nogo());
+	RUN("static-init", t_static_init());
 #ifdef BACKEND_COOP
 	RUN("coop-pause", t_coop_pause());
 	RUN("coop-mutex-noowner", t_coop_mutex_noowner());

@@ -9,6 +9,12 @@ struct inferno_prim {
 	int	locked;
 };
 
+#define INFERNO_PRIM_TOKEN	2	/* flags of a token (INFERNO_MUTEX_SHORT is 1) */
+
+/* for statics, with no init call */
+#define INFERNO_MUTEX_INITIALIZER(flags)	{ { (flags), 0 } }
+#define INFERNO_TOKEN_INITIALIZER		{ { INFERNO_PRIM_TOKEN, 0 }, NULL, 0 }
+
 struct inferno_token {
 	struct inferno_prim	p;	/* first: the core converts between the two */
 	struct inferno_token	*held_next;	/* the tokens held by a thread; only its holder uses them */

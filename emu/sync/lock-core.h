@@ -28,7 +28,7 @@ typedef char token_prim_first[offsetof(struct inferno_token, p) == 0 ? 1 : -1];
 typedef char thread_ctx_first[offsetof(struct inferno_thread, ctx) == 0 ? 1 : -1];
 #define TOKEN(prim)	((inferno_token_t*)(prim))
 
-#define F_TOKEN	2
+#define F_TOKEN	INFERNO_PRIM_TOKEN
 
 static unsigned dbg_seed;
 static int dbg_permille;
