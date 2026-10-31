@@ -67,6 +67,7 @@ so_send(int sock, void *va, int len, void *hdr, int hdrlen)
 	char *h = hdr;
 
 	osenter();
+	oswaitfd(sock, OSWRITE);
 	if(hdr == 0)
 		r = write(sock, va, len);
 	else {
@@ -102,6 +103,7 @@ so_recv(int sock, void *va, int len, void *hdr, int hdrlen)
 	char h[Udphdrlen];
 
 	osenter();
+	oswaitfd(sock, OSREAD);
 	if(hdr == 0)
 		r = read(sock, va, len);
 	else {
@@ -182,7 +184,7 @@ so_connect(int fd, uchar *raddr, ushort rport)
 	memmove((uchar*)&sin6->sin6_addr, raddr, IPaddrlen);
 
 	osenter();
-	r = connect(fd, (struct sockaddr*)sin6, sizeof(*sin6));
+	r = osconnect(fd, sin6, sizeof(*sin6));
 	osleave();
 	if(r < 0)
 		oserror();
@@ -230,6 +232,7 @@ so_accept(int fd, uchar *raddr, ushort *rport)
 
 	len = sizeof(*sin6);
 	osenter();
+	oswaitfd(fd, OSREAD);
 	nfd = accept(fd, (struct sockaddr*)&sa, &len);
 	osleave();
 	if(nfd < 0)

@@ -107,12 +107,9 @@ swiproc(Proc *p, int interp)
 	 * Maybe pull out of Host OS
 	 */
 	lock(&p->sysio);
-	if(p->syscall && p->intwait == 0) {
+	if(p->syscall) {
 		p->swipend = 1;
-		p->intwait = 1;
-		unlock(&p->sysio);
-		oshostintr(p);
-		return;	
+		oshostintr(p);	/* under sysio: osleave clears it under the same lock */
 	}
 	unlock(&p->sysio);
 }
@@ -169,23 +166,25 @@ osenter(void)
 	osenterdelay();
 }
 
+/*
+ *  The host call is over (or was interrupted).  An interrupt (oshostintr) is only
+ *  made while syscall is set, under sysio, and the flag it leaves is cleared here
+ *  under the same lock, so one that comes too late is never left for a later wait.
+ */
 void
 osleave(void)
 {
 	int r;
 
+	lock(&up->sysio);
+	up->syscall = 0;
+	osintrclear();
+	unlock(&up->sysio);
+
 	lock(&up->rlock);
 	r = up->swipend;
 	up->swipend = 0;
 	unlock(&up->rlock);
-
-	lock(&up->sysio);
-	up->syscall = 0;
-	unlock(&up->sysio);
-
-	/* Cleared by the signal/note/exception handler */
-	while(up->intwait)
-		osyield();
 
 	if(r != 0)
 		error(Eintr);

@@ -75,23 +75,6 @@ trapmemref(int signo, siginfo_t *si, void *a)
 		sysfault("segmentation violation addr=", si->si_addr);
 }
 
-static void
-trapUSR1(int signo)
-{
-	int intwait;
-
-	USED(signo);
-
-	intwait = up->intwait;
-	up->intwait = 0;	/* clear it to let proc continue in osleave */
-
-	if(up->type != Interp)		/* Used to unblock pending I/O */
-		return;
-
-	if(intwait == 0)		/* Not posted so it's a sync error */
-		disfault(nil, Eintr);	/* Should never happen */
-}
-
 void
 oslongjmp(void *regs, osjmpbuf env, int val)
 {
@@ -121,11 +104,6 @@ termrestore(void)
 void
 cleanexit(int x)
 {
-	if(up->intwait) {
-		up->intwait = 0;
-		return;
-	}
-
 	if(dflag == 0)
 		termrestore();
 
@@ -168,9 +146,6 @@ libinit(char *imod)
 		termset();
 
 	memset(&act, 0, sizeof(act));
-	act.sa_handler = trapUSR1;
-	sigaction(SIGUSR1, &act, nil);
-
 	act.sa_handler = SIG_IGN;
 	sigaction(SIGCHLD, &act, nil);
 
@@ -281,17 +256,19 @@ osusectime(void)
 int
 osmillisleep(ulong milsec)
 {
-    struct timespec req, rem;
-
-    req.tv_sec  = milsec / 1000;
-    req.tv_nsec = (milsec % 1000) * 1000000;
+	struct timespec req, rem;
 
 	/*
-	 * this call can be interrupted by SIGUSR1
+	 * interruptible by swiproc (through inferno_thread_interrupt)
 	 */
-    nanosleep(&req, &rem);
-
-    return 0;
+	if(inferno_thread_current() != nil){
+		inferno_sleep(milsec);
+		return 0;
+	}
+	req.tv_sec  = milsec / 1000;
+	req.tv_nsec = (milsec % 1000) * 1000000;
+	nanosleep(&req, &rem);
+	return 0;
 }
 
 int

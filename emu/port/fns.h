@@ -197,6 +197,10 @@ void		vmachine(void*);
 int		walk(Chan**, char**, int, int, int*);
 void		cleanexit(int);
 void		oshostintr(Proc*);
+void		osintrclear(void);
+enum { OSREAD = 1, OSWRITE = 2 };	/* events of oswaitfd */
+void		oswaitfd(int, int);
+int		osconnect(int, void*, int);
 void		osenter(void);
 void		osleave(void);
 void		oslopri(void);

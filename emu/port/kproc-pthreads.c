@@ -11,6 +11,8 @@
 #include	<errno.h>
 #include	<semaphore.h>
 #include	<sched.h>
+#include	<fcntl.h>
+#include	<sys/socket.h>
 #include	<inferno/lock-types.h>
 
 #ifdef __NetBSD__
@@ -20,7 +22,6 @@
 
 typedef struct Osdep Osdep;
 struct Osdep {
-	sem_t	sem;
 	pthread_t	self;
 	inferno_thread_t	th;	/* descriptor of the thread for the synchronization API */
 };
@@ -73,7 +74,6 @@ pexit(char *msg, int t)
 	if(os != nil){
 		inferno_thread_detach();
 		inferno_thread_destroy(&os->th);
-		sem_destroy(&os->sem);
 		HOSTED_API(free)(os);
 	}
 	HOSTED_API(free)(p);
@@ -126,7 +126,6 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 	if(os == nil)
 		panic("kproc: no memory");
 	os->self = 0;	/* set by tramp */
-	sem_init(&os->sem, 0, 0);
 	if(inferno_thread_init(&os->th) != 0)
 		panic("kproc: no memory");
 	p->os = os;
@@ -181,25 +180,82 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 	pthread_attr_destroy(&attr);
 }
 
-/* called to wake up kproc blocked on a syscall */
+/*
+ *  Called by swiproc, under p->sysio, to pull p out of a host call: the wait that p
+ *  is in (or is about to enter: the interrupt is level-triggered) returns.
+ */
 void
 oshostintr(Proc *p)
 {
 	Osdep *os;
 
 	os = p->os;
-	if(os != nil && os->self != 0)
-		pthread_kill(os->self, SIGUSR1);
+	if(os != nil)
+		inferno_thread_interrupt(&os->th);
+}
+
+/* called by osleave under sysio: an interrupt that the call did not consume is forgotten */
+void
+osintrclear(void)
+{
+	inferno_thread_clear_interrupt();
+}
+
+/*
+ *  Wait, in a host call announced by osenter, until fd is ready (OSREAD, OSWRITE):
+ *  the call that follows will not block.  If swiproc interrupts the wait, the host
+ *  call is left (osleave) and Eintr is raised, so this does not return.
+ */
+void
+oswaitfd(int fd, int events)
+{
+	int ready, ev;
+
+	ev = 0;
+	if(events & OSREAD)
+		ev |= INFERNO_FD_READ;
+	if(events & OSWRITE)
+		ev |= INFERNO_FD_WRITE;
+	if(inferno_wait_fd(fd, ev, -1, &ready) != INFERNO_WAIT_INTR)
+		return;
+	osleave();
+	error(Eintr);
+}
+
+/* connect, interruptible; between osenter and osleave like the other calls */
+int
+osconnect(int fd, void *sa, int len)
+{
+	int fl, r, e, err;
+	socklen_t el;
+
+	fl = fcntl(fd, F_GETFL);
+	fcntl(fd, F_SETFL, fl | O_NONBLOCK);
+	r = connect(fd, sa, len);
+	if(r < 0 && errno == EINPROGRESS){
+		oswaitfd(fd, OSWRITE);
+		err = 0;
+		el = sizeof(err);
+		if(getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &el) < 0)
+			err = errno;
+		if(err != 0){
+			errno = err;
+			r = -1;
+		}else
+			r = 0;
+	}
+	e = errno;
+	fcntl(fd, F_SETFL, fl);
+	errno = e;
+	return r;
 }
 
 void
 osblock(void)
 {
-	Osdep *os;
-
-	os = up->os;
-	while(sem_wait(&os->sem))
-		{}	/* retry on signals (which shouldn't happen) */
+	/* a pause point for the tokens; an interrupt is not for this wait (swiproc does not make one outside a host call) */
+	while(inferno_wait() != INFERNO_WAIT_WOKEN)
+		{}
 }
 
 void
@@ -208,7 +264,7 @@ osready(Proc *p)
 	Osdep *os;
 
 	os = p->os;
-	sem_post(&os->sem);
+	inferno_wake(&os->th);
 }
 
 void
@@ -226,7 +282,6 @@ kprocinit(Proc *p)
 	if(os == nil)
 		panic("kprocinit: no memory");
 	os->self = pthread_self();
-	sem_init(&os->sem, 0, 0);
 	if(inferno_thread_init(&os->th) != 0)
 		panic("kprocinit: no memory");
 	p->os = os;

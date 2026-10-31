@@ -381,6 +381,7 @@ eiaread(Chan *c, void *buf, long n, vlong offset)
 	switch(NETTYPE(c->qid.path)) {
 	case Ndataqid:
 	  	osenter(); 
+		oswaitfd(eia[port].fd, OSREAD);
 		cnt = read(eia[port].fd, buf, n);
 		osleave(); 
 		if(cnt == -1)
@@ -410,6 +411,7 @@ eiawrite(Chan *c, void *buf, long n, vlong offset)
 	switch(NETTYPE(c->qid.path)) {
 	case Ndataqid:
 	  	osenter(); 
+		oswaitfd(eia[port].fd, OSWRITE);
 		cnt = write(eia[port].fd, buf, n);
 		osleave(); 
 		if(cnt == -1)

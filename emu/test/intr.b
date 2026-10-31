@@ -9,7 +9,8 @@ include "draw.m";
 # call used to be lost then, and the process stayed in the call.  The hooks of #T
 # open that window (/dev/osenterdelay) and tell how many processes are in a host
 # call (/dev/hostcalls); the Prog itself disappears at once, whatever its thread does.
-# usage: intr [n]   expected: "intr: 0 of n killed processes stayed blocked"
+# The same for a process in Sys->sleep.
+# usage: intr [n]   expected: two lines "intr: 0 of n killed processes stayed blocked"
 
 Intr: module { init: fn(ctxt: ref Draw->Context, argv: list of string); };
 
@@ -17,6 +18,10 @@ reader(fd: ref Sys->FD, pidc: chan of int, go: chan of int)
 {
 	pidc <-= sys->pctl(0, nil);
 	<-go;
+	if(fd == nil){
+		sys->sleep(20000);
+		return;
+	}
 	buf := array[64] of byte;
 	sys->read(fd, buf, len buf);
 }
@@ -69,6 +74,45 @@ settle(n: int, s: int): int
 	return 0;
 }
 
+# kill n processes inside the window of their host call: reading from a host
+# command (what = "read") or sleeping (what = "sleep"); how many stayed in it?
+trial(what: string, n: int): int
+{
+	stuck := 0;
+	for(i := 0; i < n; i++){
+		ctl: ref Sys->FD;
+		data: ref Sys->FD;
+		if(what == "read"){
+			(ctl, data) = hostcmd();
+			if(data == nil){
+				sys->print("hostcmd: %r\n");
+				return -1;
+			}
+			sys->sleep(50);		# the process that waits for the command is in its host call
+		}
+		h0 := hostcalls();
+		pidc := chan of int;
+		go := chan of int;
+		spawn reader(data, pidc, go);
+		pid := <-pidc;
+		setdelay(pid, 20);
+		go <-= 1;
+		sys->sleep(5);		# inside the delay of the reader's osenter
+		pfd := sys->open("/prog/" + string pid + "/ctl", Sys->OWRITE);
+		if(pfd == nil){
+			sys->print("open prog ctl: %r\n");
+			return -1;
+		}
+		sys->fprint(pfd, "kill");
+		if(!settle(h0, 1))
+			stuck++;
+		ctl = nil;		# kills the command, which frees a reader that was stuck
+		settle(0, 3);
+	}
+	setdelay(0, 0);
+	return stuck;
+}
+
 init(nil: ref Draw->Context, argv: list of string)
 {
 	sys = load Sys Sys->PATH;
@@ -81,33 +125,10 @@ init(nil: ref Draw->Context, argv: list of string)
 	n := 10;
 	if(tl argv != nil)
 		n = int hd tl argv;
-	stuck := 0;
-	for(i := 0; i < n; i++){
-		(ctl, data) := hostcmd();
-		if(data == nil){
-			sys->print("hostcmd: %r\n");
-			return;
-		}
-		sys->sleep(50);		# the process that waits for the command is in its host call
-		h0 := hostcalls();
-		pidc := chan of int;
-		go := chan of int;
-		spawn reader(data, pidc, go);
-		pid := <-pidc;
-		setdelay(pid, 20);
-		go <-= 1;
-		sys->sleep(5);		# inside the delay of the reader's osenter
-		pfd := sys->open("/prog/" + string pid + "/ctl", Sys->OWRITE);
-		if(pfd == nil){
-			sys->print("open prog ctl: %r\n");
-			return;
-		}
-		sys->fprint(pfd, "kill");
-		if(!settle(h0, 1))
-			stuck++;
-		ctl = nil;		# kills the command, which frees a reader that was stuck
-		settle(0, 3);
-	}
-	setdelay(0, 0);
-	sys->print("intr: %d of %d killed processes stayed blocked\n", stuck, n);
+	k := trial("read", n);
+	if(k >= 0)
+		sys->print("intr: %d of %d killed processes stayed blocked\n", k, n);
+	k = trial("sleep", n);
+	if(k >= 0)
+		sys->print("intr-sleep: %d of %d killed processes stayed blocked\n", k, n);
 }

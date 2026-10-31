@@ -393,6 +393,7 @@ cmdread(Chan *ch, void *a, long n, vlong offset)
 		}
 		qunlock(&c->l);
 		osenter();
+		oswaitfd(c->fd[fd], OSREAD);
 		n = read(c->fd[fd], a, n);
 		osleave();
 		if(n < 0)
@@ -516,6 +517,7 @@ cmdwrite(Chan *ch, void *a, long n, vlong offset)
 		}
 		qunlock(&c->l);
 		osenter();
+		oswaitfd(c->fd[0], OSWRITE);
 		r = write(c->fd[0], a, n);
 		osleave();
 		if(r == 0)

@@ -396,7 +396,6 @@ struct Proc
 	int		killed;		/* by swiproc */
 	int	swipend;	/* software interrupt pending for Prog */
 	int	syscall;	/* set true under sysio for interruptable syscalls */
-	int	intwait;	/* spin wait for note to turn up */
 	int	sigid;		/* handle used for signal/note/exception */
 	Lock	sysio;		/* note handler lock */
 	char	genbuf[128];	/* buffer used e.g. for last name element from namec */

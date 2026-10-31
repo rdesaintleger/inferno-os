@@ -46,7 +46,7 @@ t lblv 50
 t clash
 t sys
 t math
-# t intr		# fails (10 of 10 stay blocked) until the wait layer replaces SIGUSR1
+t intr
 s dev-env
 s dev-dup
 s dev-prog
