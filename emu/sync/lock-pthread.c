@@ -11,37 +11,8 @@
 #include <unistd.h>
 #include "lock-core.h"
 
-struct Prim
-{
-	int		flags;
-	int		locked;
-	int		nwait;
-	pthread_mutex_t	m;
-	pthread_cond_t	c;
-};
-
-struct Thread
-{
-	pthread_mutex_t	m;
-	pthread_cond_t	c;
-	int		permits;	/* inferno_wake not consumed yet */
-	int		pending;	/* interrupt not consumed yet */
-	int		state;		/* what the thread is blocked in, so how to wake it */
-	int		wake[2];	/* pipe that interrupts a poll; created by the first wait_fd */
-};
-
+typedef struct inferno_thread Thread;
 enum { Tidle, Tcond, Tfd };
-
-struct SeqLock
-{
-	pthread_mutex_t	m;
-	unsigned	seq;
-};
-
-typedef char prim_fits[sizeof(struct Prim) <= sizeof(inferno_token_t) ? 1 : -1];
-typedef char prim_fits2[sizeof(struct Prim) <= sizeof(inferno_mutex_t) ? 1 : -1];
-typedef char thread_fits[sizeof(struct Thread) <= sizeof(inferno_thread_t) ? 1 : -1];
-typedef char seq_fits[sizeof(struct SeqLock) <= sizeof(inferno_seqlock_t) ? 1 : -1];
 
 static pthread_key_t key;
 static pthread_once_t keyonce = PTHREAD_ONCE_INIT;
@@ -140,7 +111,7 @@ prim_put(Prim *p)
 	pthread_mutex_unlock(&p->m);
 }
 
-#include "lock-core.inc"
+#include "lock-core.inc.h"
 
 /*
  *  Seqlock.  Portable form: the reader holds the lock from read_begin to
@@ -150,7 +121,7 @@ prim_put(Prim *p)
 int
 inferno_seqlock_init(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 
 	s->seq = 0;
 	return pthread_mutex_init(&s->m, NULL) == 0 ? 0 : -1;
@@ -159,13 +130,13 @@ inferno_seqlock_init(inferno_seqlock_t *l)
 void
 inferno_seqlock_destroy(inferno_seqlock_t *l)
 {
-	pthread_mutex_destroy(&((struct SeqLock*)l)->m);
+	pthread_mutex_destroy(&l->m);
 }
 
 void
 inferno_seqlock_write_begin(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 
 	pthread_mutex_lock(&s->m);
 	s->seq++;
@@ -174,7 +145,7 @@ inferno_seqlock_write_begin(inferno_seqlock_t *l)
 void
 inferno_seqlock_write_end(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 
 	s->seq++;
 	pthread_mutex_unlock(&s->m);
@@ -183,7 +154,7 @@ inferno_seqlock_write_end(inferno_seqlock_t *l)
 unsigned
 inferno_seqlock_read_begin(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 
 	pthread_mutex_lock(&s->m);
 	return s->seq;
@@ -193,7 +164,7 @@ int
 inferno_seqlock_read_retry(inferno_seqlock_t *l, unsigned seq)
 {
 	(void)seq;
-	pthread_mutex_unlock(&((struct SeqLock*)l)->m);
+	pthread_mutex_unlock(&l->m);
 	return 0;
 }
 
@@ -215,7 +186,7 @@ static pthread_mutex_t*
 stripefor(inferno_ref_t *r)
 {
 	pthread_once(&stripeonce, mkstripes);
-	return &stripe[((unsigned long)r >> 4) % NSTRIPE];
+	return &stripe[((uintptr_t)r >> 4) % NSTRIPE];
 }
 
 void
@@ -267,12 +238,10 @@ inferno_ref_dec(inferno_ref_t *r)
  *  atomically; for a descriptor, the interrupter writes a byte to a pipe that
  *  the poll includes), so an interrupt cannot fall between the test and the block.
  */
-typedef struct Thread Thread;
-
 int
 inferno_thread_init(inferno_thread_t *th)
 {
-	Thread *t = (Thread*)th;
+	Thread *t = th;
 
 	memset(t, 0, sizeof *t);
 	t->wake[0] = t->wake[1] = -1;
@@ -288,7 +257,7 @@ inferno_thread_init(inferno_thread_t *th)
 void
 inferno_thread_destroy(inferno_thread_t *th)
 {
-	Thread *t = (Thread*)th;
+	Thread *t = th;
 
 	if(t->wake[0] >= 0){
 		close(t->wake[0]);
@@ -528,7 +497,7 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 void
 inferno_wake(inferno_thread_t *th)
 {
-	Thread *t = (Thread*)th;
+	Thread *t = th;
 
 	pthread_mutex_lock(&t->m);
 	t->permits++;
@@ -540,7 +509,7 @@ inferno_wake(inferno_thread_t *th)
 void
 inferno_thread_interrupt(inferno_thread_t *th)
 {
-	Thread *t = (Thread*)th;
+	Thread *t = th;
 	char b = 'i';
 	ssize_t n;
 

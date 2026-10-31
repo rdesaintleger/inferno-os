@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include <inferno/lock.h>
+#include <inferno/lock-types.h>
 
 #define N	10000000L
 

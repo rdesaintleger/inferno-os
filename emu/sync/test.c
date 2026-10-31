@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inferno/lock.h>
+#include <inferno/lock-types.h>
 #ifdef BACKEND_COOP
 #include <signal.h>
 #include <unistd.h>

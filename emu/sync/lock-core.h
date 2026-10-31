@@ -1,22 +1,31 @@
+#ifndef _INFERNO_LOCK_CORE_H_
+#define _INFERNO_LOCK_CORE_H_
 /*
  *  Shared by the backends of the synchronization API (include/inferno/lock.h).
  *
- *  A backend defines struct Prim (starting with `flags') and the primitives
+ *  A backend defines (in its <inferno/lock-types-*.h>) struct inferno_prim, which
+ *  starts with `flags', and here (in its .c file) the primitives
  *	static Ctx *self(void);			context of the calling thread
  *	static int prim_init(Prim*);
  *	static void prim_destroy(Prim*);
  *	static int prim_try(Prim*);		1 if taken, 0 if busy
  *	static void prim_wait(Prim*);		blocks until taken
  *	static void prim_put(Prim*);		releases, any thread may call it
- *  then includes lock-core.inc, which implements tokens and mutexes on top.
+ *  then includes lock-core.inc.h, which implements tokens and mutexes on top.
  */
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inferno/lock.h>
+#include <inferno/lock-types.h>
 
 typedef struct Ctx Ctx;
-typedef struct Prim Prim;
+typedef struct inferno_prim Prim;
+
+/* a token starts with its Prim: the core goes from one to the other */
+typedef char token_prim_first[offsetof(struct inferno_token, p) == 0 ? 1 : -1];
+#define TOKEN(prim)	((inferno_token_t*)(prim))
 
 struct Ctx
 {
@@ -47,3 +56,5 @@ ctx_init(Ctx *c, unsigned id)
 	memset(c, 0, sizeof *c);
 	c->rng = dbg_seed * 2654435761u + id * 40503u + 1;
 }
+
+#endif /* _INFERNO_LOCK_CORE_H_ */

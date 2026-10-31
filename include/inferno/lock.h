@@ -43,10 +43,12 @@ extern	void	wunlock(RWlock*);
 /*
  *  New synchronization API (C99, no assembler, no C11 atomics).
  *
- *  The types below are opaque: they only reserve storage so that they can be
- *  embedded in other structures; a backend (emu/sync/lock-pthread.c,
- *  emu/sync/lock-coop.c, ...) gives them a meaning and checks at compile time
- *  that its representation fits.  Nothing here depends on the host.
+ *  The types below are incomplete here: this header only declares them and the
+ *  functions that take pointers to them, and does not depend on the host.  The
+ *  code that embeds one of them in a structure, or defines one, includes
+ *  <inferno/lock-types.h>, which selects the complete definitions of the backend
+ *  of the build (INFERNO_LOCK_BACKEND_PTHREAD, INFERNO_LOCK_BACKEND_COOP, ...).
+ *  Nothing outside the backend uses their fields.
  *
  *  Tokens.  A successful inferno_token_get gives exclusivity as long as the
  *  thread runs.  Every pause point (a get that has to wait, a slow
@@ -56,15 +58,12 @@ extern	void	wunlock(RWlock*);
  *  return 0 on the fast path and 1 when the thread was paused: what was read
  *  under the tokens already held must then be revalidated.
  */
-#define INFERNO_OPAQUE(n)\
-	union { long long ll_; long double ld_; void *p_; char b_[n]; }
-
 #define INFERNO_TOKEN_MAX	16	/* tokens held at the same time by a thread */
 
-typedef struct inferno_token { INFERNO_OPAQUE(128) u; } inferno_token_t;
-typedef struct inferno_mutex { INFERNO_OPAQUE(128) u; } inferno_mutex_t;
-typedef struct inferno_seqlock { INFERNO_OPAQUE(128) u; } inferno_seqlock_t;
-typedef struct inferno_ref { int v; } inferno_ref_t;
+typedef struct inferno_token inferno_token_t;
+typedef struct inferno_mutex inferno_mutex_t;
+typedef struct inferno_seqlock inferno_seqlock_t;
+typedef struct inferno_ref inferno_ref_t;
 
 /* what inferno_token_suspend takes away, for inferno_token_resume */
 typedef struct inferno_token_saved {
@@ -160,7 +159,7 @@ extern	void	inferno_lock_debug(unsigned seed, int permille);
 #define INFERNO_FD_READ		1
 #define INFERNO_FD_WRITE	2
 
-typedef struct inferno_thread { INFERNO_OPAQUE(256) u; } inferno_thread_t;
+typedef struct inferno_thread inferno_thread_t;
 
 extern	int	inferno_thread_init(inferno_thread_t*);
 extern	void	inferno_thread_destroy(inferno_thread_t*);

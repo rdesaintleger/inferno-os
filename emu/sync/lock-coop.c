@@ -5,15 +5,6 @@
 #include "lock-core.h"
 #include "lock-coop.h"
 
-struct Prim
-{
-	int	flags;
-	int	locked;
-};
-
-typedef char prim_fits[sizeof(struct Prim) <= sizeof(inferno_token_t) ? 1 : -1];
-typedef char prim_fits2[sizeof(struct Prim) <= sizeof(inferno_mutex_t) ? 1 : -1];
-
 void (*inferno_coop_wait)(void);
 
 static Ctx ctxs[INFERNO_COOP_MAXCTX];
@@ -99,7 +90,7 @@ prim_put(Prim *p)
 	p->locked = 0;
 }
 
-#include "lock-core.inc"
+#include "lock-core.inc.h"
 
 /*
  *  Seqlock with a real retry, as a lock-free backend would have: since
@@ -107,17 +98,10 @@ prim_put(Prim *p)
  *  seen in the middle of its section except by a test that selects a context
  *  by hand there, which is how the retry is tested.
  */
-struct SeqLock
-{
-	unsigned	seq;
-};
-
-typedef char seq_fits[sizeof(struct SeqLock) <= sizeof(inferno_seqlock_t) ? 1 : -1];
-
 int
 inferno_seqlock_init(inferno_seqlock_t *l)
 {
-	((struct SeqLock*)l)->seq = 0;
+	l->seq = 0;
 	return 0;
 }
 
@@ -130,7 +114,7 @@ inferno_seqlock_destroy(inferno_seqlock_t *l)
 void
 inferno_seqlock_write_begin(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 
 	if(s->seq & 1)
 		die("seqlock: two writers");
@@ -140,13 +124,13 @@ inferno_seqlock_write_begin(inferno_seqlock_t *l)
 void
 inferno_seqlock_write_end(inferno_seqlock_t *l)
 {
-	((struct SeqLock*)l)->seq++;
+	l->seq++;
 }
 
 unsigned
 inferno_seqlock_read_begin(inferno_seqlock_t *l)
 {
-	struct SeqLock *s = (struct SeqLock*)l;
+	struct inferno_seqlock *s = l;
 	long spins = 0;
 
 	while(s->seq & 1){		/* writer inside */
@@ -160,7 +144,7 @@ inferno_seqlock_read_begin(inferno_seqlock_t *l)
 int
 inferno_seqlock_read_retry(inferno_seqlock_t *l, unsigned seq)
 {
-	return ((struct SeqLock*)l)->seq != seq;
+	return l->seq != seq;
 }
 
 void
@@ -190,14 +174,7 @@ inferno_ref_dec(inferno_ref_t *r)
 /*
  *  Waiting and interruption on one host thread: the contexts take turns by hand.
  */
-struct Thread
-{
-	int	permits;
-	int	pending;
-};
-
-typedef struct Thread Thread;
-typedef char thread_fits[sizeof(struct Thread) <= sizeof(inferno_thread_t) ? 1 : -1];
+typedef struct inferno_thread Thread;
 
 static long clock_ms;
 int (*inferno_coop_fdready)(int, int);
@@ -217,7 +194,7 @@ inferno_coop_advance(long ms)
 int
 inferno_thread_init(inferno_thread_t *th)
 {
-	memset(th, 0, sizeof(struct Thread));
+	memset(th, 0, sizeof *th);
 	return 0;
 }
 
@@ -343,13 +320,13 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 void
 inferno_wake(inferno_thread_t *th)
 {
-	((Thread*)th)->permits++;
+	th->permits++;
 }
 
 void
 inferno_thread_interrupt(inferno_thread_t *th)
 {
-	((Thread*)th)->pending = 1;
+	th->pending = 1;
 }
 
 int

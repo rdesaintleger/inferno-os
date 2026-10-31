@@ -1,4 +1,12 @@
-/* tokens and mutexes over the primitives of a backend; see lock-core.h */
+#ifndef _INFERNO_LOCK_CORE_INC_H_
+#define _INFERNO_LOCK_CORE_INC_H_
+
+#include "lock-core.h"
+
+/*
+ *  Tokens and mutexes over the primitives of a backend; see lock-core.h.
+ *  Included once, at the end of the source of a backend: not a header for anyone else.
+ */
 
 void
 inferno_lock_debug(unsigned seed, int permille)
@@ -48,7 +56,7 @@ sortprims(Prim **v, unsigned *q, int n)
 	for(i = 1; i < n; i++){
 		p = v[i];
 		s = q[i];
-		for(j = i; j > 0 && (unsigned long)v[j-1] > (unsigned long)p; j--){
+		for(j = i; j > 0 && (uintptr_t)v[j-1] > (uintptr_t)p; j--){
 			v[j] = v[j-1];
 			q[j] = q[j-1];
 		}
@@ -65,7 +73,7 @@ release_all(Ctx *c, inferno_token_saved_t *s)
 
 	s->n = c->n;
 	for(i = 0; i < c->n; i++){
-		s->t[i] = (inferno_token_t*)c->t[i];
+		s->t[i] = TOKEN(c->t[i]);
 		s->seq[i] = c->seq[i];
 	}
 	while(c->n > 0){
@@ -84,7 +92,7 @@ retake(Ctx *c, inferno_token_saved_t *s, Prim **ex, unsigned *exq, int ne)
 
 	n = 0;
 	for(i = 0; i < s->n; i++){
-		v[n] = (Prim*)s->t[i];
+		v[n] = &s->t[i]->p;
 		q[n++] = s->seq[i];
 	}
 	for(i = 0; i < ne; i++){
@@ -103,7 +111,7 @@ retake(Ctx *c, inferno_token_saved_t *s, Prim **ex, unsigned *exq, int ne)
 int
 inferno_token_init(inferno_token_t *t)
 {
-	Prim *p = (Prim*)t;
+	Prim *p = &t->p;
 
 	memset(p, 0, sizeof *p);
 	p->flags = F_TOKEN;
@@ -113,19 +121,19 @@ inferno_token_init(inferno_token_t *t)
 void
 inferno_token_destroy(inferno_token_t *t)
 {
-	prim_destroy((Prim*)t);
+	prim_destroy(&t->p);
 }
 
 int
 inferno_token_held(inferno_token_t *t)
 {
-	return heldidx(self(), (Prim*)t) >= 0;
+	return heldidx(self(), &t->p) >= 0;
 }
 
 int
 inferno_token_get(inferno_token_t *t)
 {
-	Prim *p = (Prim*)t;
+	Prim *p = &t->p;
 	Ctx *c = self();
 	inferno_token_saved_t s;
 	unsigned q;
@@ -147,7 +155,7 @@ inferno_token_get(inferno_token_t *t)
 int
 inferno_token_try(inferno_token_t *t)
 {
-	Prim *p = (Prim*)t;
+	Prim *p = &t->p;
 	Ctx *c = self();
 
 	if(heldidx(c, p) >= 0)
@@ -161,7 +169,7 @@ inferno_token_try(inferno_token_t *t)
 void
 inferno_token_put(inferno_token_t *t)
 {
-	Prim *p = (Prim*)t;
+	Prim *p = &t->p;
 	Ctx *c = self();
 	int i;
 
@@ -187,15 +195,15 @@ inferno_token_get_all(int n, inferno_token_t **tk)
 	m = 0;
 	for(i = 0; i < n; i++){
 		for(j = 0; j < m; j++)
-			if(v[j] == (Prim*)tk[i])
+			if(v[j] == &tk[i]->p)
 				break;
 		if(j < m)
 			continue;		/* duplicate */
-		if(heldidx(c, (Prim*)tk[i]) >= 0)
+		if(heldidx(c, &tk[i]->p) >= 0)
 			die("token already held");
 		if(m >= INFERNO_TOKEN_MAX)
 			die("too many tokens held");
-		v[m] = (Prim*)tk[i];
+		v[m] = &tk[i]->p;
 		q[m++] = c->nextseq++;
 	}
 	sortprims(v, q, m);
@@ -239,7 +247,7 @@ inferno_token_release_to(unsigned mark)
 
 	for(i = c->n - 1; i >= 0; i--)
 		if((int)(c->seq[i] - mark) >= 0)
-			inferno_token_put((inferno_token_t*)c->t[i]);
+			inferno_token_put(TOKEN(c->t[i]));
 }
 
 void
@@ -262,7 +270,7 @@ inferno_token_resume(inferno_token_saved_t *s)
 int
 inferno_mutex_init(inferno_mutex_t *m, int flags)
 {
-	Prim *p = (Prim*)m;
+	Prim *p = &m->p;
 
 	memset(p, 0, sizeof *p);
 	p->flags = flags & INFERNO_MUTEX_SHORT;
@@ -272,13 +280,13 @@ inferno_mutex_init(inferno_mutex_t *m, int flags)
 void
 inferno_mutex_destroy(inferno_mutex_t *m)
 {
-	prim_destroy((Prim*)m);
+	prim_destroy(&m->p);
 }
 
 int
 inferno_mutex_lock(inferno_mutex_t *m)
 {
-	Prim *p = (Prim*)m;
+	Prim *p = &m->p;
 	Ctx *c = self();
 	inferno_token_saved_t s;
 
@@ -301,7 +309,7 @@ inferno_mutex_lock(inferno_mutex_t *m)
 int
 inferno_mutex_trylock(inferno_mutex_t *m)
 {
-	Prim *p = (Prim*)m;
+	Prim *p = &m->p;
 
 	if(!prim_try(p))
 		return 0;
@@ -313,7 +321,7 @@ inferno_mutex_trylock(inferno_mutex_t *m)
 void
 inferno_mutex_unlock(inferno_mutex_t *m)
 {
-	Prim *p = (Prim*)m;
+	Prim *p = &m->p;
 	Ctx *c;
 
 	if(p->flags & INFERNO_MUTEX_SHORT){
@@ -324,3 +332,5 @@ inferno_mutex_unlock(inferno_mutex_t *m)
 	}
 	prim_put(p);
 }
+
+#endif /* _INFERNO_LOCK_CORE_INC_H_ */
