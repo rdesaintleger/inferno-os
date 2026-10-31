@@ -203,6 +203,7 @@ inferno_thread_destroy(inferno_thread_t *th)
 	if(thread_ctx(th)->n || th->ctx.nshort)
 		fprintf(stderr, "inferno_lock: context %u destroyed holding %d tokens and %d short mutexes\n",
 			th->ctx.id, th->ctx.n, th->ctx.nshort);
+	ctx_free(&th->ctx);
 	th->ctx.magic = 0;
 	if(cur == th)
 		cur = NULL;
@@ -232,16 +233,15 @@ blockon(long ms, int usepermit, int fd, int events, int *ready)
 {
 	Thread *t = selfthread();
 	Ctx *c = &t->ctx;
-	inferno_token_saved_t s;
+	struct inferno_saveent *sv = NULL;
+	int sn = 0;
 	long dl = clock_ms + ms;
 	int r, paused, k;
 	long spins = 0;
 
 	paused = 0;
 	if(forced(c)){
-		if(c->nshort)
-			die("wait would pause with a short mutex held");
-		release_all(c, &s);
+		sn = pause_begin(c, &sv);
 		paused = 1;
 	}
 	for(;;){
@@ -266,9 +266,7 @@ blockon(long ms, int usepermit, int fd, int events, int *ready)
 			break;
 		}
 		if(!paused){
-			if(c->nshort)
-				die("wait would pause with a short mutex held");
-			release_all(c, &s);
+			sn = pause_begin(c, &sv);
 			paused = 1;
 		}
 		if(inferno_coop_wait == NULL){
@@ -285,7 +283,7 @@ blockon(long ms, int usepermit, int fd, int events, int *ready)
 			clock_ms++;
 	}
 	if(paused)
-		retake(c, &s, 0, 0, 0);
+		pause_end(c, sv, sn);
 	return r;
 }
 

@@ -40,7 +40,7 @@ static void
 t_token(void)
 {
 	inferno_token_t a, b, c, *set[3];
-	inferno_token_saved_t s;
+	inferno_token_save_t *sv;
 	unsigned m0, m1;
 
 	inferno_token_init(&a); inferno_token_init(&b); inferno_token_init(&c);
@@ -77,9 +77,11 @@ t_token(void)
 	inferno_token_get(&a);
 	m1 = inferno_token_mark();
 	inferno_token_get(&b);
-	inferno_token_suspend(&s);
-	CHECK(s.n == 2 && !H(a) && !H(b));
-	inferno_token_resume(&s);
+	sv = malloc(inferno_token_save_size());
+	inferno_token_suspend(sv);
+	CHECK(!H(a) && !H(b));
+	inferno_token_resume(sv);
+	free(sv);
 	CHECK(H(a) && H(b));
 	inferno_token_release_to(m1);
 	CHECK(H(a) && !H(b));
@@ -461,7 +463,7 @@ t_short_pause_aborts(void)
 	int st;
 	inferno_mutex_t sm;
 	inferno_token_t a;
-	inferno_token_saved_t s;
+	inferno_token_save_t *sv;
 
 	pid = fork();
 	if(pid == 0){
@@ -470,7 +472,8 @@ t_short_pause_aborts(void)
 		inferno_mutex_init(&sm, INFERNO_MUTEX_SHORT);
 		inferno_token_init(&a);
 		inferno_mutex_lock(&sm);
-		inferno_token_suspend(&s);	/* must abort */
+		sv = malloc(inferno_token_save_size());
+		inferno_token_suspend(sv);	/* must abort */
 		_exit(0);
 	}
 	waitpid(pid, &st, 0);
@@ -819,6 +822,152 @@ t_attach_checked(void)
 	CHECK(inferno_thread_current() == &mainth);
 }
 
+/* no limit to the number of tokens: held, paused (forced), suspended, unwound */
+#define NMANY	300
+
+static inferno_token_t many[NMANY];
+static int nalloc, nfree;
+
+static void*
+countalloc(size_t n)
+{
+	nalloc++;
+	return malloc(n);
+}
+
+static void
+countfree(void *p)
+{
+	nfree++;
+	free(p);
+}
+
+static int
+allheld(int from, int to)
+{
+	int i, ok = 1;
+
+	for(i = from; i < to; i++)
+		ok &= inferno_token_held(&many[i]);
+	return ok;
+}
+
+static void
+t_many_tokens(void)
+{
+	inferno_token_t *set[NMANY/2];
+	inferno_token_save_t *sv;
+	inferno_thread_t me;
+	unsigned mark = 0;
+	int i;
+
+	inferno_thread_init(&me);		/* a descriptor of its own: its save area starts empty */
+	inferno_thread_attach(&me);
+	inferno_lock_set_allocator(countalloc, countfree);
+	nalloc = nfree = 0;
+	for(i = 0; i < NMANY; i++)
+		inferno_token_init(&many[i]);
+	for(i = 0; i < NMANY/2; i++)
+		set[i] = &many[NMANY/2-1-i];		/* the other way round: get_all sorts */
+	CHECK(inferno_token_get_all(NMANY/2, set) == 0);
+	for(i = NMANY/2; i < NMANY; i++){
+		CHECK(inferno_token_get(&many[i]) == 0);
+		if(i == NMANY/2 + NMANY/4 - 1)
+			mark = inferno_token_mark();
+	}
+	CHECK(allheld(0, NMANY));
+	CHECK(nalloc == 1);			/* only get_all needed room, for its working set; no pause yet */
+
+	/* a pause with 300 tokens held: the save area is enlarged first, then they all come back */
+	{
+		inferno_token_t extra;
+
+		inferno_token_init(&extra);
+		inferno_lock_debug(11, 1000);
+		CHECK(inferno_token_get(&extra) == 1);	/* paused with the 300 */
+		inferno_lock_debug(0, 0);
+		CHECK(allheld(0, NMANY) && inferno_token_held(&extra));
+		inferno_token_put(&extra);
+		inferno_token_destroy(&extra);
+	}
+	CHECK(nalloc == 2);			/* the area grew once more, before the tokens were released */
+
+	/* suspend and resume on a buffer of the caller */
+	sv = malloc(inferno_token_save_size());
+	inferno_token_suspend(sv);
+	CHECK(!allheld(0, 1) && !allheld(NMANY-1, NMANY));
+	inferno_token_resume(sv);
+	free(sv);
+	CHECK(allheld(0, NMANY));
+
+	/* the order of acquisition survived the pauses: release_to puts back the last 150-ish */
+	inferno_token_release_to(mark);
+	CHECK(allheld(0, NMANY/2 + NMANY/4) && !inferno_token_held(&many[NMANY/2 + NMANY/4]));
+	CHECK(!inferno_token_held(&many[NMANY-1]));
+	inferno_token_release_to(0);
+	CHECK(!allheld(0, 1) && !allheld(NMANY/2, NMANY/2 + 1));
+
+	for(i = 0; i < NMANY; i++)
+		inferno_token_destroy(&many[i]);
+	inferno_thread_detach();
+	inferno_thread_destroy(&me);
+	CHECK(nfree == nalloc);			/* every area is given back, the last one with the descriptor */
+	inferno_lock_set_allocator(NULL, NULL);
+	inferno_thread_attach(&mainth);
+}
+
+/* the zone without tokens: taking one, or pausing, inside it aborts; a short mutex is fine */
+static void
+nogo_get(void)
+{
+	inferno_token_t t;
+
+	inferno_token_init(&t);
+	inferno_token_nogo_begin();
+	inferno_token_get(&t);
+}
+
+static void
+nogo_pause(void)
+{
+	inferno_mutex_t m;
+
+	inferno_mutex_init(&m, 0);
+	inferno_mutex_lock(&m);
+	inferno_token_nogo_begin();
+	inferno_sleep(1);			/* would pause */
+}
+
+static void
+nogo_end_unbalanced(void)
+{
+	inferno_token_nogo_end();
+}
+
+static void
+t_nogo(void)
+{
+	inferno_mutex_t sm, m;
+	inferno_token_t t;
+
+	inferno_mutex_init(&sm, INFERNO_MUTEX_SHORT);
+	inferno_mutex_init(&m, 0);
+	inferno_token_init(&t);
+	inferno_token_nogo_begin();
+	inferno_token_nogo_begin();
+	inferno_mutex_lock(&sm);		/* what the allocator does */
+	inferno_mutex_unlock(&sm);
+	CHECK(inferno_mutex_lock(&m) == 0);	/* fast path: no pause */
+	inferno_mutex_unlock(&m);
+	inferno_token_nogo_end();
+	inferno_token_nogo_end();
+	CHECK(inferno_token_get(&t) == 0);	/* allowed again */
+	inferno_token_put(&t);
+	CHECK(aborts(nogo_get));
+	CHECK(aborts(nogo_pause));
+	CHECK(aborts(nogo_end_unbalanced));
+}
+
 #ifdef BACKEND_COOP
 
 /*
@@ -1074,6 +1223,8 @@ main(void)
 	RUN("ref", t_ref());
 	RUN("wait-basic", t_wait_basic());
 	RUN("attach-checked", t_attach_checked());
+	RUN("many-tokens", t_many_tokens());
+	RUN("nogo", t_nogo());
 #ifdef BACKEND_COOP
 	RUN("coop-pause", t_coop_pause());
 	RUN("coop-mutex-noowner", t_coop_mutex_noowner());

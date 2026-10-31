@@ -253,6 +253,7 @@ inferno_thread_destroy(inferno_thread_t *th)
 	if(thread_ctx(t)->n || t->ctx.nshort)
 		fprintf(stderr, "inferno_lock: thread %u destroyed holding %d tokens and %d short mutexes\n",
 			t->ctx.id, t->ctx.n, t->ctx.nshort);
+	ctx_free(&t->ctx);
 	t->ctx.magic = 0;
 	if(t->wake[0] >= 0){
 		close(t->wake[0]);
@@ -334,7 +335,8 @@ blockon(long ms, int usepermit)
 {
 	Thread *t = selfthread();
 	Ctx *c = &t->ctx;
-	inferno_token_saved_t s;
+	struct inferno_saveent *sv = NULL;
+	int sn = 0;
 	struct timespec dl;
 	int r, rc, paused, timedout;
 
@@ -342,9 +344,7 @@ blockon(long ms, int usepermit)
 	if(ms > 0)
 		deadline(&dl, ms);
 	if(forced(c)){
-		if(c->nshort)
-			die("wait would pause with a short mutex held");
-		release_all(c, &s);
+		sn = pause_begin(c, &sv);
 		paused = 1;
 	}
 	pthread_mutex_lock(&t->m);
@@ -365,9 +365,7 @@ blockon(long ms, int usepermit)
 		}
 		if(!paused){			/* about to block: pause point */
 			pthread_mutex_unlock(&t->m);
-			if(c->nshort)
-				die("wait would pause with a short mutex held");
-			release_all(c, &s);
+			sn = pause_begin(c, &sv);
 			paused = 1;
 			pthread_mutex_lock(&t->m);
 			continue;		/* test again, we were not holding the lock */
@@ -383,7 +381,7 @@ blockon(long ms, int usepermit)
 	}
 	pthread_mutex_unlock(&t->m);
 	if(paused)
-		retake(c, &s, 0, 0, 0);
+		pause_end(c, sv, sn);
 	return r;
 }
 
@@ -410,7 +408,8 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 {
 	Thread *t = selfthread();
 	Ctx *c = &t->ctx;
-	inferno_token_saved_t s;
+	struct inferno_saveent *sv = NULL;
+	int sn = 0;
 	struct pollfd pfd[2];
 	struct timespec dl, now;
 	int r, rc, to, paused, ev;
@@ -430,9 +429,7 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 	}
 	t->state = Tfd;			/* from here an interrupt writes the pipe */
 	pthread_mutex_unlock(&t->m);
-	if(c->nshort)
-		die("wait would pause with a short mutex held");
-	release_all(c, &s);
+	sn = pause_begin(c, &sv);
 	paused = 1;
 
 	ev = 0;
@@ -487,7 +484,7 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 		break;
 	}
 	if(paused)
-		retake(c, &s, 0, 0, 0);
+		pause_end(c, sv, sn);
 	return r;
 }
 

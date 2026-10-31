@@ -21,4 +21,3 @@ extern	void	(*inferno_coop_wait)(void);		/* NULL: waiting aborts (deadlock) */
 extern	long	inferno_coop_now(void);			/* virtual milliseconds */
 extern	void	inferno_coop_advance(long);
 extern	int	(*inferno_coop_fdready)(int fd, int events);	/* events ready, 0 if none */
-

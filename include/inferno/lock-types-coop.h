@@ -11,6 +11,8 @@ struct inferno_prim {
 
 struct inferno_token {
 	struct inferno_prim	p;	/* first: the core converts between the two */
+	struct inferno_token	*held_next;	/* the tokens held by a thread; only its holder uses them */
+	unsigned		held_seq;
 };
 
 struct inferno_mutex {

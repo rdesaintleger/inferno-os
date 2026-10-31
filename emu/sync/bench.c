@@ -33,10 +33,13 @@ main(void)
 	inferno_mutex_t m, sm;
 	inferno_token_t t, t2;
 	inferno_seqlock_t sl;
+	inferno_thread_t me;
 	inferno_ref_t r;
 	volatile int sink = 0;
 	unsigned s;
 
+	inferno_thread_init(&me);
+	inferno_thread_attach(&me);
 	pthread_mutex_init(&pm, NULL);
 	inferno_mutex_init(&m, 0);
 	inferno_mutex_init(&sm, INFERNO_MUTEX_SHORT);

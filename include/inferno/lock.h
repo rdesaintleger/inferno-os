@@ -1,6 +1,8 @@
 #ifndef _INFERNO_LOCK_H_
 #define _INFERNO_LOCK_H_
 
+#include <stddef.h>
+
 /*
  *  synchronization
  */
@@ -63,19 +65,13 @@ extern	void	wunlock(RWlock*);
  *  return 0 on the fast path and 1 when the thread was paused: what was read
  *  under the tokens already held must then be revalidated.
  */
-#define INFERNO_TOKEN_MAX	16	/* tokens held at the same time by a thread */
-
 typedef struct inferno_token inferno_token_t;
 typedef struct inferno_mutex inferno_mutex_t;
 typedef struct inferno_seqlock inferno_seqlock_t;
 typedef struct inferno_ref inferno_ref_t;
 
-/* what inferno_token_suspend takes away, for inferno_token_resume */
-typedef struct inferno_token_saved {
-	int		n;
-	inferno_token_t	*t[INFERNO_TOKEN_MAX];
-	unsigned	seq[INFERNO_TOKEN_MAX];
-} inferno_token_saved_t;
+/* what inferno_token_suspend takes away, for inferno_token_resume: see inferno_token_save_size */
+typedef struct inferno_token_save inferno_token_save_t;
 
 /* tokens */
 extern	int	inferno_token_init(inferno_token_t*);
@@ -87,8 +83,30 @@ extern	int	inferno_token_get_all(int, inferno_token_t**);	/* the set, canonical 
 extern	int	inferno_token_held(inferno_token_t*);		/* does this thread hold it? */
 extern	unsigned	inferno_token_mark(void);		/* for error unwinding */
 extern	void	inferno_token_release_to(unsigned);		/* put the tokens taken since the mark */
-extern	void	inferno_token_suspend(inferno_token_saved_t*);	/* release all */
-extern	void	inferno_token_resume(inferno_token_saved_t*);	/* take them again */
+extern	size_t	inferno_token_save_size(void);			/* bytes that suspend needs, now */
+extern	void	inferno_token_suspend(inferno_token_save_t*);	/* release all */
+extern	void	inferno_token_resume(inferno_token_save_t*);	/* take them again */
+extern	void	inferno_token_nogo_begin(void);			/* no token, no pause until nogo_end */
+extern	void	inferno_token_nogo_end(void);
+
+/*
+ *  There is no limit to the number of tokens a thread holds.  A thread's tokens are a
+ *  list through the tokens themselves, so taking one allocates nothing.  What a pause
+ *  has to remember while the tokens are free (which they were, in which order) is
+ *  written in a save area of one entry per token: the pauses of this layer use a
+ *  buffer of the thread's descriptor, which is enlarged BEFORE the tokens are
+ *  released, when it is too small, with the allocator below (it must not take tokens,
+ *  and if it does not return, e.g. by raising an error, the tokens are still held and
+ *  the unwinding puts them back).  inferno_token_suspend / resume work on a buffer of
+ *  the caller (aligned for any type; on its stack, or on the stack of the context that
+ *  is being frozen): the caller reads inferno_token_save_size() while it holds the
+ *  tokens, provides that much, and calls suspend with nothing changed in between.
+ *
+ *  The code that must be free of tokens (the allocator, the garbage collector, the
+ *  profiler...) can say so with inferno_token_nogo_begin/end: taking a token or
+ *  pausing between the two aborts (it is a bug), so that the tests check the rule.
+ */
+extern	void	inferno_lock_set_allocator(void *(*alloc)(size_t), void (*release)(void*));
 
 /*
  *  Mutex: no thread owner (a thread can take it and another release it).  The

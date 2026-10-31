@@ -47,6 +47,32 @@ ctx_init(Ctx *c, unsigned id)
 	c->magic = INFERNO_THREAD_MAGIC;
 	c->id = id;
 	c->rng = dbg_seed * 2654435761u + id * 40503u + 1;
+	c->save = c->inl;
+	c->savecap = INFERNO_SAVE_INLINE;
+}
+
+/* memory of the save areas: malloc, or what inferno_lock_set_allocator gave */
+static void *(*lock_alloc)(size_t);
+static void (*lock_release)(void*);
+
+void
+inferno_lock_set_allocator(void *(*alloc)(size_t), void (*release)(void*))
+{
+	lock_alloc = alloc;
+	lock_release = release;
+}
+
+static void
+ctx_free(Ctx *c)
+{
+	if(c->save != c->inl){
+		if(lock_release != NULL)
+			lock_release(c->save);
+		else
+			free(c->save);
+		c->save = c->inl;
+		c->savecap = INFERNO_SAVE_INLINE;
+	}
 }
 
 /* the context of an attached descriptor, checked */
