@@ -11,6 +11,7 @@
 #include	<errno.h>
 #include	<semaphore.h>
 #include	<sched.h>
+#include	<inferno/lock-types.h>
 
 #ifdef __NetBSD__
 #define PTHREAD_STACK_MIN ((size_t)sysconf(_SC_THREAD_STACK_MIN))
@@ -21,6 +22,7 @@ typedef struct Osdep Osdep;
 struct Osdep {
 	sem_t	sem;
 	pthread_t	self;
+	inferno_thread_t	th;	/* descriptor of the thread for the synchronization API */
 };
 
 static pthread_key_t  prdakey;
@@ -69,6 +71,8 @@ pexit(char *msg, int t)
 	HOSTED_API(free)(p->prog);
 	os = p->os;
 	if(os != nil){
+		inferno_thread_detach();
+		inferno_thread_destroy(&os->th);
 		sem_destroy(&os->sem);
 		HOSTED_API(free)(os);
 	}
@@ -87,6 +91,7 @@ tramp(void *arg)
 	os->self = pthread_self();
 	if(pthread_setspecific(prdakey, arg))
 		panic("set specific data failed in tramp\n");
+	inferno_thread_attach(&os->th);
 #ifdef _GNU_SOURCE
 	if(0){
 		pthread_attr_t attr;
@@ -122,6 +127,8 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 		panic("kproc: no memory");
 	os->self = 0;	/* set by tramp */
 	sem_init(&os->sem, 0, 0);
+	if(inferno_thread_init(&os->th) != 0)
+		panic("kproc: no memory");
 	p->os = os;
 
 	if(flags & KPDUPPG) {
@@ -207,10 +214,23 @@ osready(Proc *p)
 void
 kprocinit(Proc *p)
 {
+	Osdep *os;
+
 	if(pthread_key_create(&prdakey, NULL))
 		panic("key_create failed");
 	if(pthread_setspecific(prdakey, p))
 		panic("set specific thread data failed");
+
+	/* the initial thread has host data and a descriptor like the others */
+	os = HOSTED_API(malloc)(sizeof(*os));
+	if(os == nil)
+		panic("kprocinit: no memory");
+	os->self = pthread_self();
+	sem_init(&os->sem, 0, 0);
+	if(inferno_thread_init(&os->th) != 0)
+		panic("kprocinit: no memory");
+	p->os = os;
+	inferno_thread_attach(&os->th);
 }
 
 void

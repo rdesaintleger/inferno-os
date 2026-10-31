@@ -27,6 +27,7 @@ OBJ=\
 	segflush-$OBJTYPE.$O\
 	$CONF.root.$O\
 	lock.$O\
+	lock-pthread.$O\
 	$DEVS\
 	$PORT\
 
@@ -35,7 +36,7 @@ LIBNAMES=${LIBS:%=lib%.a}
 
 HFILES=\
 
-CFLAGS='-DROOT="'$ROOT'"' -DEMU -I. -I../port -I$ROOT/$SYSTARG/$OBJTYPE/include -I$ROOT/include -I$ROOT/libinterp $CTHREADFLAGS $CFLAGS $EMUOPTIONS
+CFLAGS='-DROOT="'$ROOT'"' -DEMU -DINFERNO_LOCK_BACKEND_PTHREAD -I. -I../port -I$ROOT/$SYSTARG/$OBJTYPE/include -I$ROOT/include -I$ROOT/libinterp $CTHREADFLAGS $CFLAGS $EMUOPTIONS
 SYSLIBS= $X11LIBS -lm -lpthread
 KERNDATE=`{$NDATE}
 
@@ -52,6 +53,10 @@ install:V: $O.$CONF
 
 devfs.$O:	../port/devfs-posix.c
 devds.$O:	../port/devds.c
+
+# the synchronization API (include/inferno/lock.h): its pthread backend and the tests of both
+lock-pthread.$O:	../sync/lock-pthread.c ../sync/lock-core.h ../sync/lock-core.inc.h
+	$CC $CFLAGS -I. ../sync/lock-pthread.c
 
 # Regression tests, on the headless configuration (no X server needed):
 #	mk test
