@@ -10,7 +10,7 @@ newegrp(void)
 	e = smalloc(sizeof(Egrp));
 	if (e == nil)
 		error(Enomem);
-	e->r.ref = 1;
+	refinit(&e->r, 1);
 	return e;
 }
 

@@ -107,7 +107,7 @@ rdstat(int port, void *buf, long n, ulong offset)
 
 	s = str;
 	s += HOSTED_API(sprint)(s, "opens %d ferr %d oerr %d baud %s", 
-		    eia[port].r.ref-1, eia[port].frame, eia[port].overrun,
+		    refcount(&eia[port].r)-1, eia[port].frame, eia[port].overrun,
 		    ftos(sbuf, bps, (tcflag_t)cfgetospeed(&ts)));
 	s = rdxtra(port, &ts, s);
 	HOSTED_API(sprint)(s, "\n");

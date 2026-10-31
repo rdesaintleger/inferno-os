@@ -134,7 +134,7 @@ export(int fd, char *dir, int async)
 		error(Enomem);
 	}
 
-	fs->r.ref = 1;
+	refinit(&fs->r, 1);
 	pg = up->env->pgrp;
 	fs->pgrp = pg;
 	incref(&pg->r);

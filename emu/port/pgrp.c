@@ -4,6 +4,7 @@
 
 static Ref	pgrpid;
 static Ref	mountid;
+static inferno_mutex_t mountidl = INFERNO_MUTEX_INITIALIZER(INFERNO_MUTEX_SHORT);	/* a copy takes its ids in one block */
 
 Pgrp*
 newpgrp(void)
@@ -13,7 +14,7 @@ newpgrp(void)
 	p = HOSTED_API(malloc)(sizeof(Pgrp));
 	if(p == nil)
 		error(Enomem);
-	p->r.ref = 1;
+	refinit(&p->r, 1);
 	p->pgrpid = incref(&pgrpid);
 	p->progmode = 0644;
 	return p;
@@ -97,7 +98,7 @@ pgrpcpy(Pgrp *to, Pgrp *from)
 			if(mh == nil)
 				error(Enomem);
 			mh->from = f->from;
-			mh->r.ref = 1;
+			refinit(&mh->r, 1);
 			incref(&mh->from->r);
 			*l = mh;
 			l = &mh->hash;
@@ -116,10 +117,10 @@ pgrpcpy(Pgrp *to, Pgrp *from)
 	/*
 	 * Allocate mount ids in the same sequence as the parent group
 	 */
-	lock(&mountid.lk);
+	inferno_mutex_lock(&mountidl);
 	for(m = order; m; m = m->order)
-		m->copy->mountid = mountid.ref++;
-	unlock(&mountid.lk);
+		m->copy->mountid = incref(&mountid) - 1;
+	inferno_mutex_unlock(&mountidl);
 
 	to->progmode = from->progmode;
 	to->slash = cclone(from->slash);
@@ -138,7 +139,7 @@ newfgrp(Fgrp *old)
 	new = HOSTED_API(malloc)(sizeof(Fgrp));
 	if(new == nil)
 		error(Enomem);
-	new->r.ref = 1;
+	refinit(&new->r, 1);
 	n = DELTAFD;
 	if(old != nil){
 		lock(&old->l);
@@ -167,7 +168,7 @@ dupfgrp(Fgrp *f)
 	new = HOSTED_API(malloc)(sizeof(Fgrp));
 	if(new == nil)
 		error(Enomem);
-	new->r.ref = 1;
+	refinit(&new->r, 1);
 	lock(&f->l);
 	n = DELTAFD;
 	if(f->maxfd >= n)
@@ -218,7 +219,9 @@ newmount(Mhead *mh, Chan *to, int flag, char *spec)
 	m->to = to;
 	m->head = mh;
 	incref(&to->r);
+	inferno_mutex_lock(&mountidl);
 	m->mountid = incref(&mountid);
+	inferno_mutex_unlock(&mountidl);
 	m->mflag = flag;
 	if(spec != 0)
 		kstrdup(&m->spec, spec);

@@ -34,6 +34,8 @@ int		cmount(Chan*, Chan*, int, char*);
 Chan*	createdir(Chan*, Mhead*);
 void		cunmount(Chan*, Chan*);
 int		decref(Ref*);
+int		refcount(Ref*);
+void		refinit(Ref*, int);
 long		devbwrite(Chan*, Block*, ulong);
 void		devcreate(Chan*, char*, int, ulong);
 void		devdir(Chan*, Qid, char*, long, char*, long, Dir*);

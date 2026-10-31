@@ -1,3 +1,5 @@
+#include <inferno/lock-types.h>
+
 typedef struct Block	Block;
 typedef struct Chan	Chan;
 typedef struct Cmdbuf	Cmdbuf;
@@ -59,8 +61,7 @@ enum
 
 struct Ref
 {
-	Lock	lk;
-	long	ref;
+	inferno_ref_t	ref;	/* the count: use incref, decref, refcount */
 };
 
 struct Rendez

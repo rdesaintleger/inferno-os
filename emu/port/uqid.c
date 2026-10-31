@@ -64,7 +64,7 @@ uqidalloc(Uqidtab *tab, Chan *c)
 		qunlock(&tab->l);
 		error(Enomem);
 	}
-	q->r.ref = 1;
+	refinit(&q->r, 1);
 	q->type = c->type;
 	q->dev = c->dev;
 	q->oldpath = c->qid.path;

@@ -50,12 +50,7 @@ isdotdot(char *p)
 int
 incref(Ref *r)
 {
-	int x;
-
-	lock(&r->lk);
-	x = ++r->ref;
-	unlock(&r->lk);
-	return x;
+	return inferno_ref_inc(&r->ref);
 }
 
 int
@@ -63,13 +58,23 @@ decref(Ref *r)
 {
 	int x;
 
-	lock(&r->lk);
-	x = --r->ref;
-	unlock(&r->lk);
-	if(x < 0) 
+	x = inferno_ref_dec(&r->ref);
+	if(x < 0)
 		panic("decref");
 
 	return x;
+}
+
+int
+refcount(Ref *r)
+{
+	return inferno_ref_get(&r->ref);
+}
+
+void
+refinit(Ref *r, int v)
+{
+	inferno_ref_init(&r->ref, v);
 }
 
 /*
@@ -177,7 +182,7 @@ newchan(void)
 	   close calls rootclose, a nop */
 	c->type = 0;
 	c->flag = 0;
-	c->r.ref = 1;
+	refinit(&c->r, 1);
 	c->dev = 0;
 	c->offset = 0;
 	c->iounit = 0;
@@ -209,7 +214,7 @@ newcname(char *s)
 	n->alen = i+CNAMESLOP;
 	n->s = smalloc(n->alen);
 	memmove(n->s, s, i+1);
-	n->r.ref = 1;
+	refinit(&n->r, 1);
 	incref(&ncname);
 	return n;
 }
@@ -236,7 +241,7 @@ addelem(Cname *n, char *s)
 	if(s[0]=='.' && s[1]=='\0')
 		return n;
 
-	if(n->r.ref > 1){
+	if(refcount(&n->r) > 1){
 		/* copy on write */
 		new = newcname(n->s);
 		cnameclose(n);
@@ -319,7 +324,7 @@ cunique(Chan *c)
 {
 	Chan *nc;
 
-	if(c->r.ref != 1) {
+	if(refcount(&c->r) != 1) {
 		nc = cclone(c);
 		cclose(c);
 		c = nc;
@@ -368,7 +373,7 @@ newmhead(Chan *from)
 	Mhead *mh;
 
 	mh = smalloc(sizeof(Mhead));
-	mh->r.ref = 1;
+	refinit(&mh->r, 1);
 	mh->from = from;
 	incref(&from->r);
 
