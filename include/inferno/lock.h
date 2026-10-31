@@ -50,6 +50,11 @@ extern	void	wunlock(RWlock*);
  *  of the build (INFERNO_LOCK_BACKEND_PTHREAD, INFERNO_LOCK_BACKEND_COOP, ...).
  *  Nothing outside the backend uses their fields.
  *
+ *  Every thread that uses the functions below has a descriptor (inferno_thread_t,
+ *  see the end of this header), initialized by whoever owns the thread's data and
+ *  attached by the thread itself before its first call; the functions abort when the
+ *  calling thread is not attached.
+ *
  *  Tokens.  A successful inferno_token_get gives exclusivity as long as the
  *  thread runs.  Every pause point (a get that has to wait, a slow
  *  inferno_mutex_lock, inferno_token_suspend, a blocking host call between
@@ -131,9 +136,9 @@ extern	void	inferno_lock_debug(unsigned seed, int permille);
 /*
  *  Waiting and interruption, with no host signal.
  *
- *  Each thread has a wait object (inferno_thread_t), created and destroyed by
- *  whoever owns the thread's descriptor (it can be embedded in it) and attached
- *  by the thread itself.  Every wait below is interruptible by
+ *  The descriptor of a thread (inferno_thread_t) holds its wait object and what
+ *  the tokens need.  It is initialized and destroyed by whoever owns the thread's
+ *  data (it can be embedded in it) and attached by the thread itself.  Every wait below is interruptible by
  *  inferno_thread_interrupt, called from any thread, and is a pause point for
  *  tokens: when the thread has to block it releases all its tokens first and takes
  *  them again when the wait ends.

@@ -3,6 +3,7 @@
 
 /* Types of <inferno/lock.h> for the POSIX threads backend (emu/sync/lock-pthread.c). */
 #include <pthread.h>
+#include <inferno/lock-types-ctx.h>
 
 /*
  *  A token or a mutex is a flag guarded by a pthread mutex plus a condition
@@ -35,6 +36,7 @@ struct inferno_ref {
 };
 
 struct inferno_thread {
+	struct inferno_ctx	ctx;		/* first: the lock layer goes from the one to the other */
 	pthread_mutex_t	m;
 	pthread_cond_t	c;
 	int		permits;	/* inferno_wake not consumed yet */

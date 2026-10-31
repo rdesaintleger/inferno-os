@@ -20,23 +20,13 @@
 #include <string.h>
 #include <inferno/lock-types.h>
 
-typedef struct Ctx Ctx;
+typedef struct inferno_ctx Ctx;
 typedef struct inferno_prim Prim;
 
 /* a token starts with its Prim: the core goes from one to the other */
 typedef char token_prim_first[offsetof(struct inferno_token, p) == 0 ? 1 : -1];
+typedef char thread_ctx_first[offsetof(struct inferno_thread, ctx) == 0 ? 1 : -1];
 #define TOKEN(prim)	((inferno_token_t*)(prim))
-
-struct Ctx
-{
-	int		n;				/* tokens held */
-	Prim		*t[INFERNO_TOKEN_MAX];
-	unsigned	seq[INFERNO_TOKEN_MAX];		/* acquisition order, kept across pauses */
-	unsigned	nextseq;
-	int		nshort;				/* short mutexes held */
-	unsigned	rng;				/* for the debug mode */
-	void		*thread;			/* wait object attached by the thread */
-};
 
 #define F_TOKEN	2
 
@@ -54,7 +44,20 @@ static void
 ctx_init(Ctx *c, unsigned id)
 {
 	memset(c, 0, sizeof *c);
+	c->magic = INFERNO_THREAD_MAGIC;
+	c->id = id;
 	c->rng = dbg_seed * 2654435761u + id * 40503u + 1;
+}
+
+/* the context of an attached descriptor, checked */
+static Ctx*
+thread_ctx(inferno_thread_t *t)
+{
+	if(t == NULL)
+		die("no thread attached: the thread must call inferno_thread_attach");
+	if(t->ctx.magic != INFERNO_THREAD_MAGIC)
+		die("bad thread descriptor (not initialized, or destroyed)");
+	return &t->ctx;
 }
 
 #endif /* _INFERNO_LOCK_CORE_H_ */

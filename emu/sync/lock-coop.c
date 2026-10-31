@@ -7,32 +7,32 @@
 
 void (*inferno_coop_wait)(void);
 
-static Ctx ctxs[INFERNO_COOP_MAXCTX];
-static int inited, cur;
+typedef struct inferno_thread Thread;
+
+static Thread *cur;		/* the context that runs */
+static unsigned nctx;
+
+static Thread*
+selfthread(void)
+{
+	thread_ctx(cur);
+	return cur;
+}
 
 static Ctx*
 self(void)
 {
-	int i;
-
-	if(!inited){
-		for(i = 0; i < INFERNO_COOP_MAXCTX; i++)
-			ctx_init(&ctxs[i], i);
-		inited = 1;
-	}
-	return &ctxs[cur];
+	return &selfthread()->ctx;
 }
 
 void
-inferno_coop_select(int id)
+inferno_coop_select(inferno_thread_t *th)
 {
-	if(id < 0 || id >= INFERNO_COOP_MAXCTX)
-		die("bad context");
-	self();
-	cur = id;
+	thread_ctx(th);
+	cur = th;
 }
 
-int
+inferno_thread_t*
 inferno_coop_current(void)
 {
 	return cur;
@@ -41,7 +41,7 @@ inferno_coop_current(void)
 static void
 waitturn(void)
 {
-	int me = cur;
+	Thread *me = cur;
 
 	if(inferno_coop_wait == NULL)
 		die("coop: would wait with nothing to run (deadlock)");
@@ -174,8 +174,6 @@ inferno_ref_dec(inferno_ref_t *r)
 /*
  *  Waiting and interruption on one host thread: the contexts take turns by hand.
  */
-typedef struct inferno_thread Thread;
-
 static long clock_ms;
 int (*inferno_coop_fdready)(int, int);
 
@@ -195,47 +193,45 @@ int
 inferno_thread_init(inferno_thread_t *th)
 {
 	memset(th, 0, sizeof *th);
+	ctx_init(&th->ctx, nctx++);
 	return 0;
 }
 
 void
 inferno_thread_destroy(inferno_thread_t *th)
 {
-	(void)th;
+	if(thread_ctx(th)->n || th->ctx.nshort)
+		fprintf(stderr, "inferno_lock: context %u destroyed holding %d tokens and %d short mutexes\n",
+			th->ctx.id, th->ctx.n, th->ctx.nshort);
+	th->ctx.magic = 0;
+	if(cur == th)
+		cur = NULL;
 }
 
 void
 inferno_thread_attach(inferno_thread_t *th)
 {
-	self()->thread = th;
+	inferno_coop_select(th);
 }
 
 void
 inferno_thread_detach(void)
 {
-	self()->thread = NULL;
+	cur = NULL;
 }
 
 inferno_thread_t*
 inferno_thread_current(void)
 {
-	return self()->thread;
-}
-
-static Thread*
-mythread(Ctx *c)
-{
-	if(c->thread == NULL)
-		die("wait by a context that is not attached (inferno_thread_attach)");
-	return c->thread;
+	return cur;
 }
 
 /* ms < 0: no limit; fd >= 0: wait for a descriptor instead of a permit */
 static int
 blockon(long ms, int usepermit, int fd, int events, int *ready)
 {
-	Ctx *c = self();
-	Thread *t = mythread(c);
+	Thread *t = selfthread();
+	Ctx *c = &t->ctx;
 	inferno_token_saved_t s;
 	long dl = clock_ms + ms;
 	int r, paused, k;
@@ -332,7 +328,7 @@ inferno_thread_interrupt(inferno_thread_t *th)
 int
 inferno_thread_clear_interrupt(void)
 {
-	Thread *t = mythread(self());
+	Thread *t = selfthread();
 	int r = t->pending;
 
 	t->pending = 0;

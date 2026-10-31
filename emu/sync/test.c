@@ -182,6 +182,10 @@ t_ref(void)
 
 #define NTHREAD	4
 
+/* every thread that uses the API has a descriptor */
+#define ATTACH(me)	do { inferno_thread_init(&(me)); inferno_thread_attach(&(me)); } while(0)
+#define DETACH(me)	do { inferno_thread_detach(); inferno_thread_destroy(&(me)); } while(0)
+
 /* a pthread-specific helper: run n copies of f, wait for them */
 static void
 spawn(int n, void *(*f)(void*))
@@ -213,6 +217,9 @@ static long cnt[3];
 static void*
 tokworker(void *arg)
 {
+	inferno_thread_t me;
+
+	ATTACH(me);
 	unsigned r = (unsigned)(long)arg * 7919u + 1;
 	int i, x, y, pr;
 	long vx, a;
@@ -245,6 +252,7 @@ tokworker(void *arg)
 		inferno_token_put(&T[y]);
 		inferno_token_put(&T[x]);
 	}
+	DETACH(me);
 	return NULL;
 }
 
@@ -269,6 +277,9 @@ t_tokens_threads(int permille)
 static void*
 allworker(void *arg)
 {
+	inferno_thread_t me;
+
+	ATTACH(me);
 	inferno_token_t *set[3];
 	int i;
 
@@ -284,6 +295,7 @@ allworker(void *arg)
 			sched_yield();
 		inferno_token_put(&T[0]); inferno_token_put(&T[1]); inferno_token_put(&T[2]);
 	}
+	DETACH(me);
 	return NULL;
 }
 
@@ -313,6 +325,9 @@ static long shared_a, shared_b;
 static void*
 shortworker(void *arg)
 {
+	inferno_thread_t me;
+
+	ATTACH(me);
 	int i;
 	long a, b;
 	unsigned s;
@@ -338,6 +353,7 @@ shortworker(void *arg)
 		cnt[0]++;
 		inferno_mutex_unlock(&SM);
 	}
+	DETACH(me);
 	return NULL;
 }
 
@@ -360,8 +376,12 @@ static inferno_mutex_t XM;
 static void*
 locker(void *arg)
 {
+	inferno_thread_t me;
+
+	ATTACH(me);
 	(void)arg;
 	inferno_mutex_lock(&XM);
+	DETACH(me);
 	return NULL;
 }
 
@@ -388,6 +408,9 @@ static volatile int p_state, p_ret, p_held;
 static void*
 pausethr(void *arg)
 {
+	inferno_thread_t me;
+
+	ATTACH(me);
 	(void)arg;
 	inferno_token_get(&PA);
 	p_state = 1;
@@ -396,6 +419,7 @@ pausethr(void *arg)
 	inferno_mutex_unlock(&PM);
 	inferno_token_put(&PA);
 	p_state = 2;
+	DETACH(me);
 	return NULL;
 }
 
@@ -745,12 +769,63 @@ t_wait_basic(void)
 	(void)ready;
 }
 
+/* a thread that is not attached, or whose descriptor is gone, is a bug that must be caught */
+static int
+aborts(void (*f)(void))
+{
+	pid_t pid;
+	int st;
+
+	pid = fork();
+	if(pid == 0){
+		if(freopen("/dev/null", "w", stderr) == NULL)
+			_exit(1);
+		f();
+		_exit(0);
+	}
+	waitpid(pid, &st, 0);
+	return WIFSIGNALED(st) && WTERMSIG(st) == SIGABRT;
+}
+
+static void
+use_detached(void)
+{
+	inferno_token_t t;
+
+	inferno_token_init(&t);
+	inferno_thread_detach();
+	inferno_token_get(&t);
+}
+
+static void
+use_destroyed(void)
+{
+	inferno_token_t t;
+	inferno_thread_t me;
+
+	inferno_token_init(&t);
+	inferno_thread_init(&me);
+	inferno_thread_attach(&me);
+	inferno_thread_destroy(&me);
+	inferno_token_get(&t);
+}
+
+static void
+t_attach_checked(void)
+{
+	CHECK(inferno_thread_current() == &mainth);
+	CHECK(aborts(use_detached));
+	CHECK(aborts(use_destroyed));
+	CHECK(inferno_thread_current() == &mainth);
+}
+
 #ifdef BACKEND_COOP
 
 /*
  *  Deterministic scenarios: context 0 and 1 are two "threads".  inferno_coop_wait
  *  runs step(), one move of whoever holds what the waiter needs.
  */
+static inferno_thread_t cth[2];		/* the two contexts */
 static inferno_token_t CT[2];		/* canonical order: CT[0] first */
 #define CA	CT[0]
 #define CB	CT[1]
@@ -760,7 +835,7 @@ static void (*scenario)(void);
 static void
 wait_hook(void)
 {
-	int me = inferno_coop_current();
+	inferno_thread_t *me = inferno_coop_current();
 
 	stepno++;
 	scenario();
@@ -774,7 +849,7 @@ wait_hook(void)
 static void
 sc_a_holder(void)
 {
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	if(stepno == 1){
 		step_freed_b = inferno_token_try(&CB);	/* proves ctx 1 released B */
 		if(step_freed_b)
@@ -790,9 +865,9 @@ t_coop_pause(void)
 
 	inferno_token_init(&CA);
 	inferno_token_init(&CB);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	CHECK(inferno_token_get(&CA) == 0);
-	inferno_coop_select(1);
+	inferno_coop_select(&cth[1]);
 	CHECK(inferno_token_get(&CB) == 0);
 	scenario = sc_a_holder;
 	inferno_coop_wait = wait_hook;
@@ -801,13 +876,13 @@ t_coop_pause(void)
 	inferno_coop_wait = NULL;
 	CHECK(r == 1);
 	CHECK(step_freed_b == 1);
-	CHECK(inferno_coop_current() == 1);
+	CHECK(inferno_coop_current() == &cth[1]);
 	CHECK(inferno_token_held(&CA) && inferno_token_held(&CB));
 	inferno_token_put(&CA);
 	inferno_token_put(&CB);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	CHECK(!inferno_token_held(&CA));
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 }
 
 /* the same with a mutex taken by ctx 0 and released by ctx 1: no owner */
@@ -816,7 +891,7 @@ static inferno_mutex_t CM;
 static void
 sc_unlock_other(void)
 {
-	inferno_coop_select(1);		/* not the one that took it */
+	inferno_coop_select(&cth[1]);		/* not the one that took it */
 	inferno_mutex_unlock(&CM);
 }
 
@@ -824,7 +899,7 @@ static void
 t_coop_mutex_noowner(void)
 {
 	inferno_mutex_init(&CM, 0);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	CHECK(inferno_mutex_lock(&CM) == 0);
 	scenario = sc_unlock_other;
 	inferno_coop_wait = wait_hook;
@@ -832,7 +907,7 @@ t_coop_mutex_noowner(void)
 	CHECK(inferno_mutex_lock(&CM) == 1);	/* ctx 0 again: waits, ctx 1 releases */
 	inferno_coop_wait = NULL;
 	inferno_mutex_unlock(&CM);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 }
 
 /* the seqlock asks for a retry when a write happened in the read section */
@@ -878,14 +953,13 @@ t_coop_deadlock_aborts(void)
 }
 
 /* the wait of ctx 0 pauses: tokens come free, the others run, the wake comes from ctx 1 */
-static inferno_thread_t cth[2];
 static inferno_token_t WT;
 static int wsteps, w_freed;
 
 static void
 wake_scenario(void)
 {
-	inferno_coop_select(1);
+	inferno_coop_select(&cth[1]);
 	wsteps++;
 	if(wsteps == 2){
 		w_freed = inferno_token_try(&WT);	/* ctx 0 released it */
@@ -900,13 +974,10 @@ t_coop_wait(void)
 {
 	int r;
 
-	inferno_thread_init(&cth[0]);
-	inferno_thread_init(&cth[1]);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	inferno_thread_attach(&cth[0]);
-	inferno_coop_select(1);
 	inferno_thread_attach(&cth[1]);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	inferno_token_init(&WT);
 	inferno_token_get(&WT);
 	scenario = wake_scenario;
@@ -918,14 +989,14 @@ t_coop_wait(void)
 	CHECK(w_freed == 1);
 	CHECK(inferno_token_held(&WT));
 	inferno_token_put(&WT);
-	CHECK(inferno_coop_current() == 0);
+	CHECK(inferno_coop_current() == &cth[0]);
 }
 
 /* virtual time: a sleep with nothing to run takes the clock to its deadline; interrupts end it */
 static void
 intr_scenario(void)
 {
-	inferno_coop_select(1);
+	inferno_coop_select(&cth[1]);
 	inferno_thread_interrupt(&cth[0]);
 }
 
@@ -934,7 +1005,7 @@ t_coop_sleep(void)
 {
 	long t0;
 
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	t0 = inferno_coop_now();
 	CHECK(inferno_sleep(100) == INFERNO_WAIT_TIMEOUT);
 	CHECK(inferno_coop_now() - t0 == 100);
@@ -943,7 +1014,7 @@ t_coop_sleep(void)
 	CHECK(inferno_sleep(100000) == INFERNO_WAIT_INTR);
 	inferno_coop_wait = NULL;
 	CHECK(inferno_coop_now() - t0 < 1000);
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 }
 
 /* descriptors: readiness is decided by a hook of the test */
@@ -959,7 +1030,7 @@ fakefd(int fd, int events)
 static void
 nop_scenario(void)
 {
-	inferno_coop_select(1);
+	inferno_coop_select(&cth[1]);
 }
 
 static void
@@ -967,7 +1038,7 @@ t_coop_fd(void)
 {
 	int ready = 0;
 
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 	inferno_coop_fdready = fakefd;
 	scenario = nop_scenario;
 	inferno_coop_wait = wait_hook;
@@ -978,7 +1049,7 @@ t_coop_fd(void)
 	CHECK(inferno_wait_fd(7, INFERNO_FD_READ, 5, &ready) == INFERNO_WAIT_TIMEOUT);
 	inferno_coop_wait = NULL;
 	inferno_coop_fdready = NULL;
-	inferno_coop_select(0);
+	inferno_coop_select(&cth[0]);
 }
 
 #endif /* BACKEND_COOP */
@@ -990,6 +1061,10 @@ main(void)
 
 	inferno_thread_init(&mainth);
 	inferno_thread_attach(&mainth);
+#ifdef BACKEND_COOP
+	inferno_thread_init(&cth[0]);
+	inferno_thread_init(&cth[1]);
+#endif
 
 #define RUN(name, call) do { b = failed; call; report(name, b); } while(0)
 	RUN("token", t_token());
@@ -998,6 +1073,7 @@ main(void)
 	RUN("seqlock", t_seqlock());
 	RUN("ref", t_ref());
 	RUN("wait-basic", t_wait_basic());
+	RUN("attach-checked", t_attach_checked());
 #ifdef BACKEND_COOP
 	RUN("coop-pause", t_coop_pause());
 	RUN("coop-mutex-noowner", t_coop_mutex_noowner());

@@ -2,6 +2,7 @@
 #define _INFERNO_LOCK_TYPES_COOP_H_
 
 /* Types of <inferno/lock.h> for the coop backend (emu/sync/lock-coop.c): one host thread. */
+#include <inferno/lock-types-ctx.h>
 
 struct inferno_prim {
 	int	flags;
@@ -25,6 +26,7 @@ struct inferno_ref {
 };
 
 struct inferno_thread {
+	struct inferno_ctx	ctx;		/* first: the lock layer goes from the one to the other */
 	int	permits;
 	int	pending;
 };

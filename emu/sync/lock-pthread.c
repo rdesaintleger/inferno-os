@@ -20,41 +20,27 @@ static pthread_mutex_t idlock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned nctx;
 
 static void
-ctxfree(void *p)
-{
-	Ctx *c = p;
-
-	if(c->n || c->nshort)
-		fprintf(stderr, "inferno_lock: thread ended holding %d tokens and %d short mutexes\n", c->n, c->nshort);
-	free(c);
-}
-
-static void
 mkkey(void)
 {
-	if(pthread_key_create(&key, ctxfree) != 0)
+	if(pthread_key_create(&key, NULL) != 0)
 		die("cannot create the thread key");
+}
+
+static Thread*
+selfthread(void)
+{
+	Thread *t;
+
+	pthread_once(&keyonce, mkkey);
+	t = pthread_getspecific(key);
+	thread_ctx(t);
+	return t;
 }
 
 static Ctx*
 self(void)
 {
-	Ctx *c;
-	unsigned id;
-
-	pthread_once(&keyonce, mkkey);
-	c = pthread_getspecific(key);
-	if(c == NULL){
-		c = malloc(sizeof *c);
-		if(c == NULL)
-			die("out of memory");
-		pthread_mutex_lock(&idlock);
-		id = nctx++;
-		pthread_mutex_unlock(&idlock);
-		ctx_init(c, id);
-		pthread_setspecific(key, c);
-	}
-	return c;
+	return &selfthread()->ctx;
 }
 
 static int
@@ -242,8 +228,13 @@ int
 inferno_thread_init(inferno_thread_t *th)
 {
 	Thread *t = th;
+	unsigned id;
 
 	memset(t, 0, sizeof *t);
+	pthread_mutex_lock(&idlock);
+	id = nctx++;
+	pthread_mutex_unlock(&idlock);
+	ctx_init(&t->ctx, id);
 	t->wake[0] = t->wake[1] = -1;
 	if(pthread_mutex_init(&t->m, NULL) != 0)
 		return -1;
@@ -259,6 +250,10 @@ inferno_thread_destroy(inferno_thread_t *th)
 {
 	Thread *t = th;
 
+	if(thread_ctx(t)->n || t->ctx.nshort)
+		fprintf(stderr, "inferno_lock: thread %u destroyed holding %d tokens and %d short mutexes\n",
+			t->ctx.id, t->ctx.n, t->ctx.nshort);
+	t->ctx.magic = 0;
 	if(t->wake[0] >= 0){
 		close(t->wake[0]);
 		close(t->wake[1]);
@@ -270,27 +265,29 @@ inferno_thread_destroy(inferno_thread_t *th)
 void
 inferno_thread_attach(inferno_thread_t *th)
 {
-	self()->thread = th;
+	thread_ctx(th);
+	pthread_once(&keyonce, mkkey);
+	pthread_setspecific(key, th);
 }
 
 void
 inferno_thread_detach(void)
 {
-	self()->thread = NULL;
+	Thread *t;
+
+	pthread_once(&keyonce, mkkey);
+	t = pthread_getspecific(key);
+	if(t != NULL && (t->ctx.n || t->ctx.nshort))
+		fprintf(stderr, "inferno_lock: thread %u detached holding %d tokens and %d short mutexes\n",
+			t->ctx.id, t->ctx.n, t->ctx.nshort);
+	pthread_setspecific(key, NULL);
 }
 
 inferno_thread_t*
 inferno_thread_current(void)
 {
-	return self()->thread;
-}
-
-static Thread*
-mythread(Ctx *c)
-{
-	if(c->thread == NULL)
-		die("wait by a thread that is not attached (inferno_thread_attach)");
-	return c->thread;
+	pthread_once(&keyonce, mkkey);
+	return pthread_getspecific(key);
 }
 
 static void
@@ -335,8 +332,8 @@ mkwake(Thread *t)
 static int
 blockon(long ms, int usepermit)
 {
-	Ctx *c = self();
-	Thread *t = mythread(c);
+	Thread *t = selfthread();
+	Ctx *c = &t->ctx;
 	inferno_token_saved_t s;
 	struct timespec dl;
 	int r, rc, paused, timedout;
@@ -411,8 +408,8 @@ inferno_sleep(long ms)
 int
 inferno_wait_fd(int fd, int events, long ms, int *ready)
 {
-	Ctx *c = self();
-	Thread *t = mythread(c);
+	Thread *t = selfthread();
+	Ctx *c = &t->ctx;
 	inferno_token_saved_t s;
 	struct pollfd pfd[2];
 	struct timespec dl, now;
@@ -525,7 +522,7 @@ inferno_thread_interrupt(inferno_thread_t *th)
 int
 inferno_thread_clear_interrupt(void)
 {
-	Thread *t = mythread(self());
+	Thread *t = selfthread();
 	int r;
 
 	pthread_mutex_lock(&t->m);
