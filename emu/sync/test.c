@@ -24,6 +24,7 @@
 #endif
 
 static int failed;
+static inferno_thread_t mainth;		/* the main thread, attached in main */
 
 #define CHECK(x) do { if(!(x)){ printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #x); failed++; } } while(0)
 
@@ -452,7 +453,297 @@ t_short_pause_aborts(void)
 	CHECK(WIFSIGNALED(st) && WTERMSIG(st) == SIGABRT);
 }
 
+/* an interrupt or a wake is never lost, in lockstep, whatever the interleaving */
+#define NPING	3000
+
+static struct {
+	inferno_thread_t th;
+	int res[NPING];
+} pw;
+
+static void*
+pingworker(void *arg)
+{
+	int i;
+
+	(void)arg;
+	inferno_thread_attach(&pw.th);
+	for(i = 0; i < NPING; i++){
+		pw.res[i] = inferno_wait_timed(5000);
+		inferno_wake(&mainth);
+	}
+	return NULL;
+}
+
+static void
+t_wait_pingpong(void)
+{
+	pthread_t th;
+	int i, intr;
+
+	inferno_thread_init(&pw.th);
+	pthread_create(&th, NULL, pingworker, NULL);
+	for(i = 0; i < NPING; i++){
+		intr = (i * 7) % 3 == 0;
+		if(i % 5 == 0)
+			sched_yield();
+		if(intr)
+			inferno_thread_interrupt(&pw.th);
+		else
+			inferno_wake(&pw.th);
+		if(inferno_wait_timed(5000) != INFERNO_WAIT_WOKEN){
+			printf("FAIL: the worker did not answer at step %d\n", i);
+			failed++;
+			break;
+		}
+	}
+	pthread_join(th, NULL);
+	for(i = 0; i < NPING; i++){
+		intr = (i * 7) % 3 == 0;
+		if(pw.res[i] != (intr? INFERNO_WAIT_INTR: INFERNO_WAIT_WOKEN)){
+			printf("FAIL: step %d gave %d\n", i, pw.res[i]);
+			failed++;
+			break;
+		}
+	}
+	inferno_thread_destroy(&pw.th);
+}
+
+/* descriptors */
+static void
+t_wait_fd_basic(void)
+{
+	int p[2], ready = 0;
+	char b = 'x';
+
+	CHECK(pipe(p) == 0);
+	inferno_thread_interrupt(&mainth);
+	CHECK(inferno_wait_fd(p[0], INFERNO_FD_READ, -1, &ready) == INFERNO_WAIT_INTR);
+	CHECK(inferno_wait_fd(p[0], INFERNO_FD_READ, 20, &ready) == INFERNO_WAIT_TIMEOUT);
+	CHECK(inferno_wait_fd(p[0], INFERNO_FD_READ, 0, &ready) == INFERNO_WAIT_TIMEOUT);
+	CHECK(write(p[1], &b, 1) == 1);
+	CHECK(inferno_wait_fd(p[0], INFERNO_FD_READ, -1, &ready) == INFERNO_WAIT_READY);
+	CHECK(ready == INFERNO_FD_READ);
+	CHECK(inferno_wait_fd(p[1], INFERNO_FD_WRITE, -1, &ready) == INFERNO_WAIT_READY);
+	CHECK(ready == INFERNO_FD_WRITE);
+	/* the wake pipe holds no stale byte: an interrupt does not leak into the next wait */
+	inferno_thread_interrupt(&mainth);
+	CHECK(inferno_wait_fd(p[0], INFERNO_FD_READ, -1, &ready) == INFERNO_WAIT_INTR);
+	CHECK(inferno_wait_fd(p[1], INFERNO_FD_WRITE, 5, &ready) == INFERNO_WAIT_READY);
+	close(p[0]);
+	close(p[1]);
+}
+
+/*
+ *  The bug of the signal protocol: the interrupter acts between the moment the
+ *  thread has announced that it is going to wait and the moment it is really in
+ *  the host call.  Here the interrupt lands anywhere in that interval and the
+ *  wait must always return INTR.
+ */
+#define NFD	2000
+
+static struct {
+	inferno_thread_t th;
+	int p[2];
+	volatile int armed;
+	int res[NFD];
+} fw;
+
+static void*
+fdworker(void *arg)
+{
+	int i, ready;
+
+	(void)arg;
+	inferno_thread_attach(&fw.th);
+	for(i = 0; i < NFD; i++){
+		fw.armed = i + 1;
+		fw.res[i] = inferno_wait_fd(fw.p[0], INFERNO_FD_READ, 5000, &ready);
+		inferno_wake(&mainth);
+	}
+	return NULL;
+}
+
+static void
+t_wait_fd_race(void)
+{
+	pthread_t th;
+	int i;
+
+	inferno_thread_init(&fw.th);
+	if(pipe(fw.p) != 0)
+		return;
+	fw.armed = 0;
+	pthread_create(&th, NULL, fdworker, NULL);
+	for(i = 0; i < NFD; i++){
+		while(fw.armed != i + 1)
+			sched_yield();
+		if(i % 3 == 0)
+			sched_yield();
+		inferno_thread_interrupt(&fw.th);
+		if(inferno_wait_timed(5000) != INFERNO_WAIT_WOKEN){
+			printf("FAIL: the worker did not answer at step %d\n", i);
+			failed++;
+			break;
+		}
+	}
+	pthread_join(th, NULL);
+	for(i = 0; i < NFD; i++)
+		if(fw.res[i] != INFERNO_WAIT_INTR){
+			printf("FAIL: wait %d returned %d, the interrupt was lost\n", i, fw.res[i]);
+			failed++;
+			break;
+		}
+	close(fw.p[0]);
+	close(fw.p[1]);
+	inferno_thread_destroy(&fw.th);
+}
+
+/* waiting releases the tokens and takes them back: wait, sleep and descriptor */
+static struct {
+	inferno_thread_t th;
+	inferno_token_t tok;
+	int kind;
+	volatile int armed;
+	int res, held;
+} tw;
+
+static void*
+tokwaiter(void *arg)
+{
+	int ready, p[2] = {-1, -1};
+
+	(void)arg;
+	inferno_thread_attach(&tw.th);
+	inferno_token_get(&tw.tok);
+	if(tw.kind == 2 && pipe(p) != 0)
+		return NULL;
+	tw.armed = 1;
+	if(tw.kind == 0)
+		tw.res = inferno_wait();
+	else if(tw.kind == 1)
+		tw.res = inferno_sleep(400);
+	else
+		tw.res = inferno_wait_fd(p[0], INFERNO_FD_READ, 400, &ready);
+	tw.held = inferno_token_held(&tw.tok);
+	inferno_token_put(&tw.tok);
+	if(tw.kind == 2){
+		close(p[0]);
+		close(p[1]);
+	}
+	return NULL;
+}
+
+static void
+t_wait_releases_tokens(void)
+{
+	pthread_t th;
+	int kind, i, got;
+
+	for(kind = 0; kind < 3; kind++){
+		inferno_thread_init(&tw.th);
+		inferno_token_init(&tw.tok);
+		tw.kind = kind;
+		tw.armed = 0;
+		tw.res = -1;
+		tw.held = 0;
+		pthread_create(&th, NULL, tokwaiter, NULL);
+		for(i = 0; i < 5000 && !tw.armed; i++)
+			nap();
+		got = 0;
+		for(i = 0; i < 5000 && !got; i++){	/* released while it waits */
+			got = inferno_token_try(&tw.tok);
+			if(!got)
+				nap();
+		}
+		CHECK(got);
+		if(got)
+			inferno_token_put(&tw.tok);
+		if(kind == 0)
+			inferno_wake(&tw.th);
+		pthread_join(th, NULL);
+		CHECK(tw.held == 1);
+		CHECK(tw.res == (kind == 0? INFERNO_WAIT_WOKEN: INFERNO_WAIT_TIMEOUT));
+		inferno_token_destroy(&tw.tok);
+		inferno_thread_destroy(&tw.th);
+	}
+}
+
+/* a sleeping thread that is interrupted gets out at once */
+static struct { inferno_thread_t th; volatile int armed; int res; } sw;
+
+static void*
+sleeper(void *arg)
+{
+	(void)arg;
+	inferno_thread_attach(&sw.th);
+	sw.armed = 1;
+	sw.res = inferno_sleep(20000);
+	return NULL;
+}
+
+static void
+t_sleep_interrupted(void)
+{
+	pthread_t th;
+	struct timespec t0, t1;
+	long ms;
+
+	inferno_thread_init(&sw.th);
+	sw.armed = 0;
+	pthread_create(&th, NULL, sleeper, NULL);
+	while(!sw.armed)
+		sched_yield();
+	nap();
+	clock_gettime(CLOCK_MONOTONIC, &t0);
+	inferno_thread_interrupt(&sw.th);
+	pthread_join(th, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &t1);
+	ms = (t1.tv_sec - t0.tv_sec) * 1000 + (t1.tv_nsec - t0.tv_nsec) / 1000000;
+	CHECK(sw.res == INFERNO_WAIT_INTR);
+	CHECK(ms < 2000);
+	inferno_thread_destroy(&sw.th);
+}
+
 #endif /* BACKEND_PTHREAD */
+
+/* permits and interrupts of the calling thread alone */
+static void
+t_wait_basic(void)
+{
+	int r, ready = 0;
+
+	CHECK(inferno_wait_timed(0) == INFERNO_WAIT_TIMEOUT);	/* nothing: no block */
+	inferno_wake(&mainth);
+	CHECK(inferno_wait_timed(1000) == INFERNO_WAIT_WOKEN);	/* the permit is consumed */
+	CHECK(inferno_wait_timed(0) == INFERNO_WAIT_TIMEOUT);
+
+	inferno_thread_interrupt(&mainth);			/* level: not lost before the wait */
+	CHECK(inferno_wait() == INFERNO_WAIT_INTR);
+	CHECK(inferno_wait_timed(5) == INFERNO_WAIT_TIMEOUT);	/* and consumed by it */
+
+	inferno_thread_interrupt(&mainth);
+	CHECK(inferno_sleep(1000) == INFERNO_WAIT_INTR);
+	CHECK(inferno_sleep(5) == INFERNO_WAIT_TIMEOUT);
+
+	inferno_wake(&mainth);					/* sleeping does not take permits */
+	CHECK(inferno_sleep(5) == INFERNO_WAIT_TIMEOUT);
+	CHECK(inferno_wait_timed(0) == INFERNO_WAIT_WOKEN);
+
+	inferno_thread_interrupt(&mainth);
+	CHECK(inferno_thread_clear_interrupt() == 1);
+	CHECK(inferno_thread_clear_interrupt() == 0);
+	CHECK(inferno_wait_timed(5) == INFERNO_WAIT_TIMEOUT);
+
+	inferno_lock_debug(3, 1000);				/* forced pause: same results */
+	inferno_wake(&mainth);
+	CHECK(inferno_wait_timed(1000) == INFERNO_WAIT_WOKEN);
+	inferno_thread_interrupt(&mainth);
+	CHECK(inferno_sleep(1000) == INFERNO_WAIT_INTR);
+	inferno_lock_debug(0, 0);
+	(void)r;
+	(void)ready;
+}
 
 #ifdef BACKEND_COOP
 
@@ -586,6 +877,110 @@ t_coop_deadlock_aborts(void)
 	CHECK(WIFSIGNALED(st) && WTERMSIG(st) == SIGABRT);
 }
 
+/* the wait of ctx 0 pauses: tokens come free, the others run, the wake comes from ctx 1 */
+static inferno_thread_t cth[2];
+static inferno_token_t WT;
+static int wsteps, w_freed;
+
+static void
+wake_scenario(void)
+{
+	inferno_coop_select(1);
+	wsteps++;
+	if(wsteps == 2){
+		w_freed = inferno_token_try(&WT);	/* ctx 0 released it */
+		if(w_freed)
+			inferno_token_put(&WT);
+		inferno_wake(&cth[0]);
+	}
+}
+
+static void
+t_coop_wait(void)
+{
+	int r;
+
+	inferno_thread_init(&cth[0]);
+	inferno_thread_init(&cth[1]);
+	inferno_coop_select(0);
+	inferno_thread_attach(&cth[0]);
+	inferno_coop_select(1);
+	inferno_thread_attach(&cth[1]);
+	inferno_coop_select(0);
+	inferno_token_init(&WT);
+	inferno_token_get(&WT);
+	scenario = wake_scenario;
+	inferno_coop_wait = wait_hook;
+	wsteps = 0;
+	r = inferno_wait();
+	inferno_coop_wait = NULL;
+	CHECK(r == INFERNO_WAIT_WOKEN);
+	CHECK(w_freed == 1);
+	CHECK(inferno_token_held(&WT));
+	inferno_token_put(&WT);
+	CHECK(inferno_coop_current() == 0);
+}
+
+/* virtual time: a sleep with nothing to run takes the clock to its deadline; interrupts end it */
+static void
+intr_scenario(void)
+{
+	inferno_coop_select(1);
+	inferno_thread_interrupt(&cth[0]);
+}
+
+static void
+t_coop_sleep(void)
+{
+	long t0;
+
+	inferno_coop_select(0);
+	t0 = inferno_coop_now();
+	CHECK(inferno_sleep(100) == INFERNO_WAIT_TIMEOUT);
+	CHECK(inferno_coop_now() - t0 == 100);
+	scenario = intr_scenario;
+	inferno_coop_wait = wait_hook;
+	CHECK(inferno_sleep(100000) == INFERNO_WAIT_INTR);
+	inferno_coop_wait = NULL;
+	CHECK(inferno_coop_now() - t0 < 1000);
+	inferno_coop_select(0);
+}
+
+/* descriptors: readiness is decided by a hook of the test */
+static int fdcalls;
+
+static int
+fakefd(int fd, int events)
+{
+	(void)fd;
+	return ++fdcalls >= 3? events: 0;
+}
+
+static void
+nop_scenario(void)
+{
+	inferno_coop_select(1);
+}
+
+static void
+t_coop_fd(void)
+{
+	int ready = 0;
+
+	inferno_coop_select(0);
+	inferno_coop_fdready = fakefd;
+	scenario = nop_scenario;
+	inferno_coop_wait = wait_hook;
+	fdcalls = 0;
+	CHECK(inferno_wait_fd(7, INFERNO_FD_READ, -1, &ready) == INFERNO_WAIT_READY);
+	CHECK(ready == INFERNO_FD_READ && fdcalls == 3);
+	fdcalls = -1000;
+	CHECK(inferno_wait_fd(7, INFERNO_FD_READ, 5, &ready) == INFERNO_WAIT_TIMEOUT);
+	inferno_coop_wait = NULL;
+	inferno_coop_fdready = NULL;
+	inferno_coop_select(0);
+}
+
 #endif /* BACKEND_COOP */
 
 int
@@ -593,17 +988,24 @@ main(void)
 {
 	int b;
 
+	inferno_thread_init(&mainth);
+	inferno_thread_attach(&mainth);
+
 #define RUN(name, call) do { b = failed; call; report(name, b); } while(0)
 	RUN("token", t_token());
 	RUN("debug", t_debug());
 	RUN("mutex", t_mutex());
 	RUN("seqlock", t_seqlock());
 	RUN("ref", t_ref());
+	RUN("wait-basic", t_wait_basic());
 #ifdef BACKEND_COOP
 	RUN("coop-pause", t_coop_pause());
 	RUN("coop-mutex-noowner", t_coop_mutex_noowner());
 	RUN("coop-seqlock-retry", t_coop_seqlock_retry());
 	RUN("coop-deadlock-aborts", t_coop_deadlock_aborts());
+	RUN("coop-wait", t_coop_wait());
+	RUN("coop-sleep", t_coop_sleep());
+	RUN("coop-fd", t_coop_fd());
 #endif
 #ifdef BACKEND_PTHREAD
 	RUN("short-pause-aborts", t_short_pause_aborts());
@@ -613,6 +1015,11 @@ main(void)
 	RUN("short-seqlock-threads", t_short_seq_threads());
 	RUN("mutex-transfer", t_mutex_transfer());
 	RUN("pause-releases-tokens", t_pause_releases());
+	RUN("wait-pingpong", t_wait_pingpong());
+	RUN("wait-fd-basic", t_wait_fd_basic());
+	RUN("wait-fd-race", t_wait_fd_race());
+	RUN("wait-releases-tokens", t_wait_releases_tokens());
+	RUN("sleep-interrupted", t_sleep_interrupted());
 #endif
 	if(failed){
 		printf("%d checks failed\n", failed);

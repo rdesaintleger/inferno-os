@@ -129,4 +129,52 @@ extern	int	inferno_ref_dec(inferno_ref_t*);
  */
 extern	void	inferno_lock_debug(unsigned seed, int permille);
 
+/*
+ *  Waiting and interruption, with no host signal.
+ *
+ *  Each thread has a wait object (inferno_thread_t), created and destroyed by
+ *  whoever owns the thread's descriptor (it can be embedded in it) and attached
+ *  by the thread itself.  Every wait below is interruptible by
+ *  inferno_thread_interrupt, called from any thread, and is a pause point for
+ *  tokens: when the thread has to block it releases all its tokens first and takes
+ *  them again when the wait ends.
+ *
+ *  An interrupt is level-triggered: it stays set until a wait consumes it (that
+ *  wait returns INFERNO_WAIT_INTR) or inferno_thread_clear_interrupt is called, so
+ *  that it cannot be lost between the moment the interrupter decides to interrupt
+ *  and the moment the thread starts to wait: the flag is tested and the wait is
+ *  entered under the same internal lock.  The caller that wants an interrupt to
+ *  concern a given region only (the usual case) decides, under a lock of its own,
+ *  whether the thread is in that region before interrupting, and clears the flag
+ *  when it leaves the region under the same lock.
+ *
+ *  inferno_wake grants one permit to inferno_wait / inferno_wait_timed (a counting
+ *  semaphore, one waiter), which consume it.  Sleeping and waiting for a descriptor
+ *  do not consume permits.
+ */
+#define INFERNO_WAIT_WOKEN	0
+#define INFERNO_WAIT_INTR	1
+#define INFERNO_WAIT_TIMEOUT	2
+#define INFERNO_WAIT_READY	3	/* inferno_wait_fd: the descriptor is ready */
+
+#define INFERNO_FD_READ		1
+#define INFERNO_FD_WRITE	2
+
+typedef struct inferno_thread { INFERNO_OPAQUE(256) u; } inferno_thread_t;
+
+extern	int	inferno_thread_init(inferno_thread_t*);
+extern	void	inferno_thread_destroy(inferno_thread_t*);
+extern	void	inferno_thread_attach(inferno_thread_t*);	/* the calling thread is this one */
+extern	void	inferno_thread_detach(void);
+extern	inferno_thread_t*	inferno_thread_current(void);
+
+extern	int	inferno_wait(void);				/* until a permit or an interrupt */
+extern	int	inferno_wait_timed(long ms);			/* ... or the timeout (ms >= 0) */
+extern	int	inferno_sleep(long ms);				/* TIMEOUT, or INTR */
+extern	int	inferno_wait_fd(int fd, int events, long ms, int *ready);
+							/* READY (with *ready), TIMEOUT or INTR; ms < 0: no limit */
+extern	void	inferno_wake(inferno_thread_t*);
+extern	void	inferno_thread_interrupt(inferno_thread_t*);
+extern	int	inferno_thread_clear_interrupt(void);		/* was it set? */
+
 #endif /* _INFERNO_LOCK_H_ */

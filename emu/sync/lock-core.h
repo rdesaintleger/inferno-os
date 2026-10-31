@@ -26,6 +26,7 @@ struct Ctx
 	unsigned	nextseq;
 	int		nshort;				/* short mutexes held */
 	unsigned	rng;				/* for the debug mode */
+	void		*thread;			/* wait object attached by the thread */
 };
 
 #define F_TOKEN	2

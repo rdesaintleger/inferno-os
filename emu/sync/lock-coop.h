@@ -11,3 +11,15 @@
 extern	void	inferno_coop_select(int);		/* the context that runs from now on */
 extern	int	inferno_coop_current(void);
 extern	void	(*inferno_coop_wait)(void);		/* NULL: waiting aborts (deadlock) */
+
+/*
+ *  Waits of the coop backend (inferno_wait, inferno_sleep, inferno_wait_fd): when
+ *  nothing is available the running context pauses (tokens released) and calls
+ *  inferno_coop_wait in a loop.  Time is virtual: it passes by 1 ms each time that
+ *  hook returns while a timed wait is blocked, and by inferno_coop_advance; a
+ *  sleep with no hook just takes the clock to its deadline.
+ */
+extern	long	inferno_coop_now(void);			/* virtual milliseconds */
+extern	void	inferno_coop_advance(long);
+extern	int	(*inferno_coop_fdready)(int fd, int events);	/* events ready, 0 if none */
+
