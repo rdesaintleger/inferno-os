@@ -4,7 +4,14 @@
 
 static Ref	pgrpid;
 static Ref	mountid;
-static inferno_mutex_t mountidl = INFERNO_MUTEX_INITIALIZER(INFERNO_MUTEX_SHORT);	/* a copy takes its ids in one block */
+static inferno_mutex_t mountidl;	/* a copy takes its ids in one block; see pgrpinit */
+
+void
+pgrpinit(void)
+{
+	if(inferno_mutex_init(&mountidl, INFERNO_MUTEX_SHORT) != 0)
+		panic("pgrpinit: no memory");
+}
 
 Pgrp*
 newpgrp(void)

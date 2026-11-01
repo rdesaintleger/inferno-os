@@ -2,12 +2,47 @@
  *  Cost of the primitives without contention:
  *	cc -O2 -DBACKEND_PTHREAD bench.c lock-pthread.c -lpthread
  */
+#include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
+#include <inferno/platform.h>
 
 #define N	10000000L
+
+
+/* the platform of <inferno/platform.h>, for a host test: libc, and a panic that aborts */
+void*
+inferno_malloc(size_t size, size_t *got)
+{
+	void *v = malloc(size);
+
+	if(v != NULL)
+		*got = size;
+	return v;
+}
+
+void
+inferno_free(void *ptr, size_t size)
+{
+	(void)size;
+	free(ptr);
+}
+
+void
+inferno_panic(char *fmt, ...)
+{
+	va_list a;
+
+	va_start(a, fmt);
+	fprintf(stderr, "panic: ");
+	vfprintf(stderr, fmt, a);
+	fprintf(stderr, "\n");
+	va_end(a);
+	abort();
+}
 
 static double
 now(void)

@@ -45,12 +45,17 @@ extern	void	wunlock(RWlock*);
 /*
  *  New synchronization API (C99, no assembler, no C11 atomics).
  *
- *  The types below are incomplete here: this header only declares them and the
- *  functions that take pointers to them, and does not depend on the host.  The
- *  code that embeds one of them in a structure, or defines one, includes
- *  <inferno/lock-types.h>, which selects the complete definitions of the backend
- *  of the build (INFERNO_LOCK_BACKEND_PTHREAD, INFERNO_LOCK_BACKEND_COOP, ...).
- *  Nothing outside the backend uses their fields.
+ *  The types are complete here and the same for every backend: what the backends
+ *  share (flags, state, the tokens held by a thread...) is written once, in the
+ *  section "Types" at the end of this header.  What belongs to one backend only (a
+ *  pthread mutex and condition variable, say) is behind a pointer `impl' that the
+ *  backend allocates in the init function and frees in the destroy function; nothing
+ *  outside the backend uses it.  Which backend is linked is decided by the source
+ *  file that is compiled (emu/sync/lock-pthread.c, lock-coop.c, ...), not by a macro.
+ *
+ *  An object must be initialized before use and destroyed after: there is no static
+ *  initializer, since `impl' cannot be statically allocated, and an object filled with
+ *  zeros is not initialized.
  *
  *  Every thread that uses the functions below has a descriptor (inferno_thread_t,
  *  see the end of this header), initialized by whoever owns the thread's data and
@@ -198,5 +203,74 @@ extern	int	inferno_wait_fd(int fd, int events, long ms, int *ready);
 extern	void	inferno_wake(inferno_thread_t*);
 extern	void	inferno_thread_interrupt(inferno_thread_t*);
 extern	int	inferno_thread_clear_interrupt(void);		/* was it set? */
+
+/*
+ *  Types.  The fields are for the backends and their common core
+ *  (emu/sync/lock-core.inc.h) only; everyone else goes through the functions above.
+ */
+#define INFERNO_PRIM_TOKEN	2	/* flags of a token (INFERNO_MUTEX_SHORT is 1) */
+
+/* what tokens and mutexes have in common */
+struct inferno_prim {
+	int	flags;
+	int	locked;
+	void	*impl;	/* the backend's: allocated by prim_init, freed by prim_destroy */
+};
+
+struct inferno_token {
+	struct inferno_prim	p;		/* first: the core converts between the two */
+	struct inferno_token	*held_next;	/* the tokens held by a thread; only its holder uses them */
+	unsigned		held_seq;
+};
+
+struct inferno_mutex {
+	struct inferno_prim	p;
+};
+
+struct inferno_seqlock {
+	unsigned	seq;
+	void		*impl;
+};
+
+struct inferno_ref {
+	int	v;
+};
+
+#define INFERNO_THREAD_MAGIC	0x1f3a5c7eu	/* set by inferno_thread_init, cleared by destroy */
+#define INFERNO_SAVE_INLINE	8		/* entries of the save area that need no allocation */
+
+/* a token held, as remembered while a pause has released it */
+struct inferno_saveent {
+	struct inferno_token	*t;
+	unsigned		seq;
+};
+
+/* the save area of inferno_token_suspend */
+struct inferno_token_save {
+	int			n;
+	struct inferno_saveent	e[1];		/* n entries, really */
+};
+
+/* what every thread descriptor holds for the tokens */
+struct inferno_ctx {
+	unsigned		magic;
+	unsigned		id;			/* for messages */
+	struct inferno_token	*held;			/* the tokens held, the last taken first */
+	int			n;			/* how many */
+	unsigned		nextseq;		/* order of acquisition, kept across pauses */
+	int			nshort;			/* short mutexes held */
+	int			nogo;			/* depth of the zones that take no token */
+	unsigned		rng;			/* for the debug mode */
+	struct inferno_saveent	*save;			/* save area of the pauses of this layer */
+	int			savecap;
+	struct inferno_saveent	inl[INFERNO_SAVE_INLINE];
+};
+
+struct inferno_thread {
+	struct inferno_ctx	ctx;		/* first: the lock layer goes from the one to the other */
+	int			permits;	/* inferno_wake not consumed yet */
+	int			pending;	/* interrupt not consumed yet */
+	void			*impl;		/* the backend's */
+};
 
 #endif /* _INFERNO_LOCK_H_ */

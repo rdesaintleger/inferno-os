@@ -3,8 +3,9 @@
 /*
  *  Shared by the backends of the synchronization API (include/inferno/lock.h).
  *
- *  A backend defines (in its <inferno/lock-types-*.h>) struct inferno_prim, which
- *  starts with `flags', and here (in its .c file) the primitives
+ *  The types are those of <inferno/lock.h> (struct inferno_prim: flags, locked and
+ *  `impl', the backend's own data, allocated by prim_init and freed by prim_destroy).
+ *  A backend defines here (in its .c file) the primitives
  *	static Ctx *self(void);			context of the calling thread
  *	static int prim_init(Prim*);
  *	static void prim_destroy(Prim*);
@@ -13,12 +14,13 @@
  *	static void prim_put(Prim*);		releases, any thread may call it
  *  then includes lock-core.inc.h, which implements tokens and mutexes on top.
  */
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
+#include <inferno/platform.h>
 
 typedef struct inferno_ctx Ctx;
 typedef struct inferno_prim Prim;
@@ -33,11 +35,48 @@ typedef char thread_ctx_first[offsetof(struct inferno_thread, ctx) == 0 ? 1 : -1
 static unsigned dbg_seed;
 static int dbg_permille;
 
+/*
+ *  Nothing here calls the host: memory and fatal errors go through
+ *  <inferno/platform.h> (inferno_malloc, inferno_free, inferno_panic, whose format
+ *  is Plan 9's: `%ud', not `%u'), and the lock layer takes no lock of its own to do
+ *  so, so that the formatting primitives may themselves rely on it.
+ */
 static void
 die(const char *m)
 {
-	fprintf(stderr, "inferno_lock: %s\n", m);
-	abort();
+	inferno_panic("inferno_lock: %s", m);
+	for(;;)
+		;			/* inferno_panic does not return */
+}
+
+/* a diagnostic that is not fatal; the one place to change when the platform has one */
+static void
+lock_warn(const char *fmt, ...)
+{
+	va_list a;
+
+	va_start(a, fmt);
+	vfprintf(stderr, fmt, a);
+	va_end(a);
+}
+
+/* zeroed memory of the backends' own data, from the platform */
+static inline void*
+lock_zalloc(size_t n)
+{
+	size_t got;
+	void *p;
+
+	p = inferno_malloc(n, &got);
+	if(p != NULL)
+		memset(p, 0, n);
+	return p;
+}
+
+static inline void
+lock_zfree(void *p, size_t n)
+{
+	inferno_free(p, n);
 }
 
 static void
@@ -51,8 +90,8 @@ ctx_init(Ctx *c, unsigned id)
 	c->savecap = INFERNO_SAVE_INLINE;
 }
 
-/* memory of the save areas: malloc, or what inferno_lock_set_allocator gave */
-static void *(*lock_alloc)(size_t);
+/* memory of the save areas: the platform's, or what inferno_lock_set_allocator gave */
+static void *(*lock_alloc)(size_t);		/* NULL: the platform's */
 static void (*lock_release)(void*);
 
 void
@@ -69,7 +108,7 @@ ctx_free(Ctx *c)
 		if(lock_release != NULL)
 			lock_release(c->save);
 		else
-			free(c->save);
+			lock_zfree(c->save, c->savecap * sizeof *c->save);
 		c->save = c->inl;
 		c->savecap = INFERNO_SAVE_INLINE;
 	}

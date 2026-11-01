@@ -4,10 +4,12 @@
  *	cc -DBACKEND_COOP test.c lock-coop.c
  *  Prints "PASS name" per test and exits 0 when all passed.
  */
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
+#include <inferno/platform.h>
 #ifdef BACKEND_COOP
 #include <signal.h>
 #include <unistd.h>
@@ -22,6 +24,37 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
+
+/* the platform of <inferno/platform.h>, for a host test: libc, and a panic that aborts */
+void*
+inferno_malloc(size_t size, size_t *got)
+{
+	void *v = malloc(size);
+
+	if(v != NULL)
+		*got = size;
+	return v;
+}
+
+void
+inferno_free(void *ptr, size_t size)
+{
+	(void)size;
+	free(ptr);
+}
+
+void
+inferno_panic(char *fmt, ...)
+{
+	va_list a;
+
+	va_start(a, fmt);
+	fprintf(stderr, "panic: ");
+	vfprintf(stderr, fmt, a);
+	fprintf(stderr, "\n");
+	va_end(a);
+	abort();
+}
 
 static int failed;
 static inferno_thread_t mainth;		/* the main thread, attached in main */
@@ -968,14 +1001,17 @@ t_nogo(void)
 	CHECK(aborts(nogo_end_unbalanced));
 }
 
-/* statics need no init call */
-static inferno_mutex_t smx = INFERNO_MUTEX_INITIALIZER(INFERNO_MUTEX_SHORT);
-static inferno_mutex_t lmx = INFERNO_MUTEX_INITIALIZER(0);
-static inferno_token_t stok = INFERNO_TOKEN_INITIALIZER;
+/* objects in static storage: initialized by a call, as the others */
+static inferno_mutex_t smx;
+static inferno_mutex_t lmx;
+static inferno_token_t stok;
 
 static void
 t_static_init(void)
 {
+	CHECK(inferno_mutex_init(&smx, INFERNO_MUTEX_SHORT) == 0);
+	CHECK(inferno_mutex_init(&lmx, 0) == 0);
+	CHECK(inferno_token_init(&stok) == 0);
 	CHECK(inferno_mutex_lock(&smx) == 0);
 	CHECK(inferno_mutex_trylock(&smx) == 0);
 	inferno_mutex_unlock(&smx);
@@ -985,6 +1021,9 @@ t_static_init(void)
 	CHECK(inferno_token_held(&stok));
 	inferno_token_put(&stok);
 	CHECK(!inferno_token_held(&stok));
+	inferno_mutex_destroy(&smx);
+	inferno_mutex_destroy(&lmx);
+	inferno_token_destroy(&stok);
 }
 
 #ifdef BACKEND_COOP

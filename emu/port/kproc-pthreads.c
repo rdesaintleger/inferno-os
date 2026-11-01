@@ -13,7 +13,7 @@
 #include	<sched.h>
 #include	<fcntl.h>
 #include	<sys/socket.h>
-#include	<inferno/lock-types.h>
+#include	<inferno/lock.h>
 
 #ifdef __NetBSD__
 #define PTHREAD_STACK_MIN ((size_t)sysconf(_SC_THREAD_STACK_MIN))
