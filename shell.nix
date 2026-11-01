@@ -7,4 +7,8 @@ pkgs.mkShell {
     xorg.libXext
     xorg.libXpm
   ];
+
+  shellHook = ''
+    export PATH="$PWD/Linux/386/bin:$PATH"
+  '';
 }
