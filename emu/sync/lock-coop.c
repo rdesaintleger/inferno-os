@@ -202,7 +202,7 @@ void
 inferno_thread_destroy(inferno_thread_t *th)
 {
 	if(thread_ctx(th)->n || th->ctx.nshort)
-		fprintf(stderr, "inferno_lock: context %u destroyed holding %d tokens and %d short mutexes\n",
+		lock_warn("inferno_lock: context %u destroyed holding %d tokens and %d short mutexes\n",
 			th->ctx.id, th->ctx.n, th->ctx.nshort);
 	ctx_free(&th->ctx);
 	th->ctx.magic = 0;

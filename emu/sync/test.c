@@ -4,10 +4,12 @@
  *	cc -DBACKEND_COOP test.c lock-coop.c
  *  Prints "PASS name" per test and exits 0 when all passed.
  */
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inferno/lock.h>
+#include <inferno/platform.h>
 #ifdef BACKEND_COOP
 #include <signal.h>
 #include <unistd.h>
@@ -22,6 +24,37 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
+
+/* the platform of <inferno/platform.h>, for a host test: libc, and a panic that aborts */
+void*
+inferno_malloc(size_t size, size_t *got)
+{
+	void *v = malloc(size);
+
+	if(v != NULL)
+		*got = size;
+	return v;
+}
+
+void
+inferno_free(void *ptr, size_t size)
+{
+	(void)size;
+	free(ptr);
+}
+
+void
+inferno_panic(char *fmt, ...)
+{
+	va_list a;
+
+	va_start(a, fmt);
+	fprintf(stderr, "panic: ");
+	vfprintf(stderr, fmt, a);
+	fprintf(stderr, "\n");
+	va_end(a);
+	abort();
+}
 
 static int failed;
 static inferno_thread_t mainth;		/* the main thread, attached in main */

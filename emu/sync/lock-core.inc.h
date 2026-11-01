@@ -50,7 +50,7 @@ push(Ctx *c, inferno_token_t *t, unsigned seq)
 	t->held_seq = seq;
 	c->held = t;
 	if(++c->n == TOKEN_WARN)
-		fprintf(stderr, "inferno_lock: thread %u holds %d tokens\n", c->id, c->n);
+		lock_warn("inferno_lock: thread %u holds %d tokens\n", c->id, c->n);
 }
 
 /* unlist, without releasing */
@@ -114,7 +114,7 @@ saveroom(Ctx *c, int need)
 	cap = c->savecap * 2;
 	if(cap < need)
 		cap = need;
-	e = lock_alloc != NULL? lock_alloc(cap * sizeof *e): malloc(cap * sizeof *e);
+	e = lock_alloc != NULL? lock_alloc(cap * sizeof *e): lock_zalloc(cap * sizeof *e);
 	if(e == NULL)
 		die("out of memory for the save area of the tokens");
 	ctx_free(c);

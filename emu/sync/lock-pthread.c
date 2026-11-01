@@ -94,16 +94,16 @@ prim_init(Prim *p)
 {
 	struct pprim *x;
 
-	x = calloc(1, sizeof *x);
+	x = lock_zalloc(sizeof *x);
 	if(x == NULL)
 		return -1;
 	if(pthread_mutex_init(&x->m, NULL) != 0){
-		free(x);
+		lock_zfree(x, sizeof *x);
 		return -1;
 	}
 	if(!RAW(p) && pthread_cond_init(&x->c, NULL) != 0){
 		pthread_mutex_destroy(&x->m);
-		free(x);
+		lock_zfree(x, sizeof *x);
 		return -1;
 	}
 	p->impl = x;
@@ -120,7 +120,7 @@ prim_destroy(Prim *p)
 	if(!RAW(p))
 		pthread_cond_destroy(&x->c);
 	pthread_mutex_destroy(&x->m);
-	free(x);
+	lock_zfree(x, sizeof *x);
 	p->impl = NULL;
 }
 
@@ -194,11 +194,11 @@ inferno_seqlock_init(inferno_seqlock_t *l)
 	pthread_mutex_t *m;
 
 	l->seq = 0;
-	m = malloc(sizeof *m);
+	m = lock_zalloc(sizeof *m);
 	if(m == NULL)
 		return -1;
 	if(pthread_mutex_init(m, NULL) != 0){
-		free(m);
+		lock_zfree(m, sizeof *m);
 		l->impl = NULL;
 		return -1;
 	}
@@ -212,7 +212,7 @@ inferno_seqlock_destroy(inferno_seqlock_t *l)
 	if(l->impl == NULL)
 		return;
 	pthread_mutex_destroy(l->impl);
-	free(l->impl);
+	lock_zfree(l->impl, sizeof(pthread_mutex_t));
 	l->impl = NULL;
 }
 
@@ -323,17 +323,17 @@ inferno_thread_init(inferno_thread_t *th)
 	unsigned id;
 
 	memset(t, 0, sizeof *t);
-	x = calloc(1, sizeof *x);
+	x = lock_zalloc(sizeof *x);
 	if(x == NULL)
 		return -1;
 	x->wake[0] = x->wake[1] = -1;
 	if(pthread_mutex_init(&x->m, NULL) != 0){
-		free(x);
+		lock_zfree(x, sizeof *x);
 		return -1;
 	}
 	if(pthread_cond_init(&x->c, NULL) != 0){
 		pthread_mutex_destroy(&x->m);
-		free(x);
+		lock_zfree(x, sizeof *x);
 		return -1;
 	}
 	pthread_mutex_lock(&idlock);
@@ -351,7 +351,7 @@ inferno_thread_destroy(inferno_thread_t *th)
 	struct pthr *x;
 
 	if(thread_ctx(t)->n || t->ctx.nshort)
-		fprintf(stderr, "inferno_lock: thread %u destroyed holding %d tokens and %d short mutexes\n",
+		lock_warn("inferno_lock: thread %u destroyed holding %d tokens and %d short mutexes\n",
 			t->ctx.id, t->ctx.n, t->ctx.nshort);
 	x = t->impl;
 	ctx_free(&t->ctx);
@@ -363,7 +363,7 @@ inferno_thread_destroy(inferno_thread_t *th)
 	}
 	pthread_cond_destroy(&x->c);
 	pthread_mutex_destroy(&x->m);
-	free(x);
+	lock_zfree(x, sizeof *x);
 }
 
 void
@@ -382,7 +382,7 @@ inferno_thread_detach(void)
 	pthread_once(&keyonce, mkkey);
 	t = pthread_getspecific(key);
 	if(t != NULL && (t->ctx.n || t->ctx.nshort))
-		fprintf(stderr, "inferno_lock: thread %u detached holding %d tokens and %d short mutexes\n",
+		lock_warn("inferno_lock: thread %u detached holding %d tokens and %d short mutexes\n",
 			t->ctx.id, t->ctx.n, t->ctx.nshort);
 	pthread_setspecific(key, NULL);
 }
