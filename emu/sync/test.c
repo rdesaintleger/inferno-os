@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
 #ifdef BACKEND_COOP
 #include <signal.h>
 #include <unistd.h>
@@ -968,14 +968,17 @@ t_nogo(void)
 	CHECK(aborts(nogo_end_unbalanced));
 }
 
-/* statics need no init call */
-static inferno_mutex_t smx = INFERNO_MUTEX_INITIALIZER(INFERNO_MUTEX_SHORT);
-static inferno_mutex_t lmx = INFERNO_MUTEX_INITIALIZER(0);
-static inferno_token_t stok = INFERNO_TOKEN_INITIALIZER;
+/* objects in static storage: initialized by a call, as the others */
+static inferno_mutex_t smx;
+static inferno_mutex_t lmx;
+static inferno_token_t stok;
 
 static void
 t_static_init(void)
 {
+	CHECK(inferno_mutex_init(&smx, INFERNO_MUTEX_SHORT) == 0);
+	CHECK(inferno_mutex_init(&lmx, 0) == 0);
+	CHECK(inferno_token_init(&stok) == 0);
 	CHECK(inferno_mutex_lock(&smx) == 0);
 	CHECK(inferno_mutex_trylock(&smx) == 0);
 	inferno_mutex_unlock(&smx);
@@ -985,6 +988,9 @@ t_static_init(void)
 	CHECK(inferno_token_held(&stok));
 	inferno_token_put(&stok);
 	CHECK(!inferno_token_held(&stok));
+	inferno_mutex_destroy(&smx);
+	inferno_mutex_destroy(&lmx);
+	inferno_token_destroy(&stok);
 }
 
 #ifdef BACKEND_COOP

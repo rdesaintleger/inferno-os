@@ -111,6 +111,7 @@ Cname*	newcname(char*);
 Egrp*	newegrp(void);
 Fgrp*	newfgrp(Fgrp*);
 Mount*	newmount(Mhead*, Chan*, int, char*);
+void	pgrpinit(void);
 Pgrp*	newpgrp(void);
 Proc*	newproc(void);
 void		nexterror(void);

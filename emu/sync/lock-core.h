@@ -3,8 +3,9 @@
 /*
  *  Shared by the backends of the synchronization API (include/inferno/lock.h).
  *
- *  A backend defines (in its <inferno/lock-types-*.h>) struct inferno_prim, which
- *  starts with `flags', and here (in its .c file) the primitives
+ *  The types are those of <inferno/lock.h> (struct inferno_prim: flags, locked and
+ *  `impl', the backend's own data, allocated by prim_init and freed by prim_destroy).
+ *  A backend defines here (in its .c file) the primitives
  *	static Ctx *self(void);			context of the calling thread
  *	static int prim_init(Prim*);
  *	static void prim_destroy(Prim*);
@@ -18,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
 
 typedef struct inferno_ctx Ctx;
 typedef struct inferno_prim Prim;

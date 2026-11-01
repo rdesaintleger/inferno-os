@@ -49,6 +49,7 @@ waitturn(void)
 	cur = me;
 }
 
+/* nothing of its own to allocate: Prim.impl stays NULL */
 static int
 prim_init(Prim *p)
 {

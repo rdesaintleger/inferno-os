@@ -1,4 +1,4 @@
-#include <inferno/lock-types.h>
+#include <inferno/lock.h>
 
 typedef struct Block	Block;
 typedef struct Chan	Chan;

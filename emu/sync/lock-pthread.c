@@ -1,7 +1,8 @@
 /*
- *  Backend of include/inferno/lock.h on POSIX threads.  A token or a mutex is a
- *  flag guarded by a pthread mutex plus a condition variable, so that, as the
- *  API requires, it can be released by a thread other than the one that took it.
+ *  Backend of include/inferno/lock.h on POSIX threads.  What it keeps for itself
+ *  (pthread mutexes and condition variables, the wake pipe) is allocated by the
+ *  init functions behind the `impl' pointers of the types, which are those of the
+ *  header.
  */
 #include <pthread.h>
 #include <errno.h>
@@ -13,6 +14,22 @@
 
 typedef struct inferno_thread Thread;
 enum { Tidle, Tcond, Tfd };
+
+/* behind inferno_thread.impl: everything about one thread's waits, under m */
+struct pthr {
+	pthread_mutex_t	m;
+	pthread_cond_t	c;
+	int		state;		/* what the thread is blocked in, so how to wake it */
+	int		wake[2];	/* pipe that interrupts a poll; created by the first wait_fd */
+};
+
+/* the impl of a descriptor that another thread names, checked */
+static struct pthr*
+thread_impl(Thread *t)
+{
+	thread_ctx(t);
+	return t->impl;
+}
 
 static pthread_key_t key;
 static pthread_once_t keyonce = PTHREAD_ONCE_INIT;
@@ -49,72 +66,111 @@ self(void)
 	return &selfthread()->ctx;
 }
 
+/*
+ *  What a token or a mutex keeps for this backend, behind Prim.impl.  A token or a
+ *  short mutex is released by its holder: the pthread mutex is enough, and it has
+ *  no condition variable.  A mutex without an owner is the flag Prim.locked, guarded
+ *  by the pthread mutex, plus the condition variable, so that another thread than
+ *  the one that took it can release it.
+ */
+struct pprim {
+	pthread_mutex_t	m;
+	pthread_cond_t	c;
+	int		nwait;
+};
+
+#define RAW(p)	((p)->flags & (INFERNO_PRIM_TOKEN | INFERNO_MUTEX_SHORT))
+
+static struct pprim*
+pp(Prim *p)
+{
+	if(p->impl == NULL)
+		die("token or mutex not initialized (or destroyed)");
+	return p->impl;
+}
+
 static int
 prim_init(Prim *p)
 {
-	if(pthread_mutex_init(&p->m, NULL) != 0)
+	struct pprim *x;
+
+	x = calloc(1, sizeof *x);
+	if(x == NULL)
 		return -1;
-	if(pthread_cond_init(&p->c, NULL) != 0){
-		pthread_mutex_destroy(&p->m);
+	if(pthread_mutex_init(&x->m, NULL) != 0){
+		free(x);
 		return -1;
 	}
+	if(!RAW(p) && pthread_cond_init(&x->c, NULL) != 0){
+		pthread_mutex_destroy(&x->m);
+		free(x);
+		return -1;
+	}
+	p->impl = x;
 	return 0;
 }
 
 static void
 prim_destroy(Prim *p)
 {
-	pthread_cond_destroy(&p->c);
-	pthread_mutex_destroy(&p->m);
-}
+	struct pprim *x = p->impl;
 
-/* a token or a short mutex is released by its holder: the pthread mutex is enough */
-#define RAW(p)	((p)->flags & (INFERNO_PRIM_TOKEN | INFERNO_MUTEX_SHORT))
+	if(x == NULL)
+		return;
+	if(!RAW(p))
+		pthread_cond_destroy(&x->c);
+	pthread_mutex_destroy(&x->m);
+	free(x);
+	p->impl = NULL;
+}
 
 static int
 prim_try(Prim *p)
 {
+	struct pprim *x = pp(p);
 	int r;
 
 	if(RAW(p))
-		return pthread_mutex_trylock(&p->m) == 0;
+		return pthread_mutex_trylock(&x->m) == 0;
 
-	pthread_mutex_lock(&p->m);
+	pthread_mutex_lock(&x->m);
 	r = !p->locked;
 	if(r)
 		p->locked = 1;
-	pthread_mutex_unlock(&p->m);
+	pthread_mutex_unlock(&x->m);
 	return r;
 }
 
 static void
 prim_wait(Prim *p)
 {
-	if(RAW(p)){
-		pthread_mutex_lock(&p->m);
+	struct pprim *x = pp(p);
+
+	pthread_mutex_lock(&x->m);
+	if(RAW(p))
 		return;
-	}
-	pthread_mutex_lock(&p->m);
-	p->nwait++;
+	x->nwait++;
 	while(p->locked)
-		pthread_cond_wait(&p->c, &p->m);
-	p->nwait--;
+		pthread_cond_wait(&x->c, &x->m);
+	x->nwait--;
 	p->locked = 1;
-	pthread_mutex_unlock(&p->m);
+	pthread_mutex_unlock(&x->m);
 }
 
 static void
 prim_put(Prim *p)
 {
+	struct pprim *x = pp(p);
+
 	if(RAW(p)){
-		pthread_mutex_unlock(&p->m);
+		pthread_mutex_unlock(&x->m);
 		return;
 	}
-	pthread_mutex_lock(&p->m);
+	pthread_mutex_lock(&x->m);
 	p->locked = 0;
-	if(p->nwait)
-		pthread_cond_signal(&p->c);
-	pthread_mutex_unlock(&p->m);
+	if(x->nwait)
+		pthread_cond_signal(&x->c);
+	pthread_mutex_unlock(&x->m);
 }
 
 #include "lock-core.inc.h"
@@ -124,53 +180,68 @@ prim_put(Prim *p)
  *  read_retry, which therefore never asks for a retry.  The callers do not
  *  change when a lock-free backend replaces this one.
  */
+static pthread_mutex_t*
+seqm(inferno_seqlock_t *l)
+{
+	if(l->impl == NULL)
+		die("seqlock not initialized (or destroyed)");
+	return l->impl;
+}
+
 int
 inferno_seqlock_init(inferno_seqlock_t *l)
 {
-	struct inferno_seqlock *s = l;
+	pthread_mutex_t *m;
 
-	s->seq = 0;
-	return pthread_mutex_init(&s->m, NULL) == 0 ? 0 : -1;
+	l->seq = 0;
+	m = malloc(sizeof *m);
+	if(m == NULL)
+		return -1;
+	if(pthread_mutex_init(m, NULL) != 0){
+		free(m);
+		l->impl = NULL;
+		return -1;
+	}
+	l->impl = m;
+	return 0;
 }
 
 void
 inferno_seqlock_destroy(inferno_seqlock_t *l)
 {
-	pthread_mutex_destroy(&l->m);
+	if(l->impl == NULL)
+		return;
+	pthread_mutex_destroy(l->impl);
+	free(l->impl);
+	l->impl = NULL;
 }
 
 void
 inferno_seqlock_write_begin(inferno_seqlock_t *l)
 {
-	struct inferno_seqlock *s = l;
-
-	pthread_mutex_lock(&s->m);
-	s->seq++;
+	pthread_mutex_lock(seqm(l));
+	l->seq++;
 }
 
 void
 inferno_seqlock_write_end(inferno_seqlock_t *l)
 {
-	struct inferno_seqlock *s = l;
-
-	s->seq++;
-	pthread_mutex_unlock(&s->m);
+	l->seq++;
+	pthread_mutex_unlock(seqm(l));
 }
 
 unsigned
 inferno_seqlock_read_begin(inferno_seqlock_t *l)
 {
-	struct inferno_seqlock *s = l;
-
-	pthread_mutex_lock(&s->m);
-	return s->seq;
+	pthread_mutex_lock(seqm(l));
+	return l->seq;
 }
 
 int
 inferno_seqlock_read_retry(inferno_seqlock_t *l, unsigned seq)
 {
 	(void)seq;
-	pthread_mutex_unlock(&l->m);
+	pthread_mutex_unlock(seqm(l));
 	return 0;
 }
 
@@ -239,7 +310,7 @@ inferno_ref_dec(inferno_ref_t *r)
 
 /*
  *  Waiting and interruption.  Everything about one thread's wait (the flag of
- *  an interrupt, the permits, what it is blocked in) is under t->m, and a wait
+ *  an interrupt, the permits, what it is blocked in) is under the mutex of its impl, and a wait
  *  tests the flag and blocks under that same lock (a condition wait releases it
  *  atomically; for a descriptor, the interrupter writes a byte to a pipe that
  *  the poll includes), so an interrupt cannot fall between the test and the block.
@@ -248,20 +319,28 @@ int
 inferno_thread_init(inferno_thread_t *th)
 {
 	Thread *t = th;
+	struct pthr *x;
 	unsigned id;
 
 	memset(t, 0, sizeof *t);
+	x = calloc(1, sizeof *x);
+	if(x == NULL)
+		return -1;
+	x->wake[0] = x->wake[1] = -1;
+	if(pthread_mutex_init(&x->m, NULL) != 0){
+		free(x);
+		return -1;
+	}
+	if(pthread_cond_init(&x->c, NULL) != 0){
+		pthread_mutex_destroy(&x->m);
+		free(x);
+		return -1;
+	}
 	pthread_mutex_lock(&idlock);
 	id = nctx++;
 	pthread_mutex_unlock(&idlock);
 	ctx_init(&t->ctx, id);
-	t->wake[0] = t->wake[1] = -1;
-	if(pthread_mutex_init(&t->m, NULL) != 0)
-		return -1;
-	if(pthread_cond_init(&t->c, NULL) != 0){
-		pthread_mutex_destroy(&t->m);
-		return -1;
-	}
+	t->impl = x;
 	return 0;
 }
 
@@ -269,18 +348,22 @@ void
 inferno_thread_destroy(inferno_thread_t *th)
 {
 	Thread *t = th;
+	struct pthr *x;
 
 	if(thread_ctx(t)->n || t->ctx.nshort)
 		fprintf(stderr, "inferno_lock: thread %u destroyed holding %d tokens and %d short mutexes\n",
 			t->ctx.id, t->ctx.n, t->ctx.nshort);
+	x = t->impl;
 	ctx_free(&t->ctx);
 	t->ctx.magic = 0;
-	if(t->wake[0] >= 0){
-		close(t->wake[0]);
-		close(t->wake[1]);
+	t->impl = NULL;
+	if(x->wake[0] >= 0){
+		close(x->wake[0]);
+		close(x->wake[1]);
 	}
-	pthread_cond_destroy(&t->c);
-	pthread_mutex_destroy(&t->m);
+	pthread_cond_destroy(&x->c);
+	pthread_mutex_destroy(&x->m);
+	free(x);
 }
 
 void
@@ -326,25 +409,27 @@ deadline(struct timespec *ts, long ms)
 static void
 drain(Thread *t)
 {
+	struct pthr *X = t->impl;
 	char b[16];
 
-	if(t->wake[0] >= 0)
-		while(read(t->wake[0], b, sizeof b) > 0)
+	if(X->wake[0] >= 0)
+		while(read(X->wake[0], b, sizeof b) > 0)
 			;
 }
 
 static int
 mkwake(Thread *t)
 {
+	struct pthr *X = t->impl;
 	int i;
 
-	if(pipe(t->wake) < 0){
-		t->wake[0] = t->wake[1] = -1;
+	if(pipe(X->wake) < 0){
+		X->wake[0] = X->wake[1] = -1;
 		return -1;
 	}
 	for(i = 0; i < 2; i++){
-		fcntl(t->wake[i], F_SETFL, fcntl(t->wake[i], F_GETFL) | O_NONBLOCK);
-		fcntl(t->wake[i], F_SETFD, FD_CLOEXEC);
+		fcntl(X->wake[i], F_SETFL, fcntl(X->wake[i], F_GETFL) | O_NONBLOCK);
+		fcntl(X->wake[i], F_SETFD, FD_CLOEXEC);
 	}
 	return 0;
 }
@@ -354,6 +439,7 @@ static int
 blockon(long ms, int usepermit)
 {
 	Thread *t = selfthread();
+	struct pthr *X = t->impl;
 	Ctx *c = &t->ctx;
 	struct inferno_saveent *sv = NULL;
 	int sn = 0;
@@ -367,7 +453,7 @@ blockon(long ms, int usepermit)
 		sn = pause_begin(c, &sv);
 		paused = 1;
 	}
-	pthread_mutex_lock(&t->m);
+	pthread_mutex_lock(&X->m);
 	for(;;){
 		if(t->pending){
 			t->pending = 0;
@@ -384,22 +470,22 @@ blockon(long ms, int usepermit)
 			break;
 		}
 		if(!paused){			/* about to block: pause point */
-			pthread_mutex_unlock(&t->m);
+			pthread_mutex_unlock(&X->m);
 			sn = pause_begin(c, &sv);
 			paused = 1;
-			pthread_mutex_lock(&t->m);
+			pthread_mutex_lock(&X->m);
 			continue;		/* test again, we were not holding the lock */
 		}
-		t->state = Tcond;
+		X->state = Tcond;
 		if(ms > 0)
-			rc = pthread_cond_timedwait(&t->c, &t->m, &dl);
+			rc = pthread_cond_timedwait(&X->c, &X->m, &dl);
 		else
-			rc = pthread_cond_wait(&t->c, &t->m);
-		t->state = Tidle;
+			rc = pthread_cond_wait(&X->c, &X->m);
+		X->state = Tidle;
 		if(rc == ETIMEDOUT)
 			timedout = 1;
 	}
-	pthread_mutex_unlock(&t->m);
+	pthread_mutex_unlock(&X->m);
 	if(paused)
 		pause_end(c, sv, sn);
 	return r;
@@ -427,6 +513,7 @@ int
 inferno_wait_fd(int fd, int events, long ms, int *ready)
 {
 	Thread *t = selfthread();
+	struct pthr *X = t->impl;
 	Ctx *c = &t->ctx;
 	struct inferno_saveent *sv = NULL;
 	int sn = 0;
@@ -437,18 +524,18 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 	paused = 0;
 	if(ms > 0)
 		deadline(&dl, ms);
-	pthread_mutex_lock(&t->m);
+	pthread_mutex_lock(&X->m);
 	if(t->pending){
 		t->pending = 0;
-		pthread_mutex_unlock(&t->m);
+		pthread_mutex_unlock(&X->m);
 		return INFERNO_WAIT_INTR;
 	}
-	if(t->wake[0] < 0 && mkwake(t) < 0){
-		pthread_mutex_unlock(&t->m);
+	if(X->wake[0] < 0 && mkwake(t) < 0){
+		pthread_mutex_unlock(&X->m);
 		die("cannot create the wake pipe");
 	}
-	t->state = Tfd;			/* from here an interrupt writes the pipe */
-	pthread_mutex_unlock(&t->m);
+	X->state = Tfd;			/* from here an interrupt writes the pipe */
+	pthread_mutex_unlock(&X->m);
 	sn = pause_begin(c, &sv);
 	paused = 1;
 
@@ -461,7 +548,7 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 		pfd[0].fd = fd;
 		pfd[0].events = ev;
 		pfd[0].revents = 0;
-		pfd[1].fd = t->wake[0];
+		pfd[1].fd = X->wake[0];
 		pfd[1].events = POLLIN;
 		pfd[1].revents = 0;
 		if(ms < 0)
@@ -477,7 +564,7 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 		rc = poll(pfd, 2, to);
 		if(rc < 0 && errno == EINTR)
 			continue;		/* a host signal, not ours: wait again */
-		pthread_mutex_lock(&t->m);
+		pthread_mutex_lock(&X->m);
 		if(t->pending){
 			t->pending = 0;
 			drain(t);
@@ -493,14 +580,14 @@ inferno_wait_fd(int fd, int events, long ms, int *ready)
 			}
 		}else if(rc > 0){		/* the pipe, but the flag was consumed meanwhile */
 			drain(t);
-			pthread_mutex_unlock(&t->m);
+			pthread_mutex_unlock(&X->m);
 			continue;
 		}else if(rc == 0)
 			r = INFERNO_WAIT_TIMEOUT;
 		else
 			r = INFERNO_WAIT_INTR;	/* poll failed: let the caller's own call report it */
-		t->state = Tidle;
-		pthread_mutex_unlock(&t->m);
+		X->state = Tidle;
+		pthread_mutex_unlock(&X->m);
 		break;
 	}
 	if(paused)
@@ -512,40 +599,43 @@ void
 inferno_wake(inferno_thread_t *th)
 {
 	Thread *t = th;
+	struct pthr *X = thread_impl(t);
 
-	pthread_mutex_lock(&t->m);
+	pthread_mutex_lock(&X->m);
 	t->permits++;
-	if(t->state == Tcond)
-		pthread_cond_signal(&t->c);
-	pthread_mutex_unlock(&t->m);
+	if(X->state == Tcond)
+		pthread_cond_signal(&X->c);
+	pthread_mutex_unlock(&X->m);
 }
 
 void
 inferno_thread_interrupt(inferno_thread_t *th)
 {
 	Thread *t = th;
+	struct pthr *X = thread_impl(t);
 	char b = 'i';
 	ssize_t n;
 
-	pthread_mutex_lock(&t->m);
+	pthread_mutex_lock(&X->m);
 	t->pending = 1;
-	if(t->state == Tcond)
-		pthread_cond_broadcast(&t->c);
-	else if(t->state == Tfd)
-		n = write(t->wake[1], &b, 1), (void)n;	/* full pipe: already woken */
-	pthread_mutex_unlock(&t->m);
+	if(X->state == Tcond)
+		pthread_cond_broadcast(&X->c);
+	else if(X->state == Tfd)
+		n = write(X->wake[1], &b, 1), (void)n;	/* full pipe: already woken */
+	pthread_mutex_unlock(&X->m);
 }
 
 int
 inferno_thread_clear_interrupt(void)
 {
 	Thread *t = selfthread();
+	struct pthr *X = t->impl;
 	int r;
 
-	pthread_mutex_lock(&t->m);
+	pthread_mutex_lock(&X->m);
 	r = t->pending;
 	t->pending = 0;
 	drain(t);
-	pthread_mutex_unlock(&t->m);
+	pthread_mutex_unlock(&X->m);
 	return r;
 }

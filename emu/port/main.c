@@ -271,6 +271,7 @@ emuinit(void *imod)
 	char *wdir;
 
 	e = up->env;
+	pgrpinit();
 	e->pgrp = newpgrp();
 	e->fgrp = newfgrp(nil);
 	e->egrp = newegrp();
