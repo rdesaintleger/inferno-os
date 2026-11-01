@@ -25,6 +25,18 @@
 typedef struct inferno_ctx Ctx;
 typedef struct inferno_prim Prim;
 
+/*
+ *  What the core needs from a backend, declared here so that lock-core.inc.h
+ *  analyses and compiles on its own (an editor, a syntax check): the backend
+ *  defines them, static, before it includes lock-core.inc.h.
+ */
+static Ctx *self(void);
+static int prim_init(Prim*);
+static void prim_destroy(Prim*);
+static int prim_try(Prim*);
+static void prim_wait(Prim*);
+static void prim_put(Prim*);
+
 /* a token starts with its Prim: the core goes from one to the other */
 typedef char token_prim_first[offsetof(struct inferno_token, p) == 0 ? 1 : -1];
 typedef char thread_ctx_first[offsetof(struct inferno_thread, ctx) == 0 ? 1 : -1];
