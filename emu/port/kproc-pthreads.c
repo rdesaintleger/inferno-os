@@ -42,6 +42,7 @@ pexit(char *msg, int t)
 	Osenv *e;
 	Proc *p;
 	Osdep *os;
+	inferno_thread_t last;	/* see below */
 
 	USED(t);
 
@@ -74,9 +75,21 @@ pexit(char *msg, int t)
 	if(os != nil){
 		inferno_thread_detach();
 		inferno_thread_destroy(&os->th);
+		/*
+		 *  The frees below take the lock of the pool, so the thread needs a
+		 *  descriptor until the end: one on its own stack, since the one in
+		 *  os goes away with it.
+		 */
+		if(inferno_thread_init(&last) != 0)
+			panic("pexit: no memory");
+		inferno_thread_attach(&last);
 		HOSTED_API(free)(os);
 	}
 	HOSTED_API(free)(p);
+	if(os != nil){
+		inferno_thread_detach();
+		inferno_thread_destroy(&last);
+	}
 	pthread_exit(0);
 }
 
@@ -267,6 +280,24 @@ osready(Proc *p)
 	inferno_wake(&os->th);
 }
 
+/*
+ *  The initial thread takes the locks of the allocator and of the mapper before
+ *  it has a Proc, so its first descriptor is this one; kprocinit gives it the
+ *  usual one, in Osdep, and destroys this.
+ */
+static inferno_thread_t bootth;
+
+void
+osbootstrap(void)
+{
+	if(inferno_thread_init(&bootth) != 0){
+		if(write(2, "emu: no memory for the first thread\n", 36) < 0)
+			_exit(2);
+		_exit(1);
+	}
+	inferno_thread_attach(&bootth);
+}
+
 void
 kprocinit(Proc *p)
 {
@@ -286,6 +317,7 @@ kprocinit(Proc *p)
 		panic("kprocinit: no memory");
 	p->os = os;
 	inferno_thread_attach(&os->th);
+	inferno_thread_destroy(&bootth);
 }
 
 void

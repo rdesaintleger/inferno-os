@@ -235,6 +235,9 @@ main(int argc, char *argv[])
 	char *enva[20];
 	int envc;
 
+	/* what takes a lock, even the allocator, needs a thread descriptor and its lock initialized */
+	osbootstrap();
+	allocinit();
 	arena_initmapper();
 
 	if(coherence == nil)

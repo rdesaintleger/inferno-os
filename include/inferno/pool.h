@@ -16,7 +16,7 @@ struct Pool {
     size_t cursize;
     size_t arenasize;
     uint32_t hw;
-    Lock l;
+    inferno_mutex_t l;	/* short mutex: init by whoever creates the pool (allocinit) */
     Bhdr* root;
     Bhdr* chain;
     size_t nalloc;

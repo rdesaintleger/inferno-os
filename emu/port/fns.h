@@ -85,6 +85,8 @@ int		iseve(void);
 int		kannounce(char*, char*);
 int		kdial(char*, char*, char*, int*);
 void		kproc(char*, void (*)(void*), void*, int);
+void	osbootstrap(void);
+void	allocinit(void);
 void	kprocinit(Proc*);
 int		kfgrpclose(Fgrp*, int);
 void		ksetenv(char*, char*, int);

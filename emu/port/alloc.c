@@ -17,7 +17,6 @@ struct
 {
 	int	n;
 	Pool	pool[MAXPOOL];
-	/* Lock l; */
 } table = {
 	3,
 	{
@@ -26,6 +25,21 @@ struct
 		{ "image", 2,   64*1024*1024+256, 4*1024*1024, 1, 63*1024*1024 },
 	}
 };
+
+/*
+ *  The locks of the pools are short mutexes, which cannot be statically
+ *  initialized: main calls this before the first allocation, after osbootstrap
+ *  gave the initial thread a descriptor.
+ */
+void
+allocinit(void)
+{
+	int i;
+
+	for(i = 0; i < table.n; i++)
+		if(inferno_mutex_init(&table.pool[i].l, INFERNO_MUTEX_SHORT) != 0)
+			panic("allocinit: no memory for the lock of pool %s", table.pool[i].name);
+}
 
 Pool*	mainmem = &table.pool[0];
 Pool*	heapmem = &table.pool[1];
@@ -296,10 +310,10 @@ _auditmemloc(char *str, void *v)
 	SET(fsz);
 	SET(fmsg);
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
-		lock(&p->l);
+		inferno_mutex_lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bhl_nextchain) {
 			if (BMAGIC(bc) != MAGIC_L) {
-				unlock(&p->l);
+				inferno_mutex_unlock(&p->l);
 				corrupted(str, "chain hdr!=MAGIC_L", p, bc, v);
 				goto nextpool;
 			}
@@ -307,7 +321,7 @@ _auditmemloc(char *str, void *v)
 			if (((Bhdr*)v >= bc) && ((Bhdr*)v < ec))
 				goto found;
 		}
-		unlock(&p->l);
+		inferno_mutex_unlock(&p->l);
 nextpool:	;
 	}
 	HOSTED_API(print)("%s: %p not in pools\n", str, v);
@@ -333,13 +347,13 @@ found:
 			msg = "arena end block";
 			break;
 		default:
-			unlock(&p->l);
+			inferno_mutex_unlock(&p->l);
 			corrupted(str, "bad magic", p, b, v);
 			goto badchunk;
 		}
 		/* XXX maybe replace quanta check with computed alignment check */
 		if (b->bh_size <= 0 /*|| (b->bh_size & p->quanta)*/) {
-			unlock(&p->l);
+			inferno_mutex_unlock(&p->l);
 			corrupted(str, "bad size", p, b, v);
 			goto badchunk;
 		}
@@ -352,7 +366,7 @@ found:
 			fmsg = msg;
 		}
 	}
-	unlock(&p->l);
+	inferno_mutex_unlock(&p->l);
 	if (b >= ec) {
 		if (b > ec)
 			corrupted(str, "chain size mismatch", p, b, v);
@@ -378,10 +392,10 @@ poolaudit(char*(*audit)(int, Bhdr *))
 	char *r = nil;
 
 	for (p = &table.pool[0]; p < &table.pool[nelem(table.pool)]; p++) {
-		lock(&p->l);
+		inferno_mutex_lock(&p->l);
 		for (bc = p->chain; bc != nil; bc = bc->bhl_nextchain) {
 			if (BMAGIC(bc) != MAGIC_L) {
-				unlock(&p->l);
+				inferno_mutex_unlock(&p->l);
 				return "bad chain hdr";
 			}
 			ec = bc->bhl_trail;
@@ -407,16 +421,16 @@ poolaudit(char*(*audit)(int, Bhdr *))
 						r = "bad magic";
 					}
 				if (r != nil) {
-					unlock(&p->l);
+					inferno_mutex_unlock(&p->l);
 					return r;
 				}
 			}
 			if (b != ec || BMAGIC(b) != MAGIC_E) {
-				unlock(&p->l);
+				inferno_mutex_unlock(&p->l);
 				return "bad chain ending";
 			}
 		}
-		unlock(&p->l);
+		inferno_mutex_unlock(&p->l);
 	}
 	return r;
 }

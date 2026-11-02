@@ -317,7 +317,7 @@ static int chunkgrowpool(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 		limit = p->maxsize - p->arenasize;
 
 		/* unlock the pool during arena allocation */
-		unlock(&p->l);
+		inferno_mutex_unlock(&p->l);
 
 		lead = chunkallocnewarena(chunk, limit, &data, flags);
 
@@ -337,7 +337,7 @@ static int chunkgrowpool(Pool* p, size_t size, Bhdr** bp, uint32_t flags) {
 			lead = NULL;
 		}
 
-		lock(&p->l);
+		inferno_mutex_lock(&p->l);
 
 		if (lead != NULL) {
 			alloc = (size_t)((uintptr_t)BHDR2CHKSUCC(lead->bhl_trail) - (uintptr_t)lead);
@@ -414,7 +414,7 @@ void* dopoolalloc(Pool* p, size_t asize, uint32_t flags) {
 	 * also minimal allocation size is updated by underlying allocator.
 	 */
 
-	lock(&p->l);
+	inferno_mutex_lock(&p->l);
 
 	do {
 		p->nalloc++;
@@ -434,7 +434,7 @@ void* dopoolalloc(Pool* p, size_t asize, uint32_t flags) {
 	}
 
 	monitor = p->monitor;
-	unlock(&p->l);
+	inferno_mutex_unlock(&p->l);
 
 	if (b == NULL) {
 		return NULL;
@@ -473,7 +473,7 @@ void poolfree(Pool* p, void* v) {
 		memset(&b->bha_data, 0, size);
 	}
 
-	lock(&p->l);
+	inferno_mutex_lock(&p->l);
 
 	/* capture values for profiling */
 	monitor = p->monitor;
@@ -537,7 +537,7 @@ void poolfree(Pool* p, void* v) {
 			b = NULL;
 
 			/* pool is now up to date, unlocks it before freeing arena */
-			unlock(&p->l);
+			inferno_mutex_unlock(&p->l);
 
 			if (lead->bh_magic & BF_MAPPED) {
 				/* unmap the arena if needed */
@@ -546,7 +546,7 @@ void poolfree(Pool* p, void* v) {
 
 			inferno_free(lead, alloc);
 
-			lock(&p->l);
+			inferno_mutex_lock(&p->l);
 		}
 	}
 
@@ -554,7 +554,7 @@ void poolfree(Pool* p, void* v) {
 		pooladd(p, b, lead);
 	}
 
-	unlock(&p->l);
+	inferno_mutex_unlock(&p->l);
 
 	if (monitor) {
 		memprof_notify(p->pnum | (1 << 8), v, size);
@@ -616,7 +616,7 @@ void *poolrealloc(Pool* p, void* v, size_t asize) {
 	size = asize + offsetof(Bhdr, bha_data);
 
 	if (v != NULL) {
-		lock(&p->l);
+		inferno_mutex_lock(&p->l);
 
 		DATA2BHDR(b, v, poolfault);
 		osize = b->bh_size - offsetof(Bhdr, bha_data);
@@ -626,12 +626,12 @@ void *poolrealloc(Pool* p, void* v, size_t asize) {
 			b = chunksplitblock(p, b, b->bha_lead, size); /* shrink the current block (if possible) */
 			p->cursize += b->bh_size; /* consume new size */
 
-			unlock(&p->l);
+			inferno_mutex_unlock(&p->l);
 			return v;
 		}
 
 		if (pooltrygrowinplace(p, b, size)) {
-			unlock(&p->l);
+			inferno_mutex_unlock(&p->l);
 			return v;
 		}
 
@@ -647,7 +647,7 @@ void *poolrealloc(Pool* p, void* v, size_t asize) {
 			flags |= MEMF_32BIT;
 		}
 
-		unlock(&p->l);
+		inferno_mutex_unlock(&p->l);
 
 	}
 
@@ -687,7 +687,7 @@ size_t poolmax(Pool* p) {
 
 	overhead = offsetof(Bhdr, bha_data);
 
-	lock(&p->l);
+	inferno_mutex_lock(&p->l);
 
 	size = p->maxsize - p->cursize;
 	t = p->root;
@@ -702,7 +702,7 @@ size_t poolmax(Pool* p) {
 		}
 	}
 
-	unlock(&p->l);
+	inferno_mutex_unlock(&p->l);
 
 	if (size >= overhead)
 		size -= overhead;

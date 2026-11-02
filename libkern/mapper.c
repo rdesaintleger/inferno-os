@@ -18,7 +18,7 @@ static struct free_entry unmapped[ARENA_MAX_FREENODES];
 static uint16_t map_root;
 static uint16_t free_head;
 
-static Lock map_lock;
+static inferno_mutex_t map_lock;	/* short mutex, initialized by arena_initmapper */
 
 #define UNSIGNED_CMP(a, b) (((a) > (b)) - ((a) < (b)))
 
@@ -434,6 +434,9 @@ static uint16_t alloc_mapnode(void) {
 void arena_initmapper(void) {
     uint16_t first;
 
+    if (inferno_mutex_init(&map_lock, INFERNO_MUTEX_SHORT) != 0)
+        inferno_panic("arena_initmapper: no memory for the lock");
+
     for (uint16_t i = 0; i < ARENA_MAX_PAGES; i++) {
         arenas[i] = NULL;
     }
@@ -450,7 +453,6 @@ void arena_initmapper(void) {
     unmapped[first].fe_size = ARENA_MAX_PAGES;
     map_insert(first);
 
-    /* XXX initialize lock after Lock subsystem refactor */
 }
 
 void* arena_lookup64(uint32_t address, Bhdr** arena) {
@@ -459,7 +461,7 @@ void* arena_lookup64(uint32_t address, Bhdr** arena) {
     uint32_t offset;
     uint16_t page = (uint16_t)(address >> ARENA_PAGESHIFT);
 
-    lock(&map_lock);
+    inferno_mutex_lock(&map_lock);
     h = arenas[page];
 
     if (h != NULL) {
@@ -467,7 +469,7 @@ void* arena_lookup64(uint32_t address, Bhdr** arena) {
         v = (void*)((uintptr_t)h + (uintptr_t)offset);
     }
 
-    unlock(&map_lock);
+    inferno_mutex_unlock(&map_lock);
 
     if (arena != NULL) {
         *arena = h;
@@ -491,7 +493,7 @@ void arena_unmap(Bhdr* arena) {
     uint16_t size = 0;
     uint16_t freed;
 
-    lock(&map_lock);
+    inferno_mutex_lock(&map_lock);
 
     dataOffset = ARENA_DATAOFFSET(arena);
     start = (uint16_t)(arena_lookup32(arena, (void*)((uintptr_t)arena + dataOffset)) >> ARENA_PAGESHIFT);
@@ -546,7 +548,7 @@ void arena_unmap(Bhdr* arena) {
         map_insert(freed);
     }
 
-    unlock(&map_lock);
+    inferno_mutex_unlock(&map_lock);
 }
 
 static int arena_pagecount(Bhdr* arena, uint16_t* out_pages) {
@@ -653,9 +655,9 @@ static int arena_map_fixed_internal(Bhdr* arena, uint16_t base) {
 int arena_map_fixed(Bhdr* arena, uint16_t base) {
     int result;
 
-    lock(&map_lock);
+    inferno_mutex_lock(&map_lock);
     result = arena_map_fixed_internal(arena, base);
-    unlock(&map_lock);
+    inferno_mutex_unlock(&map_lock);
 
     return result;
 }
@@ -806,17 +808,17 @@ int arena_map_range(Bhdr* arena, uint32_t addr_min, uint32_t addr_max) {
 
     search.page_max = search.page_min + psize;
 
-    lock(&map_lock);
+    inferno_mutex_lock(&map_lock);
     map_range_search(map_root, &search);
 
     if (search.best_entry == FREENODE_NIL) {
-        unlock(&map_lock);
+        inferno_mutex_unlock(&map_lock);
         return 1;
     }
 
     result = arena_map_fixed_internal(arena, search.best_base);
 
-    unlock(&map_lock);
+    inferno_mutex_unlock(&map_lock);
 
     return result;
 }
