@@ -87,7 +87,7 @@ struct Record
 
 struct
 {
-	Lock	l;
+	inferno_mutex_t	l;	/* short: never held while waiting for the VM */
 	vlong	time;
 	Record*	hash[HSIZE];
 	Record*	list;
@@ -511,18 +511,13 @@ profwrite(Chan *c, void *va, long n, vlong offset)
 }
 
 static Record*
-newmodule(Module *m, int vm, int scale, int origin)
+newmodule(Module *m, int scale, int origin)
 {
 	int dsize;
 	Record *r, **l;
 
-	if(!vm)
-		acquire();
-	if((m->compiled && m->pctab == nil) || m->prog == nil) {
-		if(!vm)
-			release();
+	if((m->compiled && m->pctab == nil) || m->prog == nil)
 		return nil;
-	}
 	if(m->compiled)
 		dsize = m->nprog * sizeof(r->bucket[0]);
 	else
@@ -530,11 +525,8 @@ newmodule(Module *m, int vm, int scale, int origin)
 	dsize *= scale;
 	dsize += origin;
 	r = HOSTED_API(malloc)(sizeof(Record)+dsize);
-	if(r == nil) {
-		if(!vm)
-			release();
+	if(r == nil)
 		return nil;
-	}
 
 	r->id = ++ids;
 	if(ids == (1<<8)-1)
@@ -555,8 +547,6 @@ newmodule(Module *m, int vm, int scale, int origin)
 	r->hash = *l;
 	*l = r;
 
-	if(!vm)
-		release();
 	return r;
 }
 
@@ -583,25 +573,47 @@ limbomodule(void)
 	return nil;
 }
 	
+/*
+ *  newmodule, and so mlook when it does not find the module, is called by the VM
+ *  thread, or by a thread that holds the VM (acquire), since it reads what the VM
+ *  changes.  The lock of the profile is taken after the VM, never before: the
+ *  VM thread takes it from memprof.
+ */
 static Record*
-mlook(Module *m, int limbo, int vm, int scale, int origin)
+mfind(Module *m)
 {
 	Record *r;
-	void	(*f)(int, ulong, ulong, ulong);
 
-	if(limbo)
-		m = limbomodule();
-	if(m == nil)
-		return nil;
 	for(r = profile.hash[HASH(m->mtime)]; r; r = r->hash){
 		if(r->mtime == m->mtime && r->qid.path == m->qid.path && r->qid.vers == m->qid.vers && strcmp(r->name, m->name) == 0 && strcmp(r->path, m->path) == 0){
 			r->base = m->prog;
 			return r;
 		}
 	}
-	if(pmods == nil || inpmods(m->name) || inpmods(m->path)){
+	return nil;
+}
+
+/* is this module one to profile? */
+static int
+mwanted(Module *m)
+{
+	return pmods == nil || inpmods(m->name) || inpmods(m->path);
+}
+
+static Record*
+mlook(Module *m, int limbo, int scale, int origin)
+{
+	Record *r;
+
+	if(limbo)
+		m = limbomodule();
+	if(m == nil)
+		return nil;
+	if((r = mfind(m)) != nil)
+		return r;
+	if(mwanted(m)){
 		disable_callback(&memprof_entry); /* prevent monitoring of our memory usage */
-		r = newmodule(m, vm, scale, origin);
+		r = newmodule(m, scale, origin);
 		enable_callback(&memprof_entry);
 		return r;
 	}
@@ -621,23 +633,34 @@ sampler(void* a)
 		osmillisleep(interval);
 		if(profiler != Psam)
 			break;
-		lock(&profile.l);
+		inferno_mutex_lock(&profile.l);
 		profile.time += interval;
 		if(R.M == H || (m = R.M->m) == nil){
-			unlock(&profile.l);
+			inferno_mutex_unlock(&profile.l);
 			continue;
 		}
 		p = R.PC;
-		r = mlook(m, 0, 0, 1, 0);
+		r = mfind(m);
 		if(r == nil){
-			unlock(&profile.l);
+			if(mwanted(m)){
+				/* a new module: its record is made with the VM, which is not waited for under our lock */
+				inferno_mutex_unlock(&profile.l);
+				acquire();
+				inferno_mutex_lock(&profile.l);
+				if(R.M != H && (m = R.M->m) != nil)
+					mlook(m, 0, 1, 0);
+				inferno_mutex_unlock(&profile.l);
+				release();
+				continue;
+			}
+			inferno_mutex_unlock(&profile.l);
 			continue;
 		}
 		if(m->compiled && m->pctab != nil)
 			p = pc2dispc(p, m);
 		if((i = p-r->base) >= 0 && i < r->size)
 			r->bucket[i]++;
-		unlock(&profile.l);
+		inferno_mutex_unlock(&profile.l);
 	}
 	samplefn = 0;
 	pexit("", 0);
@@ -667,7 +690,7 @@ cpxec(Prog *p)
 	}
 
 	m = R.M->m;
-	r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
+	r = profiler == Pcov ? mlook(m, 0, 1, 0) : nil;
 	do{
 		dec[R.PC->add]();
 		op = R.PC->op;
@@ -685,7 +708,7 @@ cpxec(Prog *p)
 		}
 		if(m != R.M->m){
 			m = R.M->m;
-			r = profiler == Pcov ? mlook(m, 0, 1, 1, 0) : nil;
+			r = profiler == Pcov ? mlook(m, 0, 1, 0) : nil;
 		}
 	}while(--R.IC != 0);
 
@@ -721,10 +744,10 @@ memprof(int c, void *v, ulong n)
 		stop_heapmonitor();
 		return;
 	}
-	lock(&profile.l);
+	inferno_mutex_lock(&profile.l);
 	m = nil;
 	if(c != Mgcfree && (R.M == H || (m = R.M->m) == nil)){
-		unlock(&profile.l);
+		inferno_mutex_unlock(&profile.l);
 		return;
 	}
 	h = v;
@@ -732,8 +755,8 @@ memprof(int c, void *v, ulong n)
 		p = R.PC;
 		if(m->compiled && m->pctab != nil)
 			p = pc2dispc(p, m);
-		if((r = mlook(m, 1, 1, 2, 2)) == nil){
-			unlock(&profile.l);
+		if((r = mlook(m, 1, 2, 2)) == nil){
+			inferno_mutex_unlock(&profile.l);
 			return;
 		}
 		i = p-r->base;
@@ -758,7 +781,7 @@ memprof(int c, void *v, ulong n)
 		else
 			k = (int) h->hprof;
 		if((r = getrec(k>>24)) == nil){
-			unlock(&profile.l);
+			inferno_mutex_unlock(&profile.l);
 			return;
 		}
 		i = k&0xffffff;
@@ -798,7 +821,7 @@ memprof(int c, void *v, ulong n)
 			}
 		}
 	}
-	unlock(&profile.l);
+	inferno_mutex_unlock(&profile.l);
 }
 
 /* main and image memory */
@@ -832,11 +855,18 @@ memprofmi(int c, void *v, size_t n)
 	memprof(c, (void*)v, n);
 }
 
+static void
+profinit(void)
+{
+	if(inferno_mutex_init(&profile.l, INFERNO_MUTEX_SHORT) != 0)
+		panic("profinit: no memory for the lock");
+}
+
 Dev profdevtab = {
 	'P',
 	"prof",
 
-	devinit,
+	profinit,
 	profattach,
 	profwalk,
 	profstat,
