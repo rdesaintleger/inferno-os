@@ -423,17 +423,26 @@ exfreeq(Exq *q)
 static void
 exshutdown(Export *fs)
 {
-	Exq *q, **last;
+	Exq *q, **last, *dead;
 
-	/* work not started */
+	/*
+	 *  Work not started.  It is detached under the lock and freed after it:
+	 *  exfreeq goes down to cclose, which calls the driver, which may block.
+	 */
+	dead = nil;
 	lock(&exq.l);
 	for(last = &exq.head; (q = *last) != nil;)
 		if(q->export == fs){
 			*last = q->next;
-			exfreeq(q);
+			q->next = dead;
+			dead = q;
 		}else
 			last = &q->next;
 	unlock(&exq.l);
+	while((q = dead) != nil){
+		dead = q->next;
+		exfreeq(q);
+	}
 
 	/* tell slaves to abandon work in progress */
 	lock(&fs->l);
