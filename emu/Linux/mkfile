@@ -67,4 +67,4 @@ test:V:
 	mkdir -p $ROOT/tmp
 	mk CONF=emu-t install
 	(cd ../test; mk install)
-	env -u DISPLAY $INSTALLDIR/emu-t -r$ROOT -c1 -g1024x768 /dis/sh.dis /dis/test/run.sh
+	env -u DISPLAY INFERNO_LOCK_CHECKS=1 $INSTALLDIR/emu-t -r$ROOT -c1 -g1024x768 /dis/sh.dis /dis/test/run.sh

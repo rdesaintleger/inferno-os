@@ -118,9 +118,20 @@ extern	void	inferno_lock_set_allocator(void *(*alloc)(size_t), void (*release)(v
  *  slow path of inferno_mutex_lock is a pause point (returns 1).  A mutex
  *  created with INFERNO_MUTEX_SHORT is for very short sections: its holder
  *  never pauses (checked), so waiting for it does not release the tokens, and
- *  it is released by the thread that took it.
+ *  it is released by the thread that took it.  Checking the first rule needs the
+ *  descriptor of the current thread at each take and release, which is the main
+ *  cost of a short mutex: it is off by default (see inferno_lock_checks), and a
+ *  short mutex then needs no descriptor.
  */
 #define INFERNO_MUTEX_SHORT	1
+
+/*
+ *  Checks that cost time at each call (for now the count of short mutexes held,
+ *  for "pause with a short mutex held").  Off by default; the tests and a debug run
+ *  turn them on.  To be called before any other function of this API is: changing
+ *  it while a short mutex is held would unbalance the count.
+ */
+extern	void	inferno_lock_checks(int on);
 
 extern	int	inferno_mutex_init(inferno_mutex_t*, int);
 extern	void	inferno_mutex_destroy(inferno_mutex_t*);

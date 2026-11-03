@@ -1266,6 +1266,7 @@ main(void)
 {
 	int b;
 
+	inferno_lock_checks(1);	/* the tests check the rules, off by default */
 	inferno_thread_init(&mainth);
 	inferno_thread_attach(&mainth);
 #ifdef BACKEND_COOP

@@ -290,6 +290,11 @@ static inferno_thread_t bootth;
 void
 osbootstrap(void)
 {
+	char *s;
+
+	/* the checks of the lock layer: for the tests (mk test) and for debugging */
+	s = getenv("INFERNO_LOCK_CHECKS");
+	inferno_lock_checks(s != nil && *s == '1');
 	if(inferno_thread_init(&bootth) != 0){
 		if(write(2, "emu: no memory for the first thread\n", 36) < 0)
 			_exit(2);

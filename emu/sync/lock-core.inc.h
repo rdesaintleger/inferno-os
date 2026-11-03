@@ -364,20 +364,31 @@ inferno_mutex_destroy(inferno_mutex_t *m)
 	prim_destroy(&m->p);
 }
 
+/* see inferno_lock_checks; set before any thread uses the API */
+static int lock_checks;
+
+void
+inferno_lock_checks(int on)
+{
+	lock_checks = on;
+}
+
 int
 inferno_mutex_lock(inferno_mutex_t *m)
 {
 	Prim *p = &m->p;
-	Ctx *c = self();
+	Ctx *c;
 	struct inferno_saveent *e;
 	int n;
 
 	if(p->flags & INFERNO_MUTEX_SHORT){
 		if(!prim_try(p))
 			prim_wait(p);	/* its holder never pauses: bounded wait, tokens kept */
-		c->nshort++;
+		if(lock_checks)
+			self()->nshort++;
 		return 0;
 	}
+	c = self();
 	if(!forced(c) && prim_try(p))
 		return 0;
 	n = pause_begin(c, &e);
@@ -393,7 +404,7 @@ inferno_mutex_trylock(inferno_mutex_t *m)
 
 	if(!prim_try(p))
 		return 0;
-	if(p->flags & INFERNO_MUTEX_SHORT)
+	if(lock_checks && (p->flags & INFERNO_MUTEX_SHORT))
 		self()->nshort++;
 	return 1;
 }
@@ -404,7 +415,7 @@ inferno_mutex_unlock(inferno_mutex_t *m)
 	Prim *p = &m->p;
 	Ctx *c;
 
-	if(p->flags & INFERNO_MUTEX_SHORT){
+	if(lock_checks && (p->flags & INFERNO_MUTEX_SHORT)){
 		c = self();
 		if(c->nshort <= 0)
 			die("short mutex released by a thread that does not hold one");
