@@ -507,7 +507,8 @@ cunmount(Chan *mnt, Chan *mounted)
 {
 	Pgrp *pg;
 	Mhead *m, **l;
-	Mount *f, **p;
+	Mount *f, **p, *dead;
+	Chan *from;
 
 	if(mnt->umh)	/* should not happen */
 		HOSTED_API(print)("cunmount newp extra umh %p has %p\n", mnt, mnt->umh);
@@ -536,14 +537,20 @@ cunmount(Chan *mnt, Chan *mounted)
 		error(Eunmount);
 	}
 
+	/*
+	 * What is unmounted is detached under the locks and closed after them:
+	 * cclose goes down to the close of the driver, which may block.
+	 */
 	wlock(&m->lock);
 	if(mounted == 0) {
 		*l = m->hash;
 		wunlock(&pg->ns);
-		mountfree(m->mount);
+		dead = m->mount;
 		m->mount = nil;
-		cclose(m->from);
+		from = m->from;
 		wunlock(&m->lock);
+		mountfree(dead);
+		cclose(from);
 		putmhead(m);
 		return;
 	}
@@ -555,17 +562,19 @@ cunmount(Chan *mnt, Chan *mounted)
 		  (f->to->mchan && eqchan(f->to->mchan, mounted, 1))) {
 			*p = f->next;
 			f->next = 0;
-			mountfree(f);
 			if(m->mount == nil) {
 				*l = m->hash;
-				cclose(m->from);
+				from = m->from;
 				wunlock(&m->lock);
 				wunlock(&pg->ns);
+				mountfree(f);
+				cclose(from);
 				putmhead(m);
 				return;
 			}
 			wunlock(&m->lock);
 			wunlock(&pg->ns);
+			mountfree(f);
 			return;
 		}
 		p = &f->next;
@@ -596,7 +605,8 @@ int
 findmount(Chan **cp, Mhead **mp, int type, int dev, Qid qid)
 {
 	Pgrp *pg;
-	Mhead *m;
+	Mhead *m, *oldm;
+	Chan *oldc;
 
 	pg = up->env->pgrp;
 	rlock(&pg->ns);
@@ -609,17 +619,20 @@ if(m->from == nil){
 }
 		if(eqchantdqid(m->from, type, dev, qid, 1)) {
 			runlock(&pg->ns);
+			/* what is replaced is released after the lock, not under it */
+			oldm = nil;
 			if(mp != nil){
 				incref(&m->r);
-				if(*mp != nil)
-					putmhead(*mp);
+				oldm = *mp;
 				*mp = m;
 			}
-			if(*cp != nil)
-				cclose(*cp);
+			oldc = *cp;
 			incref(&m->mount->to->r);
 			*cp = m->mount->to;
 			runlock(&m->lock);
+			putmhead(oldm);
+			if(oldc != nil)
+				cclose(oldc);
 			return 1;
 		}
 		runlock(&m->lock);
@@ -635,6 +648,25 @@ domount(Chan **cp, Mhead **mp)
 	return findmount(cp, mp, (*cp)->type, (*cp)->dev, (*cp)->qid);
 }
 
+struct Undo
+{
+	struct Undo	*next;
+	Chan		*c;
+};
+
+/* closes the channels that undomount replaced */
+static void
+undofree(struct Undo *u)
+{
+	struct Undo *next;
+
+	for(; u != nil; u = next){
+		next = u->next;
+		cclose(u->c);
+		HOSTED_API(free)(u);
+	}
+}
+
 Chan*
 undomount(Chan *c, Cname *name)
 {
@@ -642,11 +674,15 @@ undomount(Chan *c, Cname *name)
 	Pgrp *pg;
 	Mount *t;
 	Mhead **h, **he, *f;
+	struct Undo *u, *undo;
 
+	/* the channels that c replaces are closed after the lock, not under it */
+	undo = nil;
 	pg = up->env->pgrp;
 	rlock(&pg->ns);
 	if(waserror()) {
 		runlock(&pg->ns);
+		undofree(undo);
 		nexterror();
 	}
 
@@ -667,7 +703,10 @@ undomount(Chan *c, Cname *name)
 						continue;
 					nc = t->head->from;
 					incref(&nc->r);
-					cclose(c);
+					u = smalloc(sizeof(*u));
+					u->c = c;
+					u->next = undo;
+					undo = u;
 					c = nc;
 					break;
 				}
@@ -676,6 +715,7 @@ undomount(Chan *c, Cname *name)
 	}
 	poperror();
 	runlock(&pg->ns);
+	undofree(undo);
 	return c;
 }
 
