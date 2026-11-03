@@ -30,26 +30,42 @@ newpgrp(void)
 void
 closepgrp(Pgrp *p)
 {
-	Mhead **h, **e, *f, *next;
+	Mhead **h, **e, *f, *next, *dead;
+	Mount *mount;
+	Chan *from;
 
 	if(p == nil || decref(&p->r) != 0)
 		return;
 
+	/*
+	 *  The heads are detached under the lock of the name space (nobody else holds
+	 *  p any more, but the walks that still hold a head take its own lock) and
+	 *  closed after it: cclose goes down to the close of the driver.
+	 */
+	dead = nil;
 	wlock(&p->ns);
 	p->pgrpid = -1;
 	e = &p->mnthash[MNTHASH];
 	for(h = p->mnthash; h < e; h++) {
 		for(f = *h; f; f = next) {
-			wlock(&f->lock);
-			cclose(f->from);
-			mountfree(f->mount);
-			f->mount = nil;
 			next = f->hash;
-			wunlock(&f->lock);
-			putmhead(f);
+			f->hash = dead;
+			dead = f;
 		}
+		*h = nil;
 	}
 	wunlock(&p->ns);
+	for(f = dead; f; f = next) {
+		wlock(&f->lock);
+		from = f->from;
+		mount = f->mount;
+		f->mount = nil;
+		next = f->hash;
+		wunlock(&f->lock);
+		cclose(from);
+		mountfree(mount);
+		putmhead(f);
+	}
 	cclose(p->dot);
 	cclose(p->slash);
 	HOSTED_API(free)(p);
