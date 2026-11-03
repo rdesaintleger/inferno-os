@@ -47,6 +47,7 @@ t clash
 t sys
 t math
 t intr
+t prof
 s dev-env
 s dev-dup
 s dev-prog
