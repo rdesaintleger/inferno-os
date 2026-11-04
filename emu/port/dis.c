@@ -527,7 +527,12 @@ delgrp(Prog *p)
 					pg->child = cg;
 				}
 			}
-			HOSTED_API(free)(g);
+			/*
+			 *  killgrp holds g across killprog (Pkilled) and clears the flag
+			 *  afterwards: it frees the emptied group itself (see unkillgrp)
+			 */
+			if((g->flags & Pkilled) == 0)
+				HOSTED_API(free)(g);
 		}while((g = pg) != nil && g->head == nil);
 	}
 	return g;
@@ -547,6 +552,18 @@ printgrp(Prog *p, char *v)
 	for(g = g->child; g != nil; g = g->sib)
 		HOSTED_API(print)(" %d", g->id);
 	HOSTED_API(print)("]\n");
+}
+
+/*
+ *  End of killgrp: g may have lost its last Prog, and delgrp left the empty
+ *  group alive because of Pkilled, so that clearing the flag is valid.
+ */
+static void
+unkillgrp(Progs *g)
+{
+	g->flags &= ~Pkilled;
+	if(g->head == nil)
+		HOSTED_API(free)(g);
 }
 
 int
@@ -579,7 +596,7 @@ killgrp(Prog *p, char *msg)
 		pids[npid++] = f->pid;
 	g->flags |= Pkilled;
 	if(waserror()) {
-		g->flags &= ~Pkilled;
+		unkillgrp(g);
 		HOSTED_API(free)(pids);
 		nexterror();
 	}
@@ -589,7 +606,7 @@ killgrp(Prog *p, char *msg)
 			killprog(f, msg);
 	}
 	poperror();
-	g->flags &= ~Pkilled;
+	unkillgrp(g);
 	HOSTED_API(free)(pids);
 	return 1;
 }
