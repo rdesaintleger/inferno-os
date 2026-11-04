@@ -198,6 +198,7 @@ void pooladd(Pool* p, Bhdr* q, Bhdr* lead) {
     /* MAGIC_F's low nibble is 0 by construction: color defaults to
      * RB_RED and fmask to 0 in the same write, both fixed up below. */
     q->bh_magic = MAGIC_F;
+    BHDR_SEAL(q); /* bh_size is already the size of the free block */
     q->bhf_lead = lead;
     lead->bhl_freecnt++;
 

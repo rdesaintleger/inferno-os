@@ -48,6 +48,8 @@ static Bhdr* arenaappendalloc(Bhdr* b, Bhdr* lead, uint32_t flags) {
 		b->bh_magic |= BF_SCRAMBLE;
 	}
 
+	BHDR_SEAL(b);
+
 	return b;
 }
 
@@ -68,6 +70,7 @@ static Bhdr* chunksplitblock(Pool* p, Bhdr* q, Bhdr* lead, size_t size) {
 
 		/* split existing bloc */
 		q->bh_size = size;
+		BHDR_SEAL(q);
 		t = BHDR2CHKSUCC(q);
 
 		t->bc_self.bh_size = (size_t)((uintptr_t)n -(uintptr_t)&t->bc_self);
@@ -201,6 +204,10 @@ static Bhdr* chunkallocnewarena(size_t request, size_t limit, Bchk** free, uint3
 
 	/* initialize trailer */
 	trail->bc_self.bh_magic = MAGIC_E;
+
+	BHDR_SEAL(lead);
+	BHDR_SEAL(&trail->bc_self);
+	BHDR_SEAL(&data->bc_self); /* sealed again when it becomes allocated or free */
 
 	/* set the free block pointer */
 	*free = data;
@@ -454,6 +461,7 @@ static void bh_merge(Bhdr* b, Bhdr* c) {
 
 	/* compute new size using pointer arithmetic (+ bh_size not accurate) */
 	b->bh_size = (size_t)((uintptr_t)chk - (uintptr_t)b);
+	BHDR_SEAL(b);
 	chk->bc_pred = b;
 }
 

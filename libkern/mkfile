@@ -8,11 +8,13 @@ OFILES=\
 	memprof.$O\
 	avlfree.$O\
 	pool.$O\
+	poolcheck.$O\
 	mapper.$O\
 
 HFILES=\
 	$ROOT/include/inferno/callback.h\
 	$ROOT/include/inferno/memprof.h\
+	$ROOT/include/inferno/poolcheck.h\
 
 <$ROOT/mkfiles/mksyslib-$SHELLTYPE
 

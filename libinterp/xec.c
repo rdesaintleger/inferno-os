@@ -777,6 +777,27 @@ OP(iload)
 	*mp = ml;
 	destroy(t);
 }
+#ifdef POOLPARANOID
+/* paranoid pools (include/inferno/poolcheck.h): check them when a native function returns */
+static void
+paranoidnative(Modlink *ml, void (*fn)(void*), int entry)
+{
+	Link *e;
+	Poolctx c;
+
+	c.mod = ml->m->name;
+	c.fn = "?";
+	c.addr = (void*)fn;
+	c.entry = entry;
+	for(e = ml->m->ext; e != nil && e->name != nil; e++)
+		if(e->u.runt == fn){
+			c.fn = e->name;
+			break;
+		}
+	poolparanoid(&c);
+}
+#endif
+
 OP(mcall)
 {
 	Heap *h;
@@ -805,7 +826,13 @@ OP(mcall)
 	else
 		l = &ml->m->ext[-o-1].u;
 	if(ml->prog == nil) {
+#ifdef POOLPARANOID
+		paranoidnative(ml, l->runt, 1);
+#endif
 		l->runt(f);
+#ifdef POOLPARANOID
+		paranoidnative(ml, l->runt, 0);
+#endif
 		h->ref--;
 		R.M = f->mr;
 		R.SP = R.FP;

@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <inferno/poolcheck.h>
+
 typedef struct Bchk Bchk;
 typedef struct Bhdr Bhdr;
 typedef struct Blead  Blead;
@@ -91,6 +93,9 @@ struct Bfree {
 struct Bhdr {
     size_t   bh_size;  /* block size, include header (exclude Bchk pred pointer)*/
     uint32_t bh_magic; /* bloc type, leave 4 bits for persistent flags/state (see above) */
+#ifdef POOLPARANOID
+    uint32_t bh_crc;   /* CRC-32 of bh_size and BMAGIC(bh_magic), see poolcheck.h */
+#endif
 
     union {
         Balloc a;
@@ -156,6 +161,17 @@ struct Bwalk {
 
 #define BCEIL(s, pad)    BFLOOR((s) + ((pad) - 1), pad)
 #define BFLOOR(s, pad)   (((s) / (pad)) * (pad))
+
+#ifdef POOLPARANOID
+/* CRC-32 of (bh_size, bh_magic & BMAGIC_MASK) */
+uint32_t bhdr_crc(const Bhdr*);
+uint32_t bhdr_crc_of(size_t size, uint32_t magic);
+
+/* to be called after every change of bh_size or of the type part of bh_magic */
+#define BHDR_SEAL(b) ((b)->bh_crc = bhdr_crc(b))
+#else
+#define BHDR_SEAL(b) ((void)0)
+#endif
 
 #define BHDR2BCHK(bp) \
     ((Bchk *)((uint8_t *)(bp) - offsetof(Bchk, bc_self)))

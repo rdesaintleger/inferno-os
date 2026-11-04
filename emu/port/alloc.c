@@ -41,6 +41,56 @@ allocinit(void)
 			panic("allocinit: no memory for the lock of pool %s", table.pool[i].name);
 }
 
+#ifdef POOLPARANOID
+/*
+ *  Paranoid mode (include/inferno/poolcheck.h): called by the VM after every native call;
+ *  walks every pool and aborts if one is corrupted. Only the VM thread calls it.
+ */
+static Poolctx lastctx;
+static char lastmod[48], lastfn[64];
+static ulong paranoidcalls;
+
+static void
+paranoidscan(const Poolctx *now)
+{
+	int i;
+	Poolfault f;
+
+	for(i = 0; i < table.n; i++)
+		if(poolcheck(&table.pool[i], &f))
+			poolreport(&table.pool[i], &f, now, &lastctx);
+}
+
+void
+poolparanoid(const Poolctx *now)
+{
+	if(++paranoidcalls % POOLPARANOID_STRIDE != 0)
+		return;
+	paranoidscan(now);
+
+	/* it was clean: remember who returned (copies: the module may be unloaded later) */
+	strncpy(lastmod, now->mod != nil ? now->mod : "?", sizeof(lastmod)-1);
+	strncpy(lastfn, now->fn != nil ? now->fn : "?", sizeof(lastfn)-1);
+	lastctx.mod = lastmod;
+	lastctx.fn = lastfn;
+	lastctx.addr = now->addr;
+	lastctx.entry = now->entry;
+}
+
+/* for gdb: call poolparanoid_now() at any time (it aborts if a pool is corrupted) */
+void
+poolparanoid_now(void)
+{
+	Poolctx c;
+
+	c.mod = "(manual)";
+	c.fn = "poolparanoid_now";
+	c.addr = (void*)poolparanoid_now;
+	c.entry = 0;
+	paranoidscan(&c);
+}
+#endif
+
 Pool*	mainmem = &table.pool[0];
 Pool*	heapmem = &table.pool[1];
 Pool*	imagmem = &table.pool[2];
