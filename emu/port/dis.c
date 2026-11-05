@@ -8,7 +8,7 @@
 
 struct
 {
-	Lock	l;
+	inferno_token_t	l;
 	Prog*	runhd;
 	Prog*	runtl;
 	Prog*	head;
@@ -46,6 +46,13 @@ pidlook(int pid)
 	for(l = &proghash[h]; *l != nil && (*l)->pid != pid; l = &(*l)->pidlink)
 		;
 	return l;
+}
+
+void
+schedinit(void)
+{
+	if(inferno_token_init(&isched.l) != 0)
+		panic("schedinit: no memory");
 }
 
 int
@@ -819,10 +826,10 @@ acquire(void)
 	int empty;
 	Prog *p;
 
-	lock(&isched.l);
+	inferno_token_get(&isched.l);
 	if(isched.idle) {
 		isched.idle = 0;
-		unlock(&isched.l);
+		inferno_token_put(&isched.l);
 	}
 	else {
 		up->qnext = nil;
@@ -835,7 +842,7 @@ acquire(void)
 		}
 		isched.vmqt = up;
 
-		unlock(&isched.l);
+		inferno_token_put(&isched.l);
 		strcpy(up->text, "acquire");
 		if(empty)
 			Wakeup(&isched.irend);
@@ -870,19 +877,19 @@ release(void)
 	else
 		delrun(Prelease);
 
-	lock(&isched.l);
+	inferno_token_get(&isched.l);
 	if(*(pq = &isched.vmq) == nil && *(pq = &isched.idlevmq) == nil) {
 		isched.idle = 1;
 		f = isched.creating;
 		isched.creating = 1;
-		unlock(&isched.l);
+		inferno_token_put(&isched.l);
 		if(f == 0)
 			kproc("dis", vmachine, nil, 0);
 		return;
 	}
 	p = *pq;
 	*pq = p->qnext;
-	unlock(&isched.l);
+	inferno_token_put(&isched.l);
 
 	osready(p);		/* wake up thread to run VM */
 	strcpy(up->text, "released");
@@ -893,10 +900,10 @@ iyield(void)
 {
 	Proc *p;
 
-	lock(&isched.l);
+	inferno_token_get(&isched.l);
 	p = isched.vmq;
 	if(p == nil) {
-		unlock(&isched.l);
+		inferno_token_put(&isched.l);
 		return;
 	}
 	isched.nyield++;
@@ -912,7 +919,7 @@ iyield(void)
 	up->qnext = isched.idlevmq;
 	isched.idlevmq = up;
 
-	unlock(&isched.l);
+	inferno_token_put(&isched.l);
 	osready(p);		/* wake up acquiring kproc */
 	strcpy(up->text, "yield");
 	osblock();		/* sleep */
@@ -926,16 +933,16 @@ startup(void)
 	up->type = Interp;
 	up->iprog = nil;
 
-	lock(&isched.l);
+	inferno_token_get(&isched.l);
 	isched.creating = 0;
 	if(isched.idle) {
 		isched.idle = 0;
-		unlock(&isched.l);
+		inferno_token_put(&isched.l);
 		return;
 	}
 	up->qnext = isched.idlevmq;
 	isched.idlevmq = up;
-	unlock(&isched.l);
+	inferno_token_put(&isched.l);
 
 	osblock();
 }

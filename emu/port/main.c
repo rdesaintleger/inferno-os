@@ -242,6 +242,7 @@ main(int argc, char *argv[])
 	if(inferno_token_init(&procs.l) != 0)
 		panic("main: no memory");
 	rendezinit();
+	schedinit();
 
 	if(coherence == nil)
 		coherence = nofence;
