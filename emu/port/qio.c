@@ -10,7 +10,7 @@
 
 struct Queue
 {
-	Lock	l;
+	inferno_token_t	l;
 
 	Block*	bfirst;		/* buffer */
 	Block*	blast;
@@ -447,12 +447,12 @@ qget(Queue *q)
 	Block *b;
 
 	/* sync with qwrite */
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	b = q->bfirst;
 	if(b == 0){
 		q->state |= Qstarve;
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		return 0;
 	}
 	q->bfirst = b->next;
@@ -468,7 +468,7 @@ qget(Queue *q)
 	} else
 		dowakeup = 0;
 
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	if(dowakeup)
 		Wakeup(&q->wr);
@@ -485,7 +485,7 @@ qdiscard(Queue *q, int len)
 	Block *b;
 	int dowakeup, n, sofar;
 
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	for(sofar = 0; sofar < len; sofar += n){
 		b = q->bfirst;
 		if(b == nil)
@@ -512,7 +512,7 @@ qdiscard(Queue *q, int len)
 	} else
 		dowakeup = 0;
 
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	if(dowakeup)
 		Wakeup(&q->wr);
@@ -532,13 +532,13 @@ qconsume(Queue *q, void *vp, int len)
 	Block *tofree = nil;
 
 	/* sync with qwrite */
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	for(;;) {
 		b = q->bfirst;
 		if(b == 0){
 			q->state |= Qstarve;
-			unlock(&q->l);
+			inferno_token_put(&q->l);
 			return -1;
 		}
 		QDEBUG checkb(b, "qconsume 1");
@@ -580,7 +580,7 @@ qconsume(Queue *q, void *vp, int len)
 	} else
 		dowakeup = 0;
 
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	if(dowakeup)
 		Wakeup(&q->wr);
@@ -598,14 +598,14 @@ qpass(Queue *q, Block *b)
 
 	/* sync with qread */
 	dowakeup = 0;
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	if(q->len >= q->limit){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		freeblist(b);
 		return -1;
 	}
 	if(q->state & Qclosed){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		len = blocklen(b);
 		freeblist(b);
 		return len;
@@ -636,7 +636,7 @@ qpass(Queue *q, Block *b)
 		q->state &= ~Qstarve;
 		dowakeup = 1;
 	}
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	if(dowakeup)
 		Wakeup(&q->rr);
@@ -651,11 +651,11 @@ qpassnolim(Queue *q, Block *b)
 
 	/* sync with qread */
 	dowakeup = 0;
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	len = BALLOC(b);
 	if(q->state & Qclosed){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		freeblist(b);
 		return len;
 	}
@@ -684,7 +684,7 @@ qpassnolim(Queue *q, Block *b)
 		q->state &= ~Qstarve;
 		dowakeup = 1;
 	}
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	if(dowakeup)
 		Wakeup(&q->rr);
@@ -726,24 +726,24 @@ qproduce(Queue *q, void *vp, int len)
 
 	/* sync with qread */
 	dowakeup = 0;
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	if(q->state & Qclosed){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		return -1;
 	}
 
 	/* no waiting receivers, room in buffer? */
 	if(q->len >= q->limit){
 		q->state |= Qflow;
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		return -1;
 	}
 
 	/* save in buffer */
 	b = iallocb(len);
 	if(b == 0){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		HOSTED_API(print)("qproduce: iallocb failed\n");
 		return -1;
 	}
@@ -766,7 +766,7 @@ qproduce(Queue *q, void *vp, int len)
 
 	if(q->len >= q->limit)
 		q->state |= Qflow;
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 
 	if(dowakeup)
@@ -788,13 +788,13 @@ qcopy(Queue *q, int len, ulong offset)
 
 	nb = allocb(len);
 
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	/* go to offset */
 	b = q->bfirst;
 	for(sofar = 0; ; sofar += n){
 		if(b == nil){
-			unlock(&q->l);
+			inferno_token_put(&q->l);
 			return nb;
 		}
 		n = BLEN(b);
@@ -819,7 +819,7 @@ qcopy(Queue *q, int len, ulong offset)
 		n = BLEN(b);
 		p = b->rp;
 	}
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	return nb;
 }
@@ -835,6 +835,10 @@ qopen(int limit, int msg, void (*kick)(void*), void *arg)
 	q = kmalloc(sizeof(Queue));
 	if(q == 0)
 		return 0;
+	if(inferno_token_init(&q->l) != 0){
+		HOSTED_API(free)(q);
+		return 0;
+	}
 
 	q->limit = q->inilim = limit;
 	q->kick = kick;
@@ -856,6 +860,11 @@ qbypass(void (*bypass)(void*, Block*), void *arg)
 	q = HOSTED_API(malloc)(sizeof(Queue));
 	if(q == 0)
 		return 0;
+	memset(q, 0, sizeof(Queue));
+	if(inferno_token_init(&q->l) != 0){
+		HOSTED_API(free)(q);
+		return 0;
+	}
 
 	q->limit = 0;
 	q->arg = arg;
@@ -894,9 +903,9 @@ qwait(Queue *q)
 		}
 
 		q->state |= Qstarve;	/* flag requesting producer to wake me */
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		Sleep(&q->rr, notempty, q);
-		lock(&q->l);
+		inferno_token_get(&q->l);
 	}
 	return 1;
 }
@@ -1029,7 +1038,7 @@ qwakeup_unlock(Queue *q)
 		dowakeup = 1;
 	}
 
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	/* wakeup flow controlled writers */
 	if(dowakeup){
@@ -1054,17 +1063,17 @@ qbread(Queue *q, int len)
 		nexterror();
 	}
 
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	switch(qwait(q)){
 	case 0:
 		/* queue closed */
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		poperror();
 		qunlock(&q->rlock);
 		return nil;
 	case -1:
 		/* multiple reads on a closed queue */
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		error(q->err);
 	}
 
@@ -1108,18 +1117,18 @@ qread(Queue *q, void *vp, int len)
 		nexterror();
 	}
 
-	lock(&q->l);
+	inferno_token_get(&q->l);
 again:
 	switch(qwait(q)){
 	case 0:
 		/* queue closed */
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		poperror();
 		qunlock(&q->rlock);
 		return 0;
 	case -1:
 		/* multiple reads on a closed queue */
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		error(q->err);
 	}
 
@@ -1157,9 +1166,9 @@ again:
 	}
 
 	/* copy to user space outside of the ilock */
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 	b = bl2mem(vp, first, len);
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	/* take care of any left over partial block */
 	if(b != nil){
@@ -1211,18 +1220,18 @@ qbwrite(Queue *q, Block *b)
 		nexterror();
 	}
 
-	lock(&q->l);
+	inferno_token_get(&q->l);
 
 	/* give up if the queue is closed */
 	if(q->state & Qclosed){
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		error(q->err);
 	}
 
 	/* if nonblocking, don't queue over the limit */
 	if(q->len >= q->limit){
 		if(q->noblock){
-			unlock(&q->l);
+			inferno_token_put(&q->l);
 			freeb(b);
 			poperror();
 			qunlock(&q->wlock);
@@ -1247,7 +1256,7 @@ qbwrite(Queue *q, Block *b)
 		dowakeup = 1;
 	}
 
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	/*  get output going again */
 	if(q->kick && (dowakeup || (q->state&Qkick)))
@@ -1272,9 +1281,9 @@ qbwrite(Queue *q, Block *b)
 		if(q->noblock || qnotfull(q))
 			break;
 
-		lock(&q->l);
+		inferno_token_get(&q->l);
 		q->state |= Qflow;
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 		Sleep(&q->wr, qnotfull, q);
 	}
 
@@ -1343,7 +1352,7 @@ qiwrite(Queue *q, void *vp, int len)
 		memmove(b->wp, p+sofar, n);
 		b->wp += n;
 
-		lock(&q->l);
+		inferno_token_get(&q->l);
 
 		QDEBUG checkb(b, "qiwrite");
 		if(q->bfirst)
@@ -1359,7 +1368,7 @@ qiwrite(Queue *q, void *vp, int len)
 			dowakeup = 1;
 		}
 
-		unlock(&q->l);
+		inferno_token_put(&q->l);
 
 		if(dowakeup){
 			if(q->kick)
@@ -1381,6 +1390,8 @@ void
 qfree(Queue *q)
 {
 	qclose(q);
+	if(q != nil)
+		inferno_token_destroy(&q->l);
 	HOSTED_API(free)(q);
 }
 
@@ -1397,7 +1408,7 @@ qclose(Queue *q)
 		return;
 
 	/* mark it */
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	q->state |= Qclosed;
 	q->state &= ~(Qflow|Qstarve);
 	strcpy(q->err, Ehungup);
@@ -1406,7 +1417,7 @@ qclose(Queue *q)
 	q->len = 0;
 	q->dlen = 0;
 	q->noblock = 0;
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	/* free queued blocks */
 	freeblist(bfirst);
@@ -1424,13 +1435,13 @@ void
 qhangup(Queue *q, char *msg)
 {
 	/* mark it */
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	q->state |= Qclosed;
 	if(msg == 0 || *msg == 0)
 		strcpy(q->err, Ehungup);
 	else
 		kstrcpy(q->err, msg, sizeof q->err);
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	/* wake up readers/writers */
 	Wakeup(&q->rr);
@@ -1452,12 +1463,12 @@ qisclosed(Queue *q)
 void
 qreopen(Queue *q)
 {
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	q->state &= ~Qclosed;
 	q->state |= Qstarve;
 	q->eof = 0;
 	q->limit = q->inilim;
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 }
 
 /*
@@ -1519,12 +1530,12 @@ qflush(Queue *q)
 	Block *bfirst;
 
 	/* mark it */
-	lock(&q->l);
+	inferno_token_get(&q->l);
 	bfirst = q->bfirst;
 	q->bfirst = 0;
 	q->len = 0;
 	q->dlen = 0;
-	unlock(&q->l);
+	inferno_token_put(&q->l);
 
 	/* free queued blocks */
 	freeblist(bfirst);
