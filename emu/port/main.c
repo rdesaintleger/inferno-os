@@ -241,6 +241,7 @@ main(int argc, char *argv[])
 	arena_initmapper();
 	if(inferno_token_init(&procs.l) != 0)
 		panic("main: no memory");
+	rendezinit();
 
 	if(coherence == nil)
 		coherence = nofence;

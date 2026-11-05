@@ -85,7 +85,7 @@ pexit(char *msg, int t)
 		inferno_thread_attach(&last);
 		HOSTED_API(free)(os);
 	}
-	HOSTED_API(free)(p);
+	freeproc(p);
 	if(os != nil){
 		inferno_thread_detach();
 		inferno_thread_destroy(&last);

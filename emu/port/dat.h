@@ -64,9 +64,13 @@ struct Ref
 	inferno_ref_t	ref;	/* the count: use incref, decref, refcount */
 };
 
+/*
+ *  The lock of a Rendez is not in it: Sleep, Wakeup and swiproc take one of a
+ *  fixed set of tokens chosen by its address (proc.c), so that a Rendez needs no
+ *  initialization and no destruction.
+ */
 struct Rendez
 {
-	Lock	l;
 	Proc*	p;
 };
 
@@ -391,14 +395,14 @@ struct Proc
 	long	pid;
 	Proc*	next;		/* list of created processes */
 	Proc*	prev;
-	Lock	rlock;	/* sync between sleep/swiproc for r */
+	inferno_token_t	rlock;	/* sync between sleep/swiproc for r */
 	Rendez*	r;		/* rendezvous point slept on */
 	Rendez	sleep;		/* place to sleep */
 	int		killed;		/* by swiproc */
 	int	swipend;	/* software interrupt pending for Prog */
 	int	syscall;	/* set true under sysio for interruptable syscalls */
 	int	sigid;		/* handle used for signal/note/exception */
-	Lock	sysio;		/* note handler lock */
+	inferno_token_t	sysio;		/* note handler lock */
 	char	genbuf[128];	/* buffer used e.g. for last name element from namec */
 	int	nerr;		/* error stack SP */
 	osjmpbuf	estack[NERR];	/* vector of error jump labels */

@@ -116,6 +116,8 @@ Mount*	newmount(Mhead*, Chan*, int, char*);
 void	pgrpinit(void);
 Pgrp*	newpgrp(void);
 Proc*	newproc(void);
+void	freeproc(Proc*);
+void	rendezinit(void);
 void		nexterror(void);
 void		nofence(void);
 void		notkilled(void);
