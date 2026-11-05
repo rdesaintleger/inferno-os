@@ -278,15 +278,15 @@ swiprog(Prog *p)
 {
 	Proc *q;
 
-	lock(&procs.l);
+	inferno_token_get(&procs.l);
 	for(q = procs.head; q; q = q->next) {
 		if(q->iprog == p) {
-			unlock(&procs.l);
+			inferno_token_put(&procs.l);
 			swiproc(q, 1);
 			return;
 		}
 	}
-	unlock(&procs.l);
+	inferno_token_put(&procs.l);
 	/*HOSTED_API(print)("didn't find\n");*/
 }
 

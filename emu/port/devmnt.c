@@ -42,7 +42,7 @@ enum
 
 struct Mntalloc
 {
-	Lock	l;
+	inferno_token_t	l;
 	Mnt*	list;		/* Mount devices in use */
 	Mnt*	mntfree;	/* Free list */
 	Mntrpc*	rpcfree;
@@ -79,6 +79,8 @@ void (*mntstats)(int, Chan*, uvlong, ulong);
 static void
 mntinit(void)
 {
+	if(inferno_token_init(&mntalloc.l) != 0)
+		panic("mntinit: no memory");
 	mntalloc.id = 1;
 	mntalloc.tagmask[0] = 1;			/* don't allow 0 as a tag */
 	mntalloc.tagmask[NMASK-1] = 0x80000000UL;	/* don't allow NOTAG */
@@ -198,14 +200,14 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 		error("bad 9P version returned from server");
 
 	/* now build Mnt associated with this connection */
-	lock(&mntalloc.l);
+	inferno_token_get(&mntalloc.l);
 	m = mntalloc.mntfree;
 	if(m != 0)
 		mntalloc.mntfree = m->list;
 	else {
 		m = HOSTED_API(malloc)(sizeof(Mnt));
 		if(m == 0) {
-			unlock(&mntalloc.l);
+			inferno_token_put(&mntalloc.l);
 			exhausted("mount devices");
 		}
 	}
@@ -216,7 +218,7 @@ mntversion(Chan *c, char *version, int msize, int returnlen)
 	m->id = mntalloc.id++;
 	m->q = qopen(10*MAXRPC, 0, nil, nil);
 	m->msize = f.msize;
-	unlock(&mntalloc.l);
+	inferno_token_put(&mntalloc.l);
 
 	poperror();	/* msg */
 	HOSTED_API(free)(msg);
@@ -367,9 +369,9 @@ mntchan(void)
 	Chan *c;
 
 	c = devattach('M', 0);
-	lock(&mntalloc.l);
+	inferno_token_get(&mntalloc.l);
 	c->dev = mntalloc.id++;
-	unlock(&mntalloc.l);
+	inferno_token_put(&mntalloc.l);
 
 	if(c->mchan)
 		panic("mntchan non-zero %p", c->mchan);
@@ -581,7 +583,7 @@ mntpntfree(Mnt *m)
 	Mnt *f, **l;
 	Queue *q;
 
-	lock(&mntalloc.l);
+	inferno_token_get(&mntalloc.l);
 	l = &mntalloc.list;
 	for(f = *l; f; f = f->list) {
 		if(f == m) {
@@ -593,7 +595,7 @@ mntpntfree(Mnt *m)
 	m->list = mntalloc.mntfree;
 	mntalloc.mntfree = m;
 	q = m->q;
-	unlock(&mntalloc.l);
+	inferno_token_put(&mntalloc.l);
 
 	qfree(q);
 }
@@ -1044,12 +1046,12 @@ mntralloc(Chan *c, ulong msize)
 {
 	Mntrpc *new;
 
-	lock(&mntalloc.l);
+	inferno_token_get(&mntalloc.l);
 	new = mntalloc.rpcfree;
 	if(new == nil){
 		new = HOSTED_API(malloc)(sizeof(Mntrpc));
 		if(new == nil) {
-			unlock(&mntalloc.l);
+			inferno_token_put(&mntalloc.l);
 			exhausted("mount rpc header");
 		}
 		/*
@@ -1059,14 +1061,14 @@ mntralloc(Chan *c, ulong msize)
 		new->rpc = HOSTED_API(mallocz)(msize, 0);
 		if(new->rpc == nil){
 			HOSTED_API(free)(new);
-			unlock(&mntalloc.l);
+			inferno_token_put(&mntalloc.l);
 			exhausted("mount rpc buffer");
 		}
 		new->rpclen = msize;
 		new->request.tag = alloctag();
 		if(new->request.tag == NOTAG){
 			HOSTED_API(free)(new);
-			unlock(&mntalloc.l);
+			inferno_token_put(&mntalloc.l);
 			exhausted("rpc tags");
 		}
 	}
@@ -1079,14 +1081,14 @@ mntralloc(Chan *c, ulong msize)
 			if(new->rpc == nil){
 				HOSTED_API(free)(new);
 				mntalloc.nrpcused--;
-				unlock(&mntalloc.l);
+				inferno_token_put(&mntalloc.l);
 				exhausted("mount rpc buffer");
 			}
 			new->rpclen = msize;
 		}
 	}
 	mntalloc.nrpcused++;
-	unlock(&mntalloc.l);
+	inferno_token_put(&mntalloc.l);
 	new->c = c;
 	new->done = 0;
 	new->flushed = nil;
@@ -1099,7 +1101,7 @@ mntfree(Mntrpc *r)
 {
 	if(r->b != nil)
 		freeblist(r->b);
-	lock(&mntalloc.l);
+	inferno_token_get(&mntalloc.l);
 	if(mntalloc.nrpcfree >= 10){
 		HOSTED_API(free)(r->rpc);
 		freetag(r->request.tag);
@@ -1111,7 +1113,7 @@ mntfree(Mntrpc *r)
 		mntalloc.nrpcfree++;
 	}
 	mntalloc.nrpcused--;
-	unlock(&mntalloc.l);
+	inferno_token_put(&mntalloc.l);
 }
 
 void

@@ -139,11 +139,11 @@ oshostcalls(void)
 	int n;
 
 	n = 0;
-	lock(&procs.l);
+	inferno_token_get(&procs.l);
 	for(p = procs.head; p != nil; p = p->next)
 		if(p->syscall)
 			n++;
-	unlock(&procs.l);
+	inferno_token_put(&procs.l);
 	return n;
 }
 

@@ -431,7 +431,7 @@ enum
 
 struct Procs
 {
-	Lock	l;
+	inferno_token_t	l;
 	Proc*	head;
 	Proc*	tail;
 };

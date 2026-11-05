@@ -21,7 +21,7 @@ enum
 
 struct
 {
-	Lock	l;
+	inferno_token_t	l;
 	int	fid;
 	Chan	*free;
 	Chan	*list;
@@ -147,6 +147,8 @@ chandevinit(void)
 {
 	int i;
 
+	if(inferno_token_init(&chanalloc.l) != 0)
+		panic("chandevinit: no memory");
 
 /*	isfrog[' '] = 1; */	/* let's see what happens */
 	isfrog['/'] = 1;
@@ -161,21 +163,21 @@ newchan(void)
 {
 	Chan *c;
 
-	lock(&chanalloc.l);
+	inferno_token_get(&chanalloc.l);
 	c = chanalloc.free;
 	if(c != 0)
 		chanalloc.free = c->next;
-	unlock(&chanalloc.l);
+	inferno_token_put(&chanalloc.l);
 
 	if(c == nil) {
 		c = HOSTED_API(malloc)(sizeof(Chan));
 		if(c == nil)
 			error(Enomem);
-		lock(&chanalloc.l);
+		inferno_token_get(&chanalloc.l);
 		c->fid = ++chanalloc.fid;
 		c->link = chanalloc.list;
 		chanalloc.list = c;
-		unlock(&chanalloc.l);
+		inferno_token_put(&chanalloc.l);
 	}
 
 	/* if you get an error before associating with a dev,
@@ -290,10 +292,10 @@ chanfree(Chan *c)
 
 	cnameclose(c->name);
 
-	lock(&chanalloc.l);
+	inferno_token_get(&chanalloc.l);
 	c->next = chanalloc.free;
 	chanalloc.free = c;
-	unlock(&chanalloc.l);
+	inferno_token_put(&chanalloc.l);
 }
 
 void

@@ -22,7 +22,7 @@ struct Pipe
 
 static struct
 {
-	Lock	l;
+	inferno_token_t	l;
 	ulong	path;
 	int	pipeqsize;	
 } pipealloc;
@@ -56,6 +56,8 @@ freepipe(Pipe *p)
 static void
 pipeinit(void)
 {
+	if(inferno_token_init(&pipealloc.l) != 0)
+		panic("pipeinit: no memory");
 	pipealloc.pipeqsize = 32*1024;
 }
 
@@ -91,9 +93,9 @@ pipeattach(char *spec)
 		error(Enomem);
 	poperror();
 
-	lock(&pipealloc.l);
+	inferno_token_get(&pipealloc.l);
 	p->path = ++pipealloc.path;
-	unlock(&pipealloc.l);
+	inferno_token_put(&pipealloc.l);
 
 	c->qid.path = NETQID(2*p->path, Qdir);
 	c->qid.vers = 0;

@@ -46,7 +46,7 @@ pexit(char *msg, int t)
 
 	USED(t);
 
-	lock(&procs.l);
+	inferno_token_get(&procs.l);
 	p = up;
 	if(p->prev)
 		p->prev->next = p->next;
@@ -57,7 +57,7 @@ pexit(char *msg, int t)
 		p->next->prev = p->prev;
 	else
 		procs.tail = p->prev;
-	unlock(&procs.l);
+	inferno_token_put(&procs.l);
 
 	if(0)
 		HOSTED_API(print)("pexit: %s: %s\n", p->text, msg);
@@ -168,7 +168,7 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 	p->func = func;
 	p->arg = arg;
 
-	lock(&procs.l);
+	inferno_token_get(&procs.l);
 	if(procs.tail != nil) {
 		p->prev = procs.tail;
 		procs.tail->next = p;
@@ -177,7 +177,7 @@ kproc(char *name, void (*func)(void*), void *arg, int flags)
 		p->prev = nil;
 	}
 	procs.tail = p;
-	unlock(&procs.l);
+	inferno_token_put(&procs.l);
 
 	memset(&attr, 0, sizeof(attr));
 	if(pthread_attr_init(&attr) == -1)
