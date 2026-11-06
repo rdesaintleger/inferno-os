@@ -66,8 +66,8 @@ struct Ref
 
 /*
  *  The lock of a Rendez is not in it: Sleep, Wakeup and swiproc take one of a
- *  fixed set of tokens chosen by its address (proc.c), so that a Rendez needs no
- *  initialization and no destruction.
+ *  fixed set of short mutexes chosen by its address (proc.c), so that a Rendez
+ *  needs no initialization and no destruction.
  */
 struct Rendez
 {
@@ -395,14 +395,14 @@ struct Proc
 	long	pid;
 	Proc*	next;		/* list of created processes */
 	Proc*	prev;
-	inferno_token_t	rlock;	/* sync between sleep/swiproc for r */
+	inferno_mutex_t	rlock;	/* sync between sleep/swiproc for r (short mutex) */
 	Rendez*	r;		/* rendezvous point slept on */
 	Rendez	sleep;		/* place to sleep */
 	int		killed;		/* by swiproc */
 	int	swipend;	/* software interrupt pending for Prog */
 	int	syscall;	/* set true under sysio for interruptable syscalls */
 	int	sigid;		/* handle used for signal/note/exception */
-	inferno_token_t	sysio;		/* note handler lock */
+	inferno_mutex_t	sysio;		/* note handler lock (short mutex) */
 	char	genbuf[128];	/* buffer used e.g. for last name element from namec */
 	int	nerr;		/* error stack SP */
 	osjmpbuf	estack[NERR];	/* vector of error jump labels */

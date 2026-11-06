@@ -4,15 +4,18 @@
 #include	"interp.h"
 
 /*
- *  The locks of the Rendez: Sleep, Wakeup and swiproc take the token of the stripe
- *  that the address of the Rendez selects.  Nobody holds the token of a stripe while
- *  taking that of another one, so sharing them is harmless, and the tokens are
+ *  The locks of the Rendez: Sleep, Wakeup and swiproc take the short mutex of the
+ *  stripe that the address of the Rendez selects.  They are short mutexes, like
+ *  Proc.rlock and Proc.sysio, because Wakeup and swiproc are called while holding
+ *  tokens (an export slave interrupted by a flush, for instance): waiting for a
+ *  short mutex does not make the caller lose its tokens.  The order is rlock, then
+ *  the stripe, and nobody holds one stripe while taking another one.  They are
  *  initialized once, at startup.
  */
 enum { Nrendezl = 64 };
-static inferno_token_t rendezl[Nrendezl];
+static inferno_mutex_t rendezl[Nrendezl];
 
-static inferno_token_t*
+static inferno_mutex_t*
 rendezlock(Rendez *r)
 {
 	return &rendezl[((uintptr_t)r >> 4) % Nrendezl];
@@ -24,7 +27,7 @@ rendezinit(void)
 	int i;
 
 	for(i = 0; i < Nrendezl; i++)
-		if(inferno_token_init(&rendezl[i]) != 0)
+		if(inferno_mutex_init(&rendezl[i], INFERNO_MUTEX_SHORT) != 0)
 			panic("rendezinit: no memory");
 }
 
@@ -37,12 +40,12 @@ newproc(void)
 	if(p == nil)
 		return nil;
 
-	if(inferno_token_init(&p->rlock) != 0){
+	if(inferno_mutex_init(&p->rlock, INFERNO_MUTEX_SHORT) != 0){
 		HOSTED_API(free)(p);
 		return nil;
 	}
-	if(inferno_token_init(&p->sysio) != 0){
-		inferno_token_destroy(&p->rlock);
+	if(inferno_mutex_init(&p->sysio, INFERNO_MUTEX_SHORT) != 0){
+		inferno_mutex_destroy(&p->rlock);
 		HOSTED_API(free)(p);
 		return nil;
 	}
@@ -59,30 +62,29 @@ newproc(void)
 	return p;
 }
 
-/* the tokens of a Proc go away with it (pexit) */
+/* the mutexes of a Proc go away with it (pexit) */
 void
 freeproc(Proc *p)
 {
-	inferno_token_destroy(&p->rlock);
-	inferno_token_destroy(&p->sysio);
+	inferno_mutex_destroy(&p->rlock);
+	inferno_mutex_destroy(&p->sysio);
 	HOSTED_API(free)(p);
 }
 
 void
 Sleep(Rendez *r, int (*f)(void*), void *arg)
 {
-	inferno_token_t *rl, *set[2];
+	inferno_mutex_t *rl;
 	int done;
 
 	rl = rendezlock(r);
-	set[0] = &up->rlock;
-	set[1] = rl;
-	inferno_token_get_all(2, set);
+	inferno_mutex_lock(&up->rlock);
+	inferno_mutex_lock(rl);
 
 	/*
 	 * if interrupted or condition happened, never mind;
-	 * f looks at its state without any lock: it is called with both tokens held,
-	 * and a pause there would let a Wakeup go by
+	 * f looks at its state without any lock, and takes none: a pause there
+	 * would let a Wakeup go by
 	 */
 	done = up->killed;
 	if(!done){
@@ -91,46 +93,46 @@ Sleep(Rendez *r, int (*f)(void*), void *arg)
 		inferno_token_nogo_end();
 	}
 	if(done) {
-		inferno_token_put(rl);
+		inferno_mutex_unlock(rl);
 	}else{
 		if(r->p != nil)
 			panic("double sleep %s[%lud] %s[%lud] r=0x%lux\n", r->p->text, r->p->pid, up->text, up->pid, r);
 
 		r->p = up;
-		inferno_token_put(rl);
+		inferno_mutex_unlock(rl);
 		up->swipend = 0;
 		up->r = r;	/* for swiproc */
-		inferno_token_put(&up->rlock);
+		inferno_mutex_unlock(&up->rlock);
 
 		osblock();
 
-		inferno_token_get(&up->rlock);
+		inferno_mutex_lock(&up->rlock);
 		up->r = nil;
 	}
 
 	if(up->killed || up->swipend) {
 		up->killed = 0;
 		up->swipend = 0;
-		inferno_token_put(&up->rlock);
+		inferno_mutex_unlock(&up->rlock);
 		error(Eintr);
 	}
-	inferno_token_put(&up->rlock);
+	inferno_mutex_unlock(&up->rlock);
 }
 
 int
 Wakeup(Rendez *r)
 {
 	Proc *p;
-	inferno_token_t *rl;
+	inferno_mutex_t *rl;
 
 	rl = rendezlock(r);
-	inferno_token_get(rl);
+	inferno_mutex_lock(rl);
 	p = r->p;
 	if(p != nil) {
 		r->p = nil;
 		osready(p);
 	}
-	inferno_token_put(rl);
+	inferno_mutex_unlock(rl);
 	return p != nil;
 }
 
@@ -138,7 +140,7 @@ void
 swiproc(Proc *p, int interp)
 {
 	Rendez *r;
-	inferno_token_t *rl;
+	inferno_mutex_t *rl;
 
 	if(p == nil)
 		return;
@@ -146,51 +148,41 @@ swiproc(Proc *p, int interp)
 	/*
 	 * Pull out of emu Sleep
 	 */
-	inferno_token_get(&p->rlock);
+	inferno_mutex_lock(&p->rlock);
 	if(!interp)
 		p->killed = 1;
-	for(;;){
-		r = p->r;
-		if(r == nil)
-			break;
+	r = p->r;
+	if(r != nil) {
 		rl = rendezlock(r);
-		/*
-		 * taking the second token may pause, and the first one is lost with
-		 * the pause: p may have left r in the meantime, so look again
-		 */
-		inferno_token_get(rl);
-		if(p->r != r){
-			inferno_token_put(rl);
-			continue;
-		}
+		inferno_mutex_lock(rl);
 		if(r->p == p){
 			p->swipend = 1;
 			r->p = nil;
 			osready(p);
 		}
-		inferno_token_put(rl);
-		inferno_token_put(&p->rlock);
+		inferno_mutex_unlock(rl);
+		inferno_mutex_unlock(&p->rlock);
 		return;
 	}
-	inferno_token_put(&p->rlock);
+	inferno_mutex_unlock(&p->rlock);
 
 	/*
 	 * Maybe pull out of Host OS
 	 */
-	inferno_token_get(&p->sysio);
+	inferno_mutex_lock(&p->sysio);
 	if(p->syscall) {
 		p->swipend = 1;
 		oshostintr(p);	/* under sysio: osleave clears it under the same lock */
 	}
-	inferno_token_put(&p->sysio);
+	inferno_mutex_unlock(&p->sysio);
 }
 
 void
 notkilled(void)
 {
-	inferno_token_get(&up->rlock);
+	inferno_mutex_lock(&up->rlock);
 	up->killed = 0;
-	inferno_token_put(&up->rlock);
+	inferno_mutex_unlock(&up->rlock);
 }
 
 /*
@@ -247,15 +239,15 @@ osleave(void)
 {
 	int r;
 
-	inferno_token_get(&up->sysio);
+	inferno_mutex_lock(&up->sysio);
 	up->syscall = 0;
 	osintrclear();
-	inferno_token_put(&up->sysio);
+	inferno_mutex_unlock(&up->sysio);
 
-	inferno_token_get(&up->rlock);
+	inferno_mutex_lock(&up->rlock);
 	r = up->swipend;
 	up->swipend = 0;
-	inferno_token_put(&up->rlock);
+	inferno_mutex_unlock(&up->rlock);
 
 	if(r != 0)
 		error(Eintr);
