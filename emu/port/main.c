@@ -243,6 +243,7 @@ main(int argc, char *argv[])
 		panic("main: no memory");
 	rendezinit();
 	schedinit();
+	exportlockinit();
 
 	if(coherence == nil)
 		coherence = nofence;

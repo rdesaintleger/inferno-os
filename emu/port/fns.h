@@ -119,6 +119,7 @@ Proc*	newproc(void);
 void	freeproc(Proc*);
 void	rendezinit(void);
 void	schedinit(void);
+void	exportlockinit(void);
 void		nexterror(void);
 void		nofence(void);
 void		notkilled(void);

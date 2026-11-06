@@ -18,10 +18,8 @@ enum
 
 struct Export
 {
-	Lock	l;
 	Ref	r;
 	Exq*	work;
-	Lock	fidlock;
 	Fid*	fid[Nfidhash];
 	Uqidtab	uqids;
 	Chan*	io;
@@ -51,7 +49,6 @@ struct Fid
 
 struct Exq
 {
-	Lock	l;
 	int	busy;	/* fcall in progress */
 	int	finished;	/* will do no more work on this request or flushes */
 	Exq*	next;
@@ -65,14 +62,33 @@ struct Exq
 	int	bsize;
 };
 
+/*
+ *  One token protects all the state of the exports that several processes share:
+ *  the queue of work waiting for a slave (exq.head, exq.tail, Exq.next), the work
+ *  in progress of each Export (Export.work) and the state of each Exq (busy,
+ *  finished, shut, flush, flusht, slave), and the fid tables with Fid.ref and
+ *  Fid.attached.  There used to be one lock for each of these, taken one inside
+ *  another; with tokens, taking a second one may make the caller lose the first
+ *  and revalidate what it read, so there is a single one and no order to keep.
+ *  The sections are short; swiproc, Wakeup and notkilled take only short mutexes
+ *  and so keep it.  Nothing blocks, sleeps or raises an error while it is held.
+ */
+static inferno_token_t exlock;
+
 struct
 {
-	Lock	l;
 	QLock	qwait;
 	Rendez	rwait;
 	Exq	*head;		/* work waiting for a slave */
 	Exq	*tail;
 }exq;
+
+void
+exportlockinit(void)
+{
+	if(inferno_token_init(&exlock) != 0)
+		panic("exportlockinit: no memory");
+}
 
 static void	exshutdown(Export*);
 static int	exflushed(Export*, Exq*);
@@ -166,9 +182,9 @@ export(int fd, char *dir, int async)
 static void
 exportinit(void)
 {
-	lock(&exq.l);
+	inferno_token_get(&exlock);
 	if(fcalls[Tversion] != nil) {
-		unlock(&exq.l);
+		inferno_token_put(&exlock);
 		return;
 	}
 	fcalls[Tversion] = Exversion;
@@ -183,7 +199,7 @@ exportinit(void)
 	fcalls[Tremove] = Exremove;
 	fcalls[Tstat] = Exstat;
 	fcalls[Twstat] = Exwstat;
-	unlock(&exq.l);
+	inferno_token_put(&exlock);
 }
 
 static int
@@ -324,14 +340,14 @@ exportproc(void *a)
 			continue;
 		}
 
-		lock(&exq.l);
+		inferno_token_get(&exlock);
 		if(exq.head == nil)
 			exq.head = q;
 		else
 			exq.tail->next = q;
 		q->next = nil;
 		exq.tail = q;
-		unlock(&exq.l);
+		inferno_token_put(&exlock);
 		if(exq.qwait.head == nil)
 			kproc("exslave", exslave, nil, 0);
 		Wakeup(&exq.rwait);
@@ -360,27 +376,25 @@ exflushed(Export *fs, Exq *fq)
 	ulong pid;
 
 	/* not yet started? */
-	lock(&exq.l);
+	inferno_token_get(&exlock);
 	for(last = &exq.head; (q = *last) != nil; last = &q->next)
 		if(q->export == fs && q->in.tag == fq->in.oldtag){
 			*last = q->next;
-			unlock(&exq.l);
+			inferno_token_put(&exlock);
 			/* not yet started: discard, and Rflush */
 			exfreeq(q);
 			return 1;
 		}
-	unlock(&exq.l);
+	inferno_token_put(&exlock);
 
 	/* tricky case: in progress */
-	lock(&fs->l);
+	inferno_token_get(&exlock);
 	for(q = fs->work; q != nil; q = q->next)
 		if(q->in.tag == fq->in.oldtag){
 			pid = 0;
-			lock(&q->l);
 			if(q->finished){
 				/* slave replied and emptied its flush queue; we can Rflush now */
-				unlock(&q->l);
-				unlock(&fs->l);
+				inferno_token_put(&exlock);
 				return 1;
 			}
 			/* append to slave's flush queue */
@@ -392,15 +406,14 @@ exflushed(Export *fs, Exq *fq)
 			q->flusht = fq;
 			if(q->busy){
 				pid = q->slave->pid;
-				swiproc(q->slave, 0);
+				swiproc(q->slave, 0);	/* the slave clears busy, under exlock, after notkilled */
 			}
-			unlock(&q->l);
-			unlock(&fs->l);
+			inferno_token_put(&exlock);
 			if(exdebug && pid)
 				HOSTED_API(print)("export: swiproc %ld to flush %d\n", pid, fq->in.oldtag);
 			return 0;
 		}
-	unlock(&fs->l);
+	inferno_token_put(&exlock);
 
 	/* not found */
 	return 1;
@@ -430,7 +443,7 @@ exshutdown(Export *fs)
 	 *  exfreeq goes down to cclose, which calls the driver, which may block.
 	 */
 	dead = nil;
-	lock(&exq.l);
+	inferno_token_get(&exlock);
 	for(last = &exq.head; (q = *last) != nil;)
 		if(q->export == fs){
 			*last = q->next;
@@ -438,22 +451,20 @@ exshutdown(Export *fs)
 			dead = q;
 		}else
 			last = &q->next;
-	unlock(&exq.l);
+	inferno_token_put(&exlock);
 	while((q = dead) != nil){
 		dead = q->next;
 		exfreeq(q);
 	}
 
 	/* tell slaves to abandon work in progress */
-	lock(&fs->l);
+	inferno_token_get(&exlock);
 	while((q = fs->work) != nil){
 		fs->work = q->next;
-		lock(&q->l);
 		q->shut = 1;
 		swiproc(q->slave, 0);	/* whether busy or not */
-		unlock(&q->l);
 	}
-	unlock(&fs->l);
+	inferno_token_put(&exlock);
 }
 
 static void
@@ -519,10 +530,10 @@ exslave(void *a)
 		Sleep(&exq.rwait, exwork, nil);
 		poperror();
 
-		lock(&exq.l);
+		inferno_token_get(&exlock);
 		q = exq.head;
 		if(q == nil) {
-			unlock(&exq.l);
+			inferno_token_put(&exlock);
 			qunlock(&exq.qwait);
 			continue;
 		}
@@ -539,11 +550,9 @@ exslave(void *a)
 		q->slave = up;
 		q->busy = 1;	/* fcall in progress: interruptible */
 		fs = q->export;
-		lock(&fs->l);
 		q->next = fs->work;
 		fs->work = q;
-		unlock(&fs->l);
-		unlock(&exq.l);
+		inferno_token_put(&exlock);
 
 		up->env->pgrp = q->export->pgrp;
 		up->env->egrp = q->export->egrp;
@@ -583,12 +592,12 @@ exslave(void *a)
 		 * might have changed state), unless the export has shut down completely.
 		 * must also reply to each flush in order, and only after the original reply (if sent).
 		 */
-		lock(&q->l);
+		inferno_token_get(&exlock);
 		notkilled();
 		q->busy = 0;	/* operation complete */
 		if(!q->shut){
 			if(q->flush == nil || err == nil){
-				unlock(&q->l);
+				inferno_token_put(&exlock);
 				q->out.type = q->in.type+1;
 				q->out.tag = q->in.tag;
 				if(err){
@@ -596,26 +605,26 @@ exslave(void *a)
 					q->out.ename = err;
 				}
 				exreply(q, "exslave");
-				lock(&q->l);
+				inferno_token_get(&exlock);
 			}
 			while((fq = q->flush) != nil && !q->shut){
 				q->flush = fq->next;
-				unlock(&q->l);
+				inferno_token_put(&exlock);
 				exreply(fq, "exslave");
 				exfreeq(fq);
-				lock(&q->l);
+				inferno_token_get(&exlock);
 			}
 		}
 		q->finished = 1;	/* promise not to send any more */
-		unlock(&q->l);
+		inferno_token_put(&exlock);
 
-		lock(&fs->l);
+		inferno_token_get(&exlock);
 		for(last = &fs->work; (t = *last) != nil; last = &t->next)
 			if(t == q){
 				*last = q->next;
 				break;
 			}
-		unlock(&fs->l);
+		inferno_token_put(&exlock);
 
 		notkilled();
 		exfreeq(q);
@@ -671,11 +680,11 @@ Exmkfid(Export *fs, ulong fid)
 	nf = HOSTED_API(malloc)(sizeof(Fid));
 	if(nf == nil)
 		return nil;
-	lock(&fs->fidlock);
+	inferno_token_get(&exlock);
 	h = fid % Nfidhash;
 	for(f = fs->fid[h]; f != nil; f = f->next){
 		if(f->fid == fid){
-			unlock(&fs->fidlock);
+			inferno_token_put(&exlock);
 			HOSTED_API(free)(nf);
 			return nil;
 		}
@@ -693,7 +702,7 @@ Exmkfid(Export *fs, ulong fid)
 	nf->offset = 0;
 	nf->chan = nil;
 	nf->qid = nil;
-	unlock(&fs->fidlock);
+	inferno_token_put(&exlock);
 	return nf;
 }
 
@@ -703,18 +712,18 @@ Exgetfid(Export *fs, ulong fid)
 	Fid *f;
 	ulong h;
 
-	lock(&fs->fidlock);
+	inferno_token_get(&exlock);
 	h = fid % Nfidhash;
 	for(f = fs->fid[h]; f; f = f->next) {
 		if(f->fid == fid){
 			if(f->attached == 0)
 				break;
 			f->ref++;
-			unlock(&fs->fidlock);
+			inferno_token_put(&exlock);
 			return f;
 		}
 	}
-	unlock(&fs->fidlock);
+	inferno_token_put(&exlock);
 	return nil;
 }
 
@@ -723,7 +732,7 @@ Exputfid(Export *fs, Fid *f)
 {
 	Chan *c;
 
-	lock(&fs->fidlock);
+	inferno_token_get(&exlock);
 	f->ref--;
 	if(f->ref == 0 && f->attached == 0){
 		c = f->chan;
@@ -731,14 +740,14 @@ Exputfid(Export *fs, Fid *f)
 		*f->last = f->next;
 		if(f->next != nil)
 			f->next->last = f->last;
-		unlock(&fs->fidlock);
+		inferno_token_put(&exlock);
 		freeuqid(&fs->uqids, f->qid);
 		HOSTED_API(free)(f);
 		if(c != nil)
 			cclose(c);
 		return;
 	}
-	unlock(&fs->fidlock);
+	inferno_token_put(&exlock);
 }
 
 static Chan*
